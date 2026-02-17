@@ -9,38 +9,58 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+
     <style>
-      /* Додаткові стилі спеціально для головної сторінки */
+      /* Стилі тільки для Головної сторінки (Хаб) */
+
+      /* Темніший, серйозніший герой для ГО */
       .hub-hero {
         background:
-          linear-gradient(rgba(0, 86, 179, 0.8), rgba(0, 0, 0, 0.6)),
-          url("https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&q=80&w=1500");
+          linear-gradient(rgba(0, 50, 100, 0.7), rgba(0, 0, 0, 0.7)),
+          url("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=1500"); /* Книги/Бібліотека */
         background-size: cover;
-        height: 60vh;
+        background-position: center;
+        height: 55vh;
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
+        padding-top: 60px; /* Відступ під шапку */
+      }
+
+      .hub-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 10px;
+      }
+      .hub-hero p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      /* Сітка карток */
+      .services-section {
+        background: #f4f6f8;
+        padding-bottom: 80px;
       }
 
       .services-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 30px;
-        margin-top: -50px; /* Картки заходять на Hero для ефекту */
-        padding-bottom: 50px;
+        margin-top: -60px; /* Наїзд на Hero */
         position: relative;
         z-index: 10;
       }
 
       .service-card {
         background: white;
-        border-radius: 20px;
+        border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
         transition: transform 0.3s ease;
-        text-align: center;
         display: flex;
         flex-direction: column;
       }
@@ -50,20 +70,26 @@
       }
 
       .card-img {
-        height: 200px;
+        height: 220px;
         background-size: cover;
         background-position: center;
       }
 
-      /* Картинки для карток */
+      /* --- ФОТО (БЕЗ ОБЛИЧ) --- */
+
+      /* Мудрик: Дитячі руки малюють/грають */
       .img-mudryk {
-        background-image: url("https://images.unsplash.com/photo-1587654780291-39c940483713?auto=format&fit=crop&q=80&w=500");
+        background-image: url("https://images.unsplash.com/photo-1596464716127-f9a826b7754e?auto=format&fit=crop&q=80&w=600");
       }
+
+      /* ГПД: Дитина пише в зошиті (вид на руки) */
       .img-gpd {
-        background-image: url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=500");
+        background-image: url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=600");
       }
+
+      /* Підготовка: Підліток з книгою/ноутбуком (вид зі спини або руки) */
       .img-prep {
-        background-image: url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=500");
+        background-image: url("https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600");
       }
 
       .card-content {
@@ -75,29 +101,41 @@
       }
 
       .card-content h3 {
+        font-family: "Ubuntu", sans-serif;
         color: var(--primary);
         margin-bottom: 10px;
         font-size: 1.5rem;
       }
+
       .card-content p {
-        color: #666;
+        color: #555;
         margin-bottom: 20px;
         font-size: 0.95rem;
+        line-height: 1.5;
       }
 
       .btn-card {
         display: block;
         width: 100%;
         padding: 12px 0;
-        background: var(--secondary);
+        background: var(--secondary); /* Жовтий */
         color: #333;
+        text-align: center;
         text-decoration: none;
         font-weight: bold;
-        border-radius: 10px;
+        border-radius: 8px;
         transition: 0.3s;
       }
       .btn-card:hover {
         background: #ffdb4d;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Стиль для неактивних кнопок */
+      .btn-card.disabled {
+        background: #e0e0e0;
+        color: #888;
+        cursor: not-allowed;
       }
     </style>
   </head>
@@ -107,7 +145,11 @@
         <nav>
           <div class="logo">ГО <span>Берегиня</span></div>
           <ul class="nav-links">
-            <li><a href="tel:+380970000000">📞 +38 (097) 000-00-00</a></li>
+            <li>
+              <a href="tel:+380970000000" style="font-size: 1.1rem"
+                >📞 Зв'язатися з нами</a
+              >
+            </li>
           </ul>
         </nav>
       </div>
@@ -116,29 +158,27 @@
     <section class="hub-hero">
       <div class="container">
         <div class="hero-content">
-          <h1>Освітній простір для дітей та молоді</h1>
+          <h1>Освітній простір «Берегиня»</h1>
           <p>
-            Від перших кроків у творчості до впевненого вступу в ВНЗ. <br />Ми
-            поруч на кожному етапі дорослішання.
+            Комплексний підхід до розвитку особистості: від перших кроків у
+            садочку до впевненого вступу у ВНЗ.
           </p>
         </div>
       </div>
     </section>
 
-    <section class="main-services">
+    <section class="services-section">
       <div class="container">
         <div class="services-grid">
           <div class="service-card">
             <div class="card-img img-mudryk"></div>
             <div class="card-content">
-              <h3>Клуб «Мудрик»</h3>
+              <h3>Дитячий клуб «Мудрик»</h3>
               <p>
-                Для дітей 3–6 років. Ранній розвиток, підготовка до школи,
+                Для дітей 3–6 років.<br />Ранній розвиток, підготовка до школи,
                 творчість та англійська в ігровій формі.
               </p>
-              <a href="mudryk.html" class="btn-card"
-                >Перейти на сторінку садочка</a
-              >
+              <a href="mudryk.html" class="btn-card">Перейти на сайт садочка</a>
             </div>
           </div>
 
@@ -147,14 +187,14 @@
             <div class="card-content">
               <h3>Група подовженого дня</h3>
               <p>
-                Для школярів 1–4 класів. Забираємо зі школи, робимо уроки,
-                гуляємо та смачно годуємо.
+                1–4 клас.<br />Забираємо зі школи, робимо домашні завдання,
+                гуляємо та забезпечуємо корисне дозвілля.
               </p>
               <a
                 href="#"
-                class="btn-card"
-                onclick="alert('Сторінка в розробці!')"
-                >Детальніше про ГПД</a
+                class="btn-card disabled"
+                onclick="alert('Розділ у розробці!')"
+                >Скоро відкриття</a
               >
             </div>
           </div>
@@ -164,14 +204,14 @@
             <div class="card-content">
               <h3>Довузівська підготовка</h3>
               <p>
-                Для учнів 9–11 класів. Підготовка до НМТ/ЗНО, профорієнтація та
-                психологічна підтримка.
+                9–11 клас.<br />Якісна підготовка до НМТ/ЗНО, профорієнтація та
+                психологічна підтримка підлітків.
               </p>
               <a
                 href="#"
-                class="btn-card"
-                onclick="alert('Сторінка в розробці!')"
-                >Підготовка до вступу</a
+                class="btn-card disabled"
+                onclick="alert('Розділ у розробці!')"
+                >Скоро відкриття</a
               >
             </div>
           </div>
@@ -182,9 +222,17 @@
     <footer>
       <div
         class="container"
-        style="text-align: center; padding: 20px 0; color: #666"
+        style="
+          text-align: center;
+          padding: 30px 0;
+          color: #777;
+          font-size: 0.9rem;
+        "
       >
-        <p>&copy; 2026 ГО «Берегиня». Виховуємо майбутнє з любов'ю.</p>
+        <p>
+          &copy; 2026 Громадська Організація «Берегиня».<br />Виховуємо майбутнє
+          з любов'ю.
+        </p>
       </div>
     </footer>
   </body>
