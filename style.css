@@ -82,54 +82,59 @@ nav {
 
 /* HERO SECTION */
 .hero {
+  /*
+       Тут ми замінили фон на яскраве зображення з повітряними кульками.
+       linear-gradient робить легке затемнення, щоб білий текст добре читався.
+    */
   background:
-    linear-gradient(rgba(0, 168, 232, 0.2), rgba(0, 0, 0, 0.4)),
-    url("https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&q=80&w=1500");
+    linear-gradient(rgba(0, 168, 232, 0.3), rgba(0, 0, 0, 0.3)),
+    url("https://images.unsplash.com/photo-1555431383-48c9960f0a94?q=80&w=1500&auto=format&fit=crop");
   background-size: cover;
-  background-position: center;
-  height: 80vh;
+  background-position: center center; /* Центруємо зображення */
+  height: 85vh; /* Трохи збільшили висоту для кращого вигляду */
   display: flex;
   align-items: center;
+  text-align: center; /* Вирівнюємо текст по центру для мобільних */
   color: var(--white);
+  /* Додаємо легку тінь до тексту, щоб він "вистрибував" з яскравого фону */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* Центруємо контент на головному екрані */
 .hero-content {
-  max-width: 600px;
+  max-width: 700px;
+  margin: 0 auto; /* Магія центрування по горизонталі */
 }
+
 .hero h1 {
-  font-size: 3rem;
+  font-size: 3.5rem; /* Зробили заголовок трохи більшим */
   margin-bottom: 20px;
   line-height: 1.2;
+  font-weight: 800; /* Зробили шрифт жирнішим */
 }
+
 .hero p {
-  font-size: 1.2rem;
-  margin-bottom: 30px;
+  font-size: 1.3rem;
+  margin-bottom: 35px;
+  opacity: 0.95;
+}
+
+.hero-btns {
+  display: flex;
+  justify-content: center; /* Центруємо кнопки */
+  gap: 15px; /* Відстань між кнопками */
+  flex-wrap: wrap; /* Дозволяємо кнопкам переноситись на малих екранах */
 }
 
 .hero-btns a {
   display: inline-block;
-  padding: 15px 30px;
+  padding: 15px 35px;
   text-decoration: none;
   border-radius: 50px;
   font-weight: bold;
-  margin-right: 15px;
   transition: 0.3s;
-}
-
-.btn-primary {
-  background: var(--secondary);
-  color: #000;
-}
-.btn-primary:hover {
-  transform: scale(1.05);
-}
-.btn-secondary {
-  border: 2px solid var(--white);
-  color: var(--white);
-}
-.btn-secondary:hover {
-  background: var(--white);
-  color: var(--primary);
+  font-size: 1.1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Додали тінь кнопкам */
 }
 
 /* ПЕРЕВАГИ */
