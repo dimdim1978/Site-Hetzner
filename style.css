@@ -129,9 +129,10 @@ nav {
   background-position: center;
 }
 
-/* Фото 1: Мудрик (Діти ліплять) */
+/* Фото 1: Мудрик (Діти ліплять/малюють) - ОНОВЛЕНЕ */
 .img-mudryk {
-  background-image: url("https://images.unsplash.com/photo-1502086223501-7ea6ecd79268?auto=format&fit=crop&q=80&w=600");
+  /* Нове надійне фото: фарби та творчий процес */
+  background-image: url("https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600");
 }
 
 /* Фото 2: ГПД (Зошит) */
