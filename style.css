@@ -1,7 +1,7 @@
-/* ЗАГАЛЬНІ НАЛАШТУВАННЯ */
+/* --- ЗАГАЛЬНІ НАЛАШТУВАННЯ --- */
 :root {
-  --primary: #00a8e8; /* Світло-блакитний */
-  --secondary: #ffcc00; /* Жовтий для акцентів */
+  --primary: #00a8e8; /* Блакитний */
+  --secondary: #ffcc00; /* Жовтий */
   --text: #333;
   --light: #f8f9fa;
   --white: #ffffff;
@@ -26,7 +26,7 @@ h3 {
   font-family: "Ubuntu", sans-serif;
 }
 
-/* ШАПКА */
+/* --- ШАПКА (Спільна для всіх сторінок) --- */
 header {
   background: var(--white);
   padding: 15px 0;
@@ -70,128 +70,9 @@ nav {
   color: var(--primary);
 }
 
-.btn-header {
-  background: var(--primary);
-  color: white;
-  padding: 10px 20px;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
+/* --- ГОЛОВНА СТОРІНКА ОРГАНІЗАЦІЇ (HUB) --- */
 
-/* HERO SECTION */
-.hero {
-  /*
-       Тут ми замінили фон на яскраве зображення з повітряними кульками.
-       linear-gradient робить легке затемнення, щоб білий текст добре читався.
-    */
-  background:
-    linear-gradient(rgba(0, 168, 232, 0.3), rgba(0, 0, 0, 0.3)),
-    url("https://images.unsplash.com/photo-1555431383-48c9960f0a94?q=80&w=1500&auto=format&fit=crop");
-  background-size: cover;
-  background-position: center center; /* Центруємо зображення */
-  height: 85vh; /* Трохи збільшили висоту для кращого вигляду */
-  display: flex;
-  align-items: center;
-  text-align: center; /* Вирівнюємо текст по центру для мобільних */
-  color: var(--white);
-  /* Додаємо легку тінь до тексту, щоб він "вистрибував" з яскравого фону */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-/* Центруємо контент на головному екрані */
-.hero-content {
-  max-width: 700px;
-  margin: 0 auto; /* Магія центрування по горизонталі */
-}
-
-.hero h1 {
-  font-size: 3.5rem; /* Зробили заголовок трохи більшим */
-  margin-bottom: 20px;
-  line-height: 1.2;
-  font-weight: 800; /* Зробили шрифт жирнішим */
-}
-
-.hero p {
-  font-size: 1.3rem;
-  margin-bottom: 35px;
-  opacity: 0.95;
-}
-
-.hero-btns {
-  display: flex;
-  justify-content: center; /* Центруємо кнопки */
-  gap: 15px; /* Відстань між кнопками */
-  flex-wrap: wrap; /* Дозволяємо кнопкам переноситись на малих екранах */
-}
-
-.hero-btns a {
-  display: inline-block;
-  padding: 15px 35px;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: bold;
-  transition: 0.3s;
-  font-size: 1.1rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Додали тінь кнопкам */
-}
-
-/* ПЕРЕВАГИ */
-.advantages {
-  padding: 80px 0;
-  background: var(--light);
-}
-.section-title {
-  text-align: center;
-  font-size: 2.2rem;
-  margin-bottom: 50px;
-}
-
-.advantages-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 30px;
-}
-
-.adv-card {
-  background: var(--white);
-  padding: 40px 30px;
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  transition: 0.3s;
-}
-
-.adv-card:hover {
-  transform: translateY(-10px);
-}
-.adv-card .icon {
-  font-size: 3rem;
-  margin-bottom: 20px;
-}
-.adv-card h3 {
-  margin-bottom: 15px;
-  color: var(--primary);
-}
-
-/* АДАПТИВНІСТЬ ДЛЯ МОБІЛЬНИХ */
-@media (max-width: 768px) {
-  .nav-links {
-    display: none;
-  }
-  .hero h1 {
-    font-size: 2.2rem;
-  }
-}
-/* Мудрик: Дитячі руки малюють/грають (ОНОВЛЕНО) */
-.img-mudryk {
-  /* Нове, яскраве фото з руками та кольоровим тістом */
-  background-image: url("https://images.unsplash.com/photo-1502086223501-7ea6ecd79268?auto=format&fit=crop&q=80&w=600");
-}
-/* --- СТИЛІ ДЛЯ ГОЛОВНОЇ СТОРІНКИ (ХАБ) --- */
-
-/* 1. Налаштування сітки та фону */
+/* Темний банер з книгами */
 .hub-hero {
   background:
     linear-gradient(rgba(0, 50, 100, 0.7), rgba(0, 0, 0, 0.7)),
@@ -207,6 +88,12 @@ nav {
   padding-top: 60px;
 }
 
+.hub-hero h1 {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+/* Сітка карток */
 .services-section {
   background: #f4f6f8;
   padding-bottom: 80px;
@@ -221,9 +108,8 @@ nav {
   z-index: 10;
 }
 
-/* 2. Зовнішній вигляд самої картки */
 .service-card {
-  background: var(--white);
+  background: white;
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
@@ -231,33 +117,33 @@ nav {
   display: flex;
   flex-direction: column;
 }
-
 .service-card:hover {
   transform: translateY(-10px);
 }
 
-/* 3. ГОЛОВНЕ: Розміри картинки (саме цього не вистачало!) */
+/* ФОТО КАРТОК (Ось тут була проблема) */
 .card-img {
-  height: 220px; /* Без цього картинку не видно! */
+  height: 220px;
   width: 100%;
   background-size: cover;
   background-position: center;
 }
 
-/* 4. Конкретні картинки */
+/* Фото 1: Мудрик (Діти ліплять) */
 .img-mudryk {
   background-image: url("https://images.unsplash.com/photo-1502086223501-7ea6ecd79268?auto=format&fit=crop&q=80&w=600");
 }
 
+/* Фото 2: ГПД (Зошит) */
 .img-gpd {
   background-image: url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=600");
 }
 
+/* Фото 3: Підготовка (Ноутбук) */
 .img-prep {
   background-image: url("https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600");
 }
 
-/* 5. Текст та кнопки всередині картки */
 .card-content {
   padding: 25px;
   flex-grow: 1;
@@ -265,13 +151,13 @@ nav {
   flex-direction: column;
   justify-content: space-between;
 }
-
 .card-content h3 {
-  margin-bottom: 10px;
   color: var(--primary);
+  margin-bottom: 10px;
   font-size: 1.5rem;
 }
 
+/* Кнопки карток */
 .btn-card {
   display: block;
   width: 100%;
@@ -282,16 +168,94 @@ nav {
   text-decoration: none;
   font-weight: bold;
   border-radius: 8px;
-  transition: 0.3s;
   margin-top: 15px;
+  transition: 0.3s;
 }
-
 .btn-card:hover {
   background: #ffdb4d;
 }
-
 .btn-card.disabled {
   background: #e0e0e0;
   color: #888;
   cursor: not-allowed;
+}
+
+/* --- СТОРІНКА САДОЧКА (MUDRYK.HTML) --- */
+.hero {
+  background:
+    linear-gradient(rgba(0, 168, 232, 0.3), rgba(0, 0, 0, 0.3)),
+    url("https://images.unsplash.com/photo-1555431383-48c9960f0a94?q=80&w=1500&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+  height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--white);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.hero h1 {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  font-weight: 800;
+}
+.hero p {
+  font-size: 1.3rem;
+  margin-bottom: 35px;
+}
+
+.hero-btns a {
+  display: inline-block;
+  padding: 15px 35px;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: bold;
+  margin: 5px;
+}
+.btn-primary {
+  background: var(--secondary);
+  color: #333;
+}
+.btn-secondary {
+  border: 2px solid white;
+  color: white;
+}
+
+/* Переваги садочка */
+.advantages {
+  padding: 80px 0;
+  background: var(--light);
+}
+.section-title {
+  text-align: center;
+  font-size: 2.2rem;
+  margin-bottom: 50px;
+}
+.adv-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+.adv-card .icon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+/* МОБІЛЬНА ВЕРСІЯ */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .hero h1,
+  .hub-hero h1 {
+    font-size: 2.2rem;
+  }
 }
