@@ -3,82 +3,189 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ГО Берегиня | Дитячий клуб Мудрик</title>
+    <title>ГО «Берегиня» | Освітній простір Покров</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Ubuntu:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Додаткові стилі спеціально для головної сторінки */
+      .hub-hero {
+        background:
+          linear-gradient(rgba(0, 86, 179, 0.8), rgba(0, 0, 0, 0.6)),
+          url("https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&q=80&w=1500");
+        background-size: cover;
+        height: 60vh;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-top: -50px; /* Картки заходять на Hero для ефекту */
+        padding-bottom: 50px;
+        position: relative;
+        z-index: 10;
+      }
+
+      .service-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .service-card:hover {
+        transform: translateY(-10px);
+      }
+
+      .card-img {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+      }
+
+      /* Картинки для карток */
+      .img-mudryk {
+        background-image: url("https://images.unsplash.com/photo-1587654780291-39c940483713?auto=format&fit=crop&q=80&w=500");
+      }
+      .img-gpd {
+        background-image: url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=500");
+      }
+      .img-prep {
+        background-image: url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=500");
+      }
+
+      .card-content {
+        padding: 25px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .card-content h3 {
+        color: var(--primary);
+        margin-bottom: 10px;
+        font-size: 1.5rem;
+      }
+      .card-content p {
+        color: #666;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+      }
+
+      .btn-card {
+        display: block;
+        width: 100%;
+        padding: 12px 0;
+        background: var(--secondary);
+        color: #333;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 10px;
+        transition: 0.3s;
+      }
+      .btn-card:hover {
+        background: #ffdb4d;
+      }
+    </style>
   </head>
   <body>
     <header>
       <div class="container">
         <nav>
-          <div class="logo">Берегиня<span>Мудрик</span></div>
+          <div class="logo">ГО <span>Берегиня</span></div>
           <ul class="nav-links">
-            <li><a href="#about">Про нас</a></li>
-            <li><a href="#program">Програма</a></li>
-            <li><a href="#contacts">Контакти</a></li>
+            <li><a href="tel:+380970000000">📞 +38 (097) 000-00-00</a></li>
           </ul>
-          <a href="https://t.me/Твій_Бот_Username" class="btn-header"
-            >Записатися</a
-          >
         </nav>
       </div>
     </header>
 
-    <section class="hero">
+    <section class="hub-hero">
       <div class="container">
         <div class="hero-content">
-          <h1>Простір щасливого дитинства «Мудрик»</h1>
+          <h1>Освітній простір для дітей та молоді</h1>
           <p>
-            Поєднуємо творчість, навчання та живі експерименти. Тут ваша дитина
-            знайде друзів і полюбить пізнавати світ.
+            Від перших кроків у творчості до впевненого вступу в ВНЗ. <br />Ми
+            поруч на кожному етапі дорослішання.
           </p>
-          <div class="hero-btns">
-            <a href="#about" class="btn-primary">Як ми навчаємо</a>
-            <a href="tel:+380970000000" class="btn-secondary">Зателефонувати</a>
-          </div>
         </div>
       </div>
     </section>
 
-    <section id="about" class="advantages">
+    <section class="main-services">
       <div class="container">
-        <h2 class="section-title">Як проходять наші дні?</h2>
-        <div class="advantages-grid">
-          <div class="adv-card">
-            <div class="icon">🎨</div>
-            <h3>Творча майстерня</h3>
-            <p>
-              Ліплення, малювання та аплікації для розвитку моторики та уяви.
-            </p>
+        <div class="services-grid">
+          <div class="service-card">
+            <div class="card-img img-mudryk"></div>
+            <div class="card-content">
+              <h3>Клуб «Мудрик»</h3>
+              <p>
+                Для дітей 3–6 років. Ранній розвиток, підготовка до школи,
+                творчість та англійська в ігровій формі.
+              </p>
+              <a href="mudryk.html" class="btn-card"
+                >Перейти на сторінку садочка</a
+              >
+            </div>
           </div>
 
-          <div class="adv-card">
-            <div class="icon">📚</div>
-            <h3>Легке навчання</h3>
-            <p>
-              Вивчаємо літери, цифри та світ навколо через цікаву гру, а не
-              нудні уроки.
-            </p>
+          <div class="service-card">
+            <div class="card-img img-gpd"></div>
+            <div class="card-content">
+              <h3>Група подовженого дня</h3>
+              <p>
+                Для школярів 1–4 класів. Забираємо зі школи, робимо уроки,
+                гуляємо та смачно годуємо.
+              </p>
+              <a
+                href="#"
+                class="btn-card"
+                onclick="alert('Сторінка в розробці!')"
+                >Детальніше про ГПД</a
+              >
+            </div>
           </div>
 
-          <div class="adv-card">
-            <div class="icon">🇬🇧</div>
-            <h3>English Start</h3>
-            <p>
-              Вивчаємо перші англійські слова через пісні, вірші та розваги.
-            </p>
-          </div>
-
-          <div class="adv-card">
-            <div class="icon">💧</div>
-            <h3>Юні дослідники</h3>
-            <p>Проводимо прості та захопливі експерименти (STEAM-підхід).</p>
+          <div class="service-card">
+            <div class="card-img img-prep"></div>
+            <div class="card-content">
+              <h3>Довузівська підготовка</h3>
+              <p>
+                Для учнів 9–11 класів. Підготовка до НМТ/ЗНО, профорієнтація та
+                психологічна підтримка.
+              </p>
+              <a
+                href="#"
+                class="btn-card"
+                onclick="alert('Сторінка в розробці!')"
+                >Підготовка до вступу</a
+              >
+            </div>
           </div>
         </div>
       </div>
     </section>
+
+    <footer>
+      <div
+        class="container"
+        style="text-align: center; padding: 20px 0; color: #666"
+      >
+        <p>&copy; 2026 ГО «Берегиня». Виховуємо майбутнє з любов'ю.</p>
+      </div>
+    </footer>
   </body>
 </html>
