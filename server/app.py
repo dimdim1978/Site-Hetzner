@@ -52,6 +52,8 @@ SMTP_USER   = os.environ.get('SMTP_USER', '')
 SMTP_PASS   = os.environ.get('SMTP_PASS', '')
 MAIL_FROM   = os.environ.get('MAIL_FROM', SMTP_USER)
 SITE_URL    = os.environ.get('SITE_URL', 'https://children.pp.ua')
+PHONE_1     = os.environ.get('PHONE_1', '+380 97 382 33 79')
+PHONE_2     = os.environ.get('PHONE_2', '+380 95 484 01 03')
 DEV         = os.environ.get('DEV', '') == '1'
 
 if not SECRET_KEY:
@@ -233,11 +235,17 @@ def zayavka():
     conn.commit()
     log('нова заявка', child_id, who='форма')
 
-    # лист не має права зламати прийом заявки
+    # жоден лист не має права зламати прийом заявки — вона вже в базі
     try:
         send_admin_mail(child_id, data)
     except Exception as e:
-        app.logger.error('Лист не надіслано: %s', e)
+        app.logger.error('Лист адміністратору не надіслано: %s', e)
+
+    if data.get('parent_email'):
+        try:
+            send_parent_mail(child_id, data)
+        except Exception as e:
+            app.logger.error('Лист батькам не надіслано: %s', e)
 
     return jsonify(ok=True, id=child_id)
 
@@ -291,6 +299,85 @@ border:1px solid #E4E7EC">
         s.starttls()
         s.login(SMTP_USER, SMTP_PASS)
         s.sendmail(MAIL_FROM, [a.strip() for a in ADMIN_MAIL.split(',')], msg.as_string())
+
+# ============================================================
+#  ЛИСТ-ПІДТВЕРДЖЕННЯ БАТЬКАМ
+#  Надсилається, лише якщо батько лишив пошту — вона необов'язкова.
+#  Навмисно без чутливих полів: у листі немає ні алергій, ні
+#  «кому не віддавати». Пошта — не найбезпечніше місце.
+# ============================================================
+def send_parent_mail(child_id, data):
+    if not (SMTP_USER and SMTP_PASS):
+        return
+
+    who = data.get('parent_name', '').split()
+    greeting = who[1] if len(who) > 1 else (who[0] if who else '')
+
+    school = data.get('school', '')
+    grade  = data.get('grade', '')
+    line_school = '{}{}'.format(school, ', {} клас'.format(grade) if grade else '') if school else ''
+
+    html = """<!doctype html><html><body style="margin:0;background:#F5F6F7;
+padding:24px;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
+<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;
+overflow:hidden;border:1px solid #E4E7EC">
+
+  <div style="background:#2F6F4E;color:#fff;padding:22px 26px">
+    <div style="font-size:13px;opacity:.85">ГО «Берегиня» · Освітній простір Покров</div>
+    <div style="font-size:20px;font-weight:700;margin-top:6px">Заявку прийнято</div>
+  </div>
+
+  <div style="padding:24px 26px;color:#101828;font-size:16px;line-height:1.55">
+    <p style="margin:0 0 16px">Доброго дня{greet}!</p>
+
+    <p style="margin:0 0 16px">Ми отримали заявку на <b>{child}</b>.
+    Номер заявки — <b>№&nbsp;{id}</b>.{school}</p>
+
+    <p style="margin:0 0 8px"><b>Що далі</b></p>
+    <p style="margin:0 0 16px">Ми зателефонуємо протягом двох робочих днів, щоб
+    узгодити дні та години відвідування й відповісти на ваші запитання.</p>
+
+    <p style="margin:0 0 16px">При першій зустрічі попросимо заповнити паперову
+    картку дитини — там детальніше про здоров'я та перелік осіб, які можуть її
+    забирати. Це займе близько п'яти хвилин.</p>
+
+    <p style="margin:0 0 6px"><b>Якщо треба щось змінити</b></p>
+    <p style="margin:0 0 20px">Просто зателефонуйте:<br>
+      <a href="{h1}" style="color:#2F6F4E;font-weight:600;text-decoration:none">{p1}</a><br>
+      <a href="{h2}" style="color:#2F6F4E;font-weight:600;text-decoration:none">{p2}</a>
+    </p>
+
+    <p style="margin:0;color:#667085;font-size:14px">
+      Дані дитини ми обробляємо відповідно до
+      <a href="{url}/dani.html" style="color:#475467">повідомлення про обробку
+      персональних даних</a>.
+    </p>
+  </div>
+</div>
+
+<div style="max-width:560px;margin:14px auto 0;color:#98A2B3;font-size:12px;text-align:center">
+  Цей лист надіслано автоматично, відповідати на нього не потрібно.
+</div>
+</body></html>""".format(
+        greet=(', ' + esc(greeting)) if greeting else '',
+        child=esc(data.get('child_name', '')),
+        id=child_id,
+        school=(' Заклад: ' + esc(line_school) + '.') if line_school else '',
+        p1=PHONE_1, h1='tel:' + PHONE_1.replace(' ', ''),
+        p2=PHONE_2, h2='tel:' + PHONE_2.replace(' ', ''),
+        url=SITE_URL)
+
+    msg = MIMEText(html, 'html', 'utf-8')
+    msg['Subject'] = Header('Заявку до групи подовженого дня прийнято, № {}'.format(child_id), 'utf-8')
+    msg['From']    = formataddr((str(Header('ГО «Берегиня»', 'utf-8')), MAIL_FROM))
+    msg['To']      = data['parent_email']
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as s:
+        s.starttls()
+        s.login(SMTP_USER, SMTP_PASS)
+        s.sendmail(MAIL_FROM, [data['parent_email']], msg.as_string())
+    app.logger.info('Лист батькам надіслано: заявка %s', child_id)
+
 
 def esc(s):
     return (str(s).replace('&', '&amp;').replace('<', '&lt;')
