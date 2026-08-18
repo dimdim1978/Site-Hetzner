@@ -1,0 +1,128 @@
+{% extends "_base.html" %}
+{% block title %}{{ c.child_name }}{% endblock %}
+{% macro row(lab, val) %}
+  {% if val %}
+  <tr>
+    <td style="padding:9px 0;color:var(--ink-3);font-size:14px;width:230px;vertical-align:top">{{ lab }}</td>
+    <td style="padding:9px 0;font-size:15px">{{ val }}</td>
+  </tr>
+  {% endif %}
+{% endmacro %}
+{% block body %}
+
+<div style="margin-top:22px"><a href="/admin" style="font-size:14px;text-decoration:none">← до списку</a></div>
+
+<h1 style="margin-top:10px">{{ c.child_name }}</h1>
+<div class="sub">Заявка № {{ c.id }} · надійшла {{ c.created_at[:16] }}
+  · <span class="pill st-{{ c.status }}">{{ c.status }}</span></div>
+
+<div class="card">
+  <h2 style="font-size:17px;margin-bottom:12px">Дитина</h2>
+  <table style="width:100%;border-collapse:collapse">
+    {{ row('Дата народження', c.child_dob) }}
+    {{ row('Клас', c.grade) }}
+    {{ row('Заклад освіти', c.school) }}
+    {{ row('Адреса закладу', c.school_addr) }}
+    {{ row('Забирати зі школи', c.pickup_school) }}
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="font-size:17px;margin-bottom:12px">Батьки та контакти</h2>
+  <table style="width:100%;border-collapse:collapse">
+    {{ row('ПІБ заявника', c.parent_name) }}
+    {{ row('Ким доводиться', c.parent_role) }}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px;width:230px">Телефон</td>
+        <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.parent_phone|replace(' ','') }}">{{ c.parent_phone }}</a></td></tr>
+    {% if c.parent_email %}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Пошта</td>
+        <td style="padding:9px 0;font-size:15px"><a href="mailto:{{ c.parent_email }}">{{ c.parent_email }}</a></td></tr>
+    {% endif %}
+    {{ row('Другий контакт', c.contact2_name) }}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Телефон другого контакту</td>
+        <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.contact2_phone|replace(' ','') }}">{{ c.contact2_phone }}</a></td></tr>
+    {{ row('Адреса проживання', c.address) }}
+  </table>
+</div>
+
+<div class="card" style="background:var(--bg-soft)">
+  <h2 style="font-size:17px;margin-bottom:12px">Хто забирає дитину</h2>
+  {% for p in pickup %}
+    <div style="padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--line){% endif %}">
+      <b>{{ p.name }}</b>{% if p.relation %} <span style="color:var(--ink-3)">— {{ p.relation }}</span>{% endif %}<br>
+      <a href="tel:{{ p.phone|replace(' ','') }}" style="font-size:15px">{{ p.phone }}</a>
+    </div>
+  {% else %}
+    <div style="color:var(--ink-3)">Не вказано</div>
+  {% endfor %}
+  <table style="width:100%;border-collapse:collapse;margin-top:10px;border-top:1px solid var(--line)">
+    {{ row('Може йти додому сама', c.self_leave) }}
+    {{ row('Не раніше', c.self_time) }}
+  </table>
+  {% if s and s.do_not_release %}
+    {% if role == 'admin' %}
+      <div style="margin-top:14px;padding:12px 14px;background:var(--err-soft);
+                  border:1px solid #FDA29B;border-radius:8px">
+        <div style="font-size:13px;color:var(--err);font-weight:600;margin-bottom:4px">Не віддавати дитину</div>
+        <div style="font-size:15px">{{ s.do_not_release }}</div>
+      </div>
+    {% else %}
+      <div style="margin-top:14px;padding:12px 14px;background:var(--err-soft);border-radius:8px;
+                  font-size:14px;color:var(--err)">
+        Є обмеження щодо передачі дитини — зверніться до керівника клубу.
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 style="font-size:17px;margin-bottom:12px">Що варто знати</h2>
+  {% if s and s.has_allergy == 'так' %}
+    <div style="padding:12px 14px;background:var(--warn-soft);border:1px solid #FEC84B;
+                border-radius:8px;margin-bottom:12px">
+      <div style="font-size:13px;color:var(--warn);font-weight:600;margin-bottom:4px">Алергія</div>
+      <div style="font-size:15px">{{ s.allergy_details or 'деталі не вказано' }}</div>
+    </div>
+  {% else %}
+    <div style="color:var(--ink-3);font-size:15px;margin-bottom:10px">Алергій немає</div>
+  {% endif %}
+  <table style="width:100%;border-collapse:collapse">
+    {{ row('Чого не їсть', s.meal_limits if s else '') }}
+    {{ row('Що ще варто знати', s.health_notes if s else '') }}
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="font-size:17px;margin-bottom:12px">Очікування та згоди</h2>
+  <table style="width:100%;border-collapse:collapse">
+    {{ row('Що важливо для батьків', c.expectations) }}
+    {{ row('Коментар', c.comment) }}
+    {{ row('Достовірність', c.c_true) }}
+    {{ row('Обробка даних', c.c_data) }}
+    {{ row('Дані про здоров’я', c.c_health) }}
+    {{ row('Екстрена допомога', c.c_medical) }}
+    {{ row('Месенджер', c.c_messenger) }}
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="font-size:17px;margin-bottom:12px">Опрацювання</h2>
+
+  <form method="post" action="/admin/{{ c.id }}/status"
+        style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+    <select name="status" style="width:auto;min-width:170px">
+      {% for st in ['нова','підтверджена','зарахована','відмова','архів'] %}
+        <option value="{{ st }}" {% if c.status == st %}selected{% endif %}>{{ st }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn primary" type="submit">Змінити статус</button>
+  </form>
+
+  <form method="post" action="/admin/{{ c.id }}/note">
+    <label style="display:block;font-size:14px;color:var(--ink-2);margin-bottom:6px">Внутрішній коментар</label>
+    <textarea name="note_admin" placeholder="Дзвонили 20.08, домовились на понеділок…">{{ c.note_admin or '' }}</textarea>
+    <button class="btn ghost" type="submit" style="margin-top:10px">Зберегти коментар</button>
+  </form>
+</div>
+
+{% endblock %}

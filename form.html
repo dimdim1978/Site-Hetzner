@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Запис до групи подовженого дня | ГО «Берегиня»</title>
+<meta name="description" content="Реєстрація дитини до групи подовженого дня ГО «Берегиня», Покров. Щодня 12:00–17:00.">
+
+<!-- ==========================================================
+     НАЛАШТУВАННЯ — усе, що треба міняти, зібрано тут
+     ========================================================== -->
+<script>
+const CFG = {
+  // Куди форма надсилає заявку. Порожній рядок = демо-режим:
+  // доводить до екрана успіху, але нікуди не пише.
+  // На бойовому сервері має бути '/api/zayavka'.
+  ENDPOINT: '/api/zayavka',
+
+  // Телефон клубу — у підвалі й у тексті помилки
+  PHONE: '+380 97 000 00 00',
+  PHONE_HREF: 'tel:+380970000000',
+
+  // Заклади освіти Покрова. Порядок такий, як у списку — не сортується.
+  SCHOOLS: [
+    { n: 'КЗ «Ліцей № 2»',        a: 'вул. Івана Малки, 15' },
+    { n: 'КЗ «Ліцей № 3»',        a: 'вул. Центральна, 31' },
+    { n: 'КЗ «Гімназія № 4»',     a: 'вул. Карпатська, 2 / вул. Уральська, 2' },
+    { n: 'КЗ «Ліцей № 5»',        a: 'вул. Центральна, 35' },
+    { n: 'КЗ «Ліцей № 6»',        a: 'вул. Чіатурська, 6' },
+    { n: 'КЗ «Ліцей № 8»',        a: 'вул. Б. Джонсона, 15' },
+    { n: 'КЗ «Ліцей № 9»',        a: 'вул. Б. Джонсона, 29-а' },
+    { n: 'КЗ «Шолоховський ліцей»', a: 'с. Шолохове' }
+  ],
+
+  // Класи, які приймаємо
+  GRADES: [1,2,3,4,5,6,7,8]
+};
+</script>
+
+<style>
+:root{
+  --accent:#2F6F4E;
+  --accent-dark:#255A3E;
+  --accent-soft:#EAF2ED;
+  --ink:#101828;
+  --ink-2:#475467;
+  --ink-3:#667085;
+  --line:#D0D5DD;
+  --line-soft:#E4E7EC;
+  --bg:#FFFFFF;
+  --bg-soft:#FAFAF7;
+  --err:#B42318;
+  --err-soft:#FEF3F2;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:17px;
+  line-height:1.5;
+  color:var(--ink);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:600px;margin:0 auto;padding:0 20px 64px}
+
+/* ---------- шапка ---------- */
+.top{padding:20px 0 0}
+.top a.back{font-size:15px;color:var(--ink-3);text-decoration:none;display:inline-block;padding:6px 0}
+.top a.back:hover{color:var(--accent)}
+
+header.head{padding:20px 0 28px;border-bottom:1px solid var(--line-soft)}
+header.head .org{font-size:14px;color:var(--ink-3);letter-spacing:.02em;margin-bottom:8px}
+header.head h1{font-size:26px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
+header.head .meta{
+  margin-top:14px;font-size:15px;color:var(--ink-2);
+  background:var(--bg-soft);border:1px solid var(--line-soft);
+  border-radius:8px;padding:12px 14px;
+}
+header.head .meta b{color:var(--ink)}
+header.head .time{font-size:13px;color:var(--ink-3);margin-top:10px}
+
+/* ---------- розділи ---------- */
+section.block{padding-top:32px;margin-top:8px}
+section.block > h2{font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.01em}
+section.block > .lead{font-size:14px;color:var(--ink-3);margin-bottom:20px;line-height:1.45}
+section.block > h2 + .field{margin-top:20px}
+
+section.safety{
+  background:var(--bg-soft);
+  border:1px solid var(--line-soft);
+  border-radius:12px;
+  padding:24px 20px;
+  margin-top:32px;
+}
+
+/* ---------- поля ---------- */
+.field{margin-bottom:20px}
+.field:last-child{margin-bottom:0}
+
+label.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:6px;font-weight:500}
+label.lab .opt{color:var(--ink-3);font-weight:400}
+.hint{font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.4}
+
+input[type=text],input[type=tel],input[type=email],input[type=date],input[type=time],select,textarea{
+  width:100%;
+  font-family:inherit;
+  font-size:16px;            /* менше 16px — iOS зумить сторінку при фокусі */
+  color:var(--ink);
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px 13px;
+  min-height:48px;
+  appearance:none;
+  -webkit-appearance:none;
+}
+textarea{min-height:88px;resize:vertical;line-height:1.45}
+
+select{
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23667085' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 13px center;
+  padding-right:36px;
+  text-overflow:ellipsis;
+}
+
+input:focus,select:focus,textarea:focus{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-color:var(--accent);
+}
+
+.field.bad input,.field.bad select,.field.bad textarea{border-color:var(--err);background-color:var(--err-soft)}
+.err{display:none;font-size:13px;color:var(--err);margin-top:6px}
+.field.bad .err{display:block}
+
+/* ---------- чекбокси й радіо ---------- */
+fieldset{border:0}
+legend.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:10px;font-weight:500}
+.choices{display:flex;flex-direction:column;gap:2px}
+
+.choice{display:flex;align-items:center;gap:11px;min-height:44px;padding:4px 2px;cursor:pointer;font-size:16px}
+.choice input{width:22px;height:22px;flex:none;margin:0;accent-color:var(--accent);cursor:pointer}
+.choice span{line-height:1.35}
+
+/* ---------- особи, які забирають ---------- */
+.person{border:1px solid var(--line-soft);border-radius:10px;padding:16px 14px;margin-bottom:12px;background:#fff}
+.person .p-head{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--ink-3);margin-bottom:12px}
+.person .p-del{background:none;border:0;color:var(--ink-3);font-size:14px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:4px}
+.person .p-del:hover{color:var(--err)}
+.person .field{margin-bottom:12px}
+.person .field:last-child{margin-bottom:0}
+.add-btn{width:100%;padding:13px;font-size:15px;font-family:inherit;color:var(--accent);background:#fff;border:1px dashed var(--line);border-radius:8px;cursor:pointer}
+.add-btn:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+/* ---------- згоди ---------- */
+.consent{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line-soft);cursor:pointer}
+.consent:last-of-type{border-bottom:0}
+.consent input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent);cursor:pointer}
+.consent .c-text{font-size:15px;line-height:1.45;color:var(--ink)}
+.consent .c-text .c-opt{display:block;font-size:13px;color:var(--ink-3);margin-top:3px}
+.consent.bad{background:var(--err-soft);border-radius:8px;padding-left:10px;padding-right:10px}
+
+a.inline{color:var(--accent)}
+
+/* ---------- кнопка ---------- */
+.submit-zone{margin-top:36px}
+button.go{width:100%;min-height:52px;font-family:inherit;font-size:17px;font-weight:600;color:#fff;background:var(--accent);border:0;border-radius:8px;cursor:pointer}
+button.go:hover{background:var(--accent-dark)}
+button.go:disabled{background:var(--ink-3);cursor:default}
+button.go:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+.form-err{display:none;margin-top:14px;padding:14px;background:var(--err-soft);border:1px solid var(--err);border-radius:8px;font-size:15px;color:var(--err);line-height:1.45}
+.form-err.on{display:block}
+.form-err a{color:var(--err);font-weight:600}
+
+/* ---------- екран успіху ---------- */
+.done{display:none;padding:56px 0 40px;text-align:center}
+.done.on{display:block}
+.done .tick{width:56px;height:56px;margin:0 auto 22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:28px;line-height:56px}
+.done h2{font-size:23px;margin-bottom:16px}
+.done .num{display:inline-block;margin-bottom:20px;padding:8px 16px;background:var(--bg-soft);border:1px solid var(--line-soft);border-radius:8px;font-size:16px;font-variant-numeric:tabular-nums}
+.done p{color:var(--ink-2);font-size:16px;margin-bottom:14px;line-height:1.5}
+.done .again{margin-top:28px;width:100%;min-height:48px;font-family:inherit;font-size:16px;color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:8px;cursor:pointer}
+
+/* ---------- підвал ---------- */
+footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--line-soft);font-size:14px;color:var(--ink-3);line-height:1.6}
+footer a{color:var(--ink-2)}
+
+.hidden{display:none !important}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+@media (max-width:380px){
+  body{font-size:16px}
+  header.head h1{font-size:22px}
+  .wrap{padding:0 16px 56px}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="top"><a class="back" href="index.html">← ГО «Берегиня»</a></div>
+
+  <header class="head">
+    <div class="org">ГО «Берегиня» · Освітній простір Покров</div>
+    <h1>Запис до групи подовженого дня</h1>
+    <div class="meta">
+      <b>Щодня 12:00 – 17:00</b><br>
+      Забираємо зі школи, робимо домашні завдання, гуляємо.
+      <div class="time">Заповнення анкети — близько 3 хвилин.<br>
+      Дні й години узгодимо окремо, тут вони не потрібні.</div>
+    </div>
+  </header>
+
+  <form id="f" novalidate>
+
+    <!-- honeypot: люди його не бачать, боти заповнюють -->
+    <div class="hp"><label>Не заповнюйте це поле<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <!-- ================= 1. ДИТИНА ================= -->
+    <section class="block">
+      <h2>Дитина</h2>
+
+      <div class="field" data-req>
+        <label class="lab" for="child_name">Прізвище та ім’я дитини</label>
+        <input type="text" id="child_name" name="child_name" autocomplete="off">
+        <div class="hint">Як у свідоцтві про народження</div>
+        <div class="err">Вкажіть прізвище та ім’я дитини</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="child_dob">Дата народження</label>
+        <input type="date" id="child_dob" name="child_dob">
+        <div class="err">Вкажіть дату народження</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="grade">Клас у 2026/27 навчальному році</label>
+        <select id="grade" name="grade"><option value="">— оберіть —</option></select>
+        <div class="err">Оберіть клас</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="school">Заклад освіти</label>
+        <select id="school" name="school"><option value="">— оберіть —</option></select>
+        <div class="hint" id="school_addr"></div>
+        <div class="err">Оберіть заклад освіти</div>
+      </div>
+
+      <div class="field hidden" id="school_other_wrap" data-req>
+        <label class="lab" for="school_other">Назва закладу</label>
+        <input type="text" id="school_other" name="school_other">
+        <div class="err">Напишіть назву закладу</div>
+      </div>
+
+      <fieldset class="field" data-req>
+        <legend class="lab">Забирати дитину зі школи?</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="pickup_school" value="так"><span>Так, забирайте зі школи</span></label>
+          <label class="choice"><input type="radio" name="pickup_school" value="ні"><span>Ні, дитину приведуть</span></label>
+        </div>
+        <div class="err">Оберіть варіант</div>
+      </fieldset>
+    </section>
+
+    <!-- ================= 2. БАТЬКИ ================= -->
+    <section class="block">
+      <h2>Батьки або законні представники</h2>
+      <p class="lead">Другий контакт потрібен на випадок, якщо з вами не вдасться зв’язатися.</p>
+
+      <div class="field" data-req>
+        <label class="lab" for="parent_name">Ваше прізвище, ім’я та по батькові</label>
+        <input type="text" id="parent_name" name="parent_name" autocomplete="name">
+        <div class="err">Вкажіть ПІБ</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="parent_role">Ким доводитесь дитині</label>
+        <select id="parent_role" name="parent_role">
+          <option value="">— оберіть —</option>
+          <option>мати</option><option>батько</option>
+          <option>бабуся, дідусь</option>
+          <option>опікун, законний представник</option>
+          <option>інше</option>
+        </select>
+        <div class="err">Оберіть варіант</div>
+      </div>
+
+      <div class="field" data-req data-phone>
+        <label class="lab" for="parent_phone">Ваш телефон</label>
+        <input type="tel" id="parent_phone" name="parent_phone" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __">
+        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
+      </div>
+
+      <div class="field" data-email>
+        <label class="lab" for="parent_email">Електронна пошта <span class="opt">— необов’язково</span></label>
+        <input type="email" id="parent_email" name="parent_email" inputmode="email" autocomplete="email">
+        <div class="hint">Якщо вкажете — надішлемо копію заявки</div>
+        <div class="err">Перевірте адресу пошти</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="contact2_name">Другий контакт — прізвище та ім’я</label>
+        <input type="text" id="contact2_name" name="contact2_name">
+        <div class="err">Вкажіть другу контактну особу</div>
+      </div>
+
+      <div class="field" data-req data-phone>
+        <label class="lab" for="contact2_phone">Другий контакт — телефон</label>
+        <input type="tel" id="contact2_phone" name="contact2_phone" inputmode="tel" placeholder="+380 __ ___ __ __">
+        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="address">Адреса проживання <span class="opt">— необов’язково</span></label>
+        <input type="text" id="address" name="address">
+        <div class="hint">Знадобиться лише в екстреній ситуації</div>
+      </div>
+    </section>
+
+    <!-- ================= 3. БЕЗПЕКА ================= -->
+    <section class="block safety">
+      <h2>Хто забирає дитину</h2>
+      <p class="lead">Дитину передамо лише особам із цього списку й лише за пред’явленням документа. Список можна змінити в будь-який момент — просто скажіть педагогу.</p>
+
+      <div id="people"></div>
+      <button type="button" class="add-btn" id="add_person">+ Додати ще одну особу</button>
+
+      <fieldset class="field" data-req style="margin-top:24px">
+        <legend class="lab">Чи може дитина йти додому самостійно?</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="self_leave" value="ні"><span>Ні, тільки з дорослим</span></label>
+          <label class="choice"><input type="radio" name="self_leave" value="так"><span>Так, у будь-який час</span></label>
+          <label class="choice"><input type="radio" name="self_leave" value="після"><span>Так, але не раніше певної години</span></label>
+        </div>
+        <div class="err">Оберіть варіант</div>
+      </fieldset>
+
+      <div class="field hidden" id="self_time_wrap" data-req>
+        <label class="lab" for="self_time">Не раніше якої години</label>
+        <input type="time" id="self_time" name="self_time" value="16:00">
+        <div class="err">Вкажіть час</div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="do_not_release">Чи є особи, яким дитину віддавати не можна? <span class="opt">— необов’язково</span></label>
+        <textarea id="do_not_release" name="do_not_release"></textarea>
+        <div class="hint">Це поле бачить лише керівник клубу. Заповніть, якщо є рішення суду або інші обставини.</div>
+      </div>
+    </section>
+
+    <!-- ================= 4. ЩО НАМ ВАРТО ЗНАТИ ================= -->
+    <section class="block">
+      <h2>Що нам варто знати</h2>
+      <p class="lead">Кілька дрібниць, щоб ми могли подбати про дитину так, як вдома. Ці відповіді зберігаються окремо від решти анкети — доступ до них мають дві особи.</p>
+
+      <fieldset class="field" data-req>
+        <legend class="lab">Чи є в дитини алергії?</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="has_allergy" value="ні"><span>Немає</span></label>
+          <label class="choice"><input type="radio" name="has_allergy" value="так"><span>Є</span></label>
+        </div>
+        <div class="err">Оберіть варіант</div>
+      </fieldset>
+
+      <div class="field hidden" id="allergy_wrap" data-req>
+        <label class="lab" for="allergy_details">На що алергія і що робити, якщо почалася реакція</label>
+        <textarea id="allergy_details" name="allergy_details"></textarea>
+        <div class="err">Опишіть алергію — це потрібно для безпеки дитини</div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="meal_limits">Чого дитина не їсть <span class="opt">— необов’язково</span></label>
+        <input type="text" id="meal_limits" name="meal_limits" placeholder="Не любить молочне, не їсть м’яса…">
+        <div class="hint">Разом із тим, що не можна за станом здоров’я</div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="health_notes">Що ще допоможе педагогу <span class="opt">— необов’язково</span></label>
+        <textarea id="health_notes" name="health_notes" placeholder="Ліки, обмеження в рухливих іграх, що допомагає дитині заспокоїтись"></textarea>
+      </div>
+    </section>
+
+    <!-- ================= 5. ОЧІКУВАННЯ ================= -->
+    <section class="block">
+      <h2>Що для вас важливо</h2>
+      <p class="lead">Необов’язково, але допоможе нам спланувати роботу групи.</p>
+
+      <fieldset class="field">
+        <legend class="lab">Оберіть скільки завгодно варіантів</legend>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" class="exp" value="допомога з домашнім завданням"><span>Допомога з домашнім завданням</span></label>
+          <label class="choice"><input type="checkbox" class="exp" value="прогулянки й рух"><span>Прогулянки й рух</span></label>
+          <label class="choice"><input type="checkbox" class="exp" value="творчі заняття"><span>Творчі заняття</span></label>
+          <label class="choice"><input type="checkbox" class="exp" value="спілкування з однолітками"><span>Спілкування з однолітками</span></label>
+          <label class="choice"><input type="checkbox" class="exp" value="безпечне місце до вечора"><span>Безпечне місце до вечора</span></label>
+          <label class="choice"><input type="checkbox" class="exp" value="англійська"><span>Англійська</span></label>
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label class="lab" for="comment">Побажання або запитання <span class="opt">— необов’язково</span></label>
+        <textarea id="comment" name="comment"></textarea>
+      </div>
+    </section>
+
+    <!-- ================= 6. ЗГОДИ ================= -->
+    <section class="block">
+      <h2>Згоди</h2>
+      <p class="lead">Перші чотири пункти обов’язкові. Останній — на ваш вибір.</p>
+
+      <label class="consent" data-req-check>
+        <input type="checkbox" name="c_true">
+        <span class="c-text">Підтверджую достовірність наданих відомостей і те, що дію як батько, мати або законний представник дитини.</span>
+      </label>
+
+      <label class="consent" data-req-check>
+        <input type="checkbox" name="c_data">
+        <span class="c-text">Даю згоду на обробку персональних даних дитини та моїх для організації роботи групи подовженого дня й комунікації.
+        <a class="inline" href="dani.html" target="_blank">Як ми обробляємо дані →</a></span>
+      </label>
+
+      <label class="consent" data-req-check>
+        <input type="checkbox" name="c_health">
+        <span class="c-text">Даю окрему згоду на обробку відомостей про стан здоров’я дитини, зазначених вище, для забезпечення її безпеки під час перебування в групі.</span>
+      </label>
+
+      <label class="consent" data-req-check>
+        <input type="checkbox" name="c_medical">
+        <span class="c-text">Даю згоду на надання дитині екстреної медичної допомоги, виклик швидкої та супровід дитини, якщо зі мною не вдається зв’язатися.</span>
+      </label>
+
+      <label class="consent">
+        <input type="checkbox" name="c_messenger">
+        <span class="c-text">Хочу отримувати повідомлення в групі Viber або Telegram.
+        <span class="c-opt">Необов’язково.</span></span>
+      </label>
+    </section>
+
+    <div class="submit-zone">
+      <button type="submit" class="go" id="go">Надіслати заявку</button>
+      <div class="form-err" id="form_err"></div>
+    </div>
+  </form>
+
+  <!-- ================= ЕКРАН УСПІХУ ================= -->
+  <div class="done" id="done">
+    <div class="tick">✓</div>
+    <h2>Заявку прийнято</h2>
+    <div class="num">Номер заявки: <b id="app_no">—</b></div>
+    <p id="done_mail" class="hidden">Копію надіслали на вашу пошту.</p>
+    <p>Ми зателефонуємо протягом двох робочих днів, щоб узгодити дні, години та перший день у групі.</p>
+    <p>Питання: <a href="" id="done_phone"></a></p>
+    <button type="button" class="again" id="again">Записати ще одну дитину</button>
+  </div>
+
+  <footer>
+    ГО «Берегиня» · Освітній простір Покров<br>
+    <a href="" id="foot_phone"></a><br>
+    <a href="dani.html">Обробка персональних даних</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const $  = (s,r)=>(r||document).querySelector(s);
+const $$ = (s,r)=>Array.from((r||document).querySelectorAll(s));
+const started = Date.now();
+
+/* ---------- підстановка з CFG ---------- */
+$('#done_phone').textContent = CFG.PHONE; $('#done_phone').href = CFG.PHONE_HREF;
+$('#foot_phone').textContent = CFG.PHONE; $('#foot_phone').href = CFG.PHONE_HREF;
+
+CFG.GRADES.forEach(function(g){ $('#grade').appendChild(new Option(g + ' клас', g)); });
+
+CFG.SCHOOLS.forEach(function(s,i){ $('#school').appendChild(new Option(s.n, String(i))); });
+$('#school').appendChild(new Option('Інший заклад','__other__'));
+
+$('#school').addEventListener('change', function(){
+  const other = this.value === '__other__';
+  $('#school_other_wrap').classList.toggle('hidden', !other);
+  const s = CFG.SCHOOLS[Number(this.value)];
+  $('#school_addr').textContent = (!other && s) ? s.a : '';
+});
+
+/* ---------- помічники ---------- */
+function mark(el, bad){
+  const f = el.closest('.field, .consent');
+  if(f) f.classList.toggle('bad', !!bad);
+}
+
+/* телефон: тримаємо +380 і лише цифри */
+function fixPhone(inp){
+  let d = inp.value.replace(/\D/g,'');
+  if(d.startsWith('380'))     d = d.slice(3);
+  else if(d.startsWith('80')) d = d.slice(2);
+  if(d.startsWith('0'))       d = d.slice(1);   // окремо: буває «+380 067…»
+  d = d.slice(0,9);
+  let out = '+380';
+  if(d.length)   out += ' ' + d.slice(0,2);
+  if(d.length>2) out += ' ' + d.slice(2,5);
+  if(d.length>5) out += ' ' + d.slice(5,7);
+  if(d.length>7) out += ' ' + d.slice(7,9);
+  inp.value = out;
+}
+function phoneOk(v){ return v.replace(/\D/g,'').length === 12; }
+function emailOk(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+
+/* ---------- умовні поля ---------- */
+$$('input[name=self_leave]').forEach(function(r){
+  r.addEventListener('change', function(){
+    $('#self_time_wrap').classList.toggle('hidden', this.value !== 'після');
+  });
+});
+$$('input[name=has_allergy]').forEach(function(r){
+  r.addEventListener('change', function(){
+    $('#allergy_wrap').classList.toggle('hidden', this.value !== 'так');
+  });
+});
+
+/* =====================================================
+   ОСОБИ, ЯКІ ЗАБИРАЮТЬ ДИТИНУ
+   ===================================================== */
+let pid = 0;
+function addPerson(required){
+  if($$('.person').length >= 4) return;
+  pid++;
+  const n = $$('.person').length + 1;
+  const d = document.createElement('div');
+  d.className = 'person';
+  d.innerHTML =
+    '<div class="p-head"><span>Особа '+n+(required?'':' — необов’язково')+'</span>'+
+    (required?'':'<button type="button" class="p-del">прибрати</button>')+'</div>'+
+    '<div class="field"'+(required?' data-req':'')+'>'+
+      '<label class="lab" for="pn'+pid+'">Прізвище та ім’я</label>'+
+      '<input type="text" id="pn'+pid+'" class="p-name">'+
+      '<div class="err">Вкажіть, хто забиратиме дитину</div></div>'+
+    '<div class="field"'+(required?' data-req data-phone':'')+'>'+
+      '<label class="lab" for="pp'+pid+'">Телефон</label>'+
+      '<input type="tel" id="pp'+pid+'" class="p-phone" inputmode="tel" placeholder="+380 __ ___ __ __">'+
+      '<div class="err">Введіть номер у форматі +380 XX XXX XX XX</div></div>'+
+    '<div class="field"'+(required?' data-req':'')+'>'+
+      '<label class="lab" for="pr'+pid+'">Ким доводиться дитині</label>'+
+      '<input type="text" id="pr'+pid+'" class="p-rel" placeholder="мати, бабуся, тітка…">'+
+      '<div class="err">Вкажіть ступінь спорідненості</div></div>';
+
+  const del = $('.p-del', d);
+  if(del) del.addEventListener('click', function(){ d.remove(); renumber(); });
+
+  bindPhones(d); bindBlur(d);
+  $('#people').appendChild(d);
+  $('#add_person').classList.toggle('hidden', $$('.person').length >= 4);
+}
+function renumber(){
+  $$('.person').forEach(function(p,i){
+    $('.p-head span', p).textContent = 'Особа '+(i+1)+(i===0?'':' — необов’язково');
+  });
+  $('#add_person').classList.remove('hidden');
+}
+$('#add_person').addEventListener('click', function(){ addPerson(false); });
+
+/* ---------- прив’язка обробників ---------- */
+function bindPhones(root){
+  $$('input[type=tel]', root).forEach(function(inp){
+    inp.addEventListener('focus', function(){ if(!this.value) this.value = '+380 '; });
+    inp.addEventListener('input', function(){ fixPhone(this); mark(this,false); });
+  });
+}
+function bindBlur(root){
+  $$('input,select,textarea', root).forEach(function(el){
+    el.addEventListener('blur', function(){
+      const f = el.closest('.field');
+      if(!f) return;
+      if(!el.value.trim()) return;              // порожнє на blur не сваримо
+      if(f.hasAttribute('data-phone') && !phoneOk(el.value)) return mark(el,true);
+      if(f.hasAttribute('data-email') && !emailOk(el.value)) return mark(el,true);
+      mark(el,false);
+    });
+    el.addEventListener('input',  function(){ mark(el,false); });
+    el.addEventListener('change', function(){ mark(el,false); });
+  });
+}
+bindPhones(document);
+bindBlur(document);
+$$('.consent input').forEach(function(c){
+  c.addEventListener('change', function(){ this.closest('.consent').classList.remove('bad'); });
+});
+
+/* ---------- перевірка перед надсиланням ---------- */
+function validate(){
+  let first = null;
+  const fail = function(el){ if(!first) first = el; };
+
+  // обов’язкові поля
+  $$('.field[data-req], fieldset[data-req]').forEach(function(f){
+    if(f.classList.contains('hidden') || f.closest('.hidden')){ f.classList.remove('bad'); return; }
+    let ok = true;
+    const radios = $$('input[type=radio]', f);
+    if(radios.length){
+      ok = radios.some(r=>r.checked);
+    } else {
+      const el = $('input,select,textarea', f);
+      if(!el) return;
+      const v = el.value.trim();
+      ok = !!v;
+      if(ok && f.hasAttribute('data-phone')) ok = phoneOk(v);
+    }
+    f.classList.toggle('bad', !ok);
+    if(!ok) fail(f);
+  });
+
+  // пошта необов’язкова, але якщо заповнена — має бути коректна
+  const em = $('#parent_email');
+  if(em.value.trim() && !emailOk(em.value.trim())){
+    mark(em,true); fail(em.closest('.field'));
+  }
+
+  // обов’язкові згоди
+  $$('.consent[data-req-check]').forEach(function(c){
+    const bad = !$('input',c).checked;
+    c.classList.toggle('bad', bad);
+    if(bad) fail(c);
+  });
+
+  return first;
+}
+
+/* ---------- збір даних ---------- */
+function collect(){
+  const d = {};
+  $$('#f input[name], #f select[name], #f textarea[name]').forEach(function(el){
+    if(el.type === 'checkbox')   { d[el.name] = el.checked ? 'так' : 'ні'; }
+    else if(el.type === 'radio') { if(el.checked) d[el.name] = el.value; }
+    else                         { d[el.name] = el.value.trim(); }
+  });
+
+  // школа: у select лежить індекс — розгортаємо в назву й адресу
+  const si = $('#school').value;
+  if(si === '__other__'){
+    d.school = $('#school_other').value.trim();
+    d.school_addr = '';
+  } else if(si !== ''){
+    d.school = CFG.SCHOOLS[Number(si)].n;
+    d.school_addr = CFG.SCHOOLS[Number(si)].a;
+  }
+
+  d.expectations = $$('.exp:checked').map(c=>c.value).join(', ');
+  d.pickup = $$('.person').map(function(p){
+    const n=$('.p-name',p).value.trim(), t=$('.p-phone',p).value.trim(), r=$('.p-rel',p).value.trim();
+    return n ? (n+' · '+t+' · '+r) : '';
+  }).filter(Boolean).join(' | ');
+  d.fill_seconds = Math.round((Date.now()-started)/1000);
+  return d;
+}
+
+/* ---------- чернетка ---------- */
+const DRAFT = 'gpd_draft_v2';
+function saveDraft(){
+  try{
+    const d={};
+    $$('#f input,#f select,#f textarea').forEach(function(el,i){
+      const k = el.id || (el.name+'_'+i);
+      d[k] = (el.type==='checkbox'||el.type==='radio') ? el.checked : el.value;
+    });
+    localStorage.setItem(DRAFT, JSON.stringify(d));
+  }catch(e){/* приватний режим — просто без чернетки */}
+}
+$('#f').addEventListener('input', function(){
+  clearTimeout(window.__dt); window.__dt = setTimeout(saveDraft, 1200);
+});
+
+/* ---------- надсилання ---------- */
+$('#f').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  const box = $('#form_err');
+  box.classList.remove('on');
+
+  if($('input[name=website]').value) return;                // бот
+  const bad = validate();
+  if(bad){
+    box.textContent = 'Перевірте позначені поля — щось лишилось незаповненим.';
+    box.classList.add('on');
+    bad.scrollIntoView({behavior:'smooth', block:'center'});
+    const inp = $('input,select,textarea', bad);
+    if(inp) setTimeout(()=>inp.focus({preventScroll:true}), 400);
+    return;
+  }
+
+  const btn = $('#go');
+  btn.disabled = true; btn.textContent = 'Надсилаємо…';
+  const data = collect();
+
+  const finish = function(no){
+    try{ localStorage.removeItem(DRAFT); }catch(e){}
+    $('#app_no').textContent = no;
+    $('#done_mail').classList.toggle('hidden', !data.parent_email);
+    $('#f').classList.add('hidden');
+    $('#done').classList.add('on');
+    window.scrollTo({top:0, behavior:'smooth'});
+  };
+
+  if(!CFG.ENDPOINT){                                        // демо-режим
+    setTimeout(function(){ finish('демо'); }, 700);
+    return;
+  }
+
+  fetch(CFG.ENDPOINT, {
+    method:'POST',
+    body:new URLSearchParams(data)                          // простий запит, без preflight
+  })
+  .then(r=>r.json())
+  .then(function(res){
+    if(res && res.ok) finish(res.id); else throw new Error('bad response');
+  })
+  .catch(function(){
+    btn.disabled=false; btn.textContent='Надіслати заявку';
+    box.innerHTML = 'Не вдалося надіслати заявку. Спробуйте ще раз або зателефонуйте: <a href="'+CFG.PHONE_HREF+'">'+CFG.PHONE+'</a>. Заповнене не втрачено.';
+    box.classList.add('on');
+  });
+});
+
+/* ---------- «записати ще одну дитину» ---------- */
+$('#again').addEventListener('click', function(){
+  ['child_name','child_dob','grade','school','school_other',
+   'meal_limits','allergy_details','health_notes','comment','do_not_release'].forEach(function(id){
+    const e=$('#'+id); if(e) e.value='';
+  });
+  $('#school_addr').textContent='';
+  $$('.exp').forEach(function(c){ c.checked=false; });
+  $$('input[name=has_allergy],input[name=self_leave],input[name=pickup_school]')
+    .forEach(function(r){ r.checked=false; });
+  $('#allergy_wrap').classList.add('hidden');
+  $('#school_other_wrap').classList.add('hidden');
+  $('#done').classList.remove('on');
+  $('#f').classList.remove('hidden');
+  $('#go').disabled=false; $('#go').textContent='Надіслати заявку';
+  window.scrollTo({top:0,behavior:'smooth'});
+  $('#child_name').focus();
+});
+
+/* ---------- старт ---------- */
+addPerson(true);
+})();
+</script>
+</body>
+</html>

@@ -1,110 +1,128 @@
 <!doctype html>
 <html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ГО «Берегиня» | Освітній простір Покров</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Ubuntu:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header>
-      <div class="container">
-        <nav>
-          <div class="logo">ГО <span>Берегиня</span></div>
-          <ul class="nav-links">
-            <li>
-              <a href="tel:+380970000000" style="font-size: 1.1rem"
-                >📞 Зв'язатися з нами</a
-              >
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </header>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ГО «Берегиня» — освітній простір, Покров</title>
+  <meta name="description" content="Група подовженого дня, дитячий клуб «Мудрик» і довузівська підготовка в Покрові. Набір до ГПД відкрито: щодня 12:00–17:00, 1–8 клас.">
+  <meta name="theme-color" content="#2F6F4E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    <section class="hub-hero">
-      <div class="container">
-        <div class="hero-content">
-          <h1>Освітній простір «Берегиня»</h1>
-          <p>
-            Комплексний підхід до розвитку особистості: від перших кроків у
-            садочку до впевненого вступу у ВНЗ.
-          </p>
+<!-- ================= ШАПКА ================= -->
+<header>
+  <div class="container">
+    <nav>
+      <div class="logo">ГО <span>«Берегиня»</span></div>
+      <ul class="nav-links">
+        <li><a href="#napriamy">Напрями</a></li>
+        <li><a href="#kontakty">Контакти</a></li>
+      </ul>
+      <a href="form.html" class="btn-header">Записати дитину</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= ГЕРОЙ ================= -->
+<section class="hub-hero">
+  <div class="container">
+    <div class="place">Покров</div>
+    <h1>Освітній простір «Берегиня»</h1>
+    <p>Від перших кроків у садочку до впевненого вступу у ВНЗ.</p>
+  </div>
+</section>
+
+<!-- ================= ГОЛОВНИЙ ЗАКЛИК ================= -->
+<div class="container">
+  <div class="cta">
+    <span class="tag">Набір відкрито</span>
+    <h2>Група подовженого дня</h2>
+    <div class="when">Щодня 12:00 – 17:00 · 1–8 клас</div>
+    <p class="what">Забираємо дитину зі школи, робимо домашні завдання, гуляємо та проводимо час із користю.</p>
+    <a href="form.html" class="btn">Записати дитину →</a>
+    <div class="note">Анкета заповнюється приблизно за 3 хвилини</div>
+  </div>
+</div>
+
+<!-- ================= НАПРЯМИ ================= -->
+<section class="services-section" id="napriamy">
+  <div class="container">
+
+    <div class="services-head">
+      <h2>Наші напрями</h2>
+      <p>Три програми для різного віку</p>
+    </div>
+
+    <div class="services-grid">
+
+      <div class="service-card">
+        <div class="card-img img-mudryk" aria-hidden="true">🎨</div>
+        <div class="card-content">
+          <h3>Дитячий клуб «Мудрик»</h3>
+          <div class="age">3–6 років</div>
+          <p>Ранній розвиток, підготовка до школи, творчість та англійська в ігровій формі.</p>
+          <a href="mudryk.html" class="btn-card ghost">Про клуб «Мудрик»</a>
         </div>
       </div>
-    </section>
 
-    <section class="services-section">
-      <div class="container">
-        <div class="services-grid">
-          <div class="service-card">
-            <div class="card-img img-mudryk"></div>
-            <div class="card-content">
-              <h3>Дитячий клуб «Мудрик»</h3>
-              <p>
-                Для дітей 3–6 років.<br />Ранній розвиток, підготовка до школи,
-                творчість та англійська в ігровій формі.
-              </p>
-              <a href="mudryk.html" class="btn-card">Перейти на сайт садочка</a>
-            </div>
-          </div>
-
-          <div class="service-card">
-            <div class="card-img img-gpd"></div>
-            <div class="card-content">
-              <h3>Група подовженого дня</h3>
-              <p>
-                1–4 клас.<br />Забираємо зі школи, робимо домашні завдання,
-                гуляємо та забезпечуємо корисне дозвілля.
-              </p>
-              <a
-                href="#"
-                class="btn-card disabled"
-                onclick="alert('Розділ у розробці!')"
-                >Скоро відкриття</a
-              >
-            </div>
-          </div>
-
-          <div class="service-card">
-            <div class="card-img img-prep"></div>
-            <div class="card-content">
-              <h3>Довузівська підготовка</h3>
-              <p>
-                9–11 клас.<br />Якісна підготовка до НМТ/ЗНО, профорієнтація та
-                психологічна підтримка підлітків.
-              </p>
-              <a
-                href="#"
-                class="btn-card disabled"
-                onclick="alert('Розділ у розробці!')"
-                >Скоро відкриття</a
-              >
-            </div>
-          </div>
+      <div class="service-card">
+        <div class="card-img img-gpd" aria-hidden="true">📚</div>
+        <div class="card-content">
+          <h3>Група подовженого дня</h3>
+          <div class="age">1–8 клас · щодня 12:00–17:00</div>
+          <p>Забираємо зі школи, робимо домашні завдання, гуляємо та забезпечуємо корисне дозвілля.</p>
+          <a href="form.html" class="btn-card go">Записати дитину</a>
         </div>
       </div>
-    </section>
 
-    <footer>
-      <div
-        class="container"
-        style="
-          text-align: center;
-          padding: 30px 0;
-          color: #777;
-          font-size: 0.9rem;
-        "
-      >
-        <p>
-          &copy; 2026 Громадська Організація «Берегиня».<br />Виховуємо майбутнє
-          з любов'ю.
-        </p>
+      <div class="service-card">
+        <div class="card-img img-prep" aria-hidden="true">🎓</div>
+        <div class="card-content">
+          <h3>Довузівська підготовка</h3>
+          <div class="age">9–11 клас</div>
+          <p>Підготовка до НМТ, профорієнтація та психологічна підтримка підлітків.</p>
+          <span class="btn-card soon">Скоро відкриття</span>
+        </div>
       </div>
-    </footer>
-  </body>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= КОНТАКТИ ================= -->
+<section class="contacts" id="kontakty">
+  <div class="container">
+    <h2>Як з нами зв'язатися</h2>
+    <div class="contacts-grid">
+
+      <div class="contact-item">
+        <div class="ci-lab">Телефон</div>
+        <a href="tel:+380970000000">+380 97 000 00 00</a>
+      </div>
+
+      <div class="contact-item">
+        <div class="ci-lab">Адреса</div>
+        <div class="ci-val">м. Покров</div>
+      </div>
+
+      <div class="contact-item">
+        <div class="ci-lab">Запис до групи</div>
+        <a href="form.html">Заповнити анкету →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= ПІДВАЛ ================= -->
+<footer>
+  <div class="container f-in">
+    © 2026 Громадська організація «Берегиня»<br>
+    Виховуємо майбутнє з любов'ю.<br>
+    <a href="dani.html">Обробка персональних даних</a>
+  </div>
+</footer>
+
+</body>
 </html>

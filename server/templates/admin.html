@@ -1,0 +1,63 @@
+{% extends "_base.html" %}
+{% block title %}Заявки{% endblock %}
+{% block body %}
+
+<h1>Заявки</h1>
+<div class="sub">Усього {{ total }}{% for st, n in counts.items() %} · {{ st }} {{ n }}{% endfor %}</div>
+
+<form class="card" method="get" action="/admin"
+      style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px">
+  <input type="search" name="q" value="{{ q }}" placeholder="Прізвище дитини, батьків або телефон"
+         style="flex:1;min-width:200px">
+  <select name="status" style="width:auto;min-width:150px">
+    <option value="">усі статуси</option>
+    {% for st in ['нова','підтверджена','зарахована','відмова','архів'] %}
+      <option value="{{ st }}" {% if status == st %}selected{% endif %}>{{ st }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn primary" type="submit">Шукати</button>
+  {% if q or status %}<a class="btn ghost" href="/admin">Скинути</a>{% endif %}
+</form>
+
+{% if not rows %}
+  <div class="card" style="text-align:center;color:var(--ink-3);padding:44px 20px">
+    {% if q or status %}За таким запитом нічого немає.{% else %}Заявок ще немає.{% endif %}
+  </div>
+{% else %}
+  <div class="card" style="padding:0;overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;min-width:760px">
+    <thead>
+      <tr style="background:var(--bg-soft);text-align:left">
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">№</th>
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Дитина</th>
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Клас</th>
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Батьки</th>
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Телефон</th>
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Статус</th>
+        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Надійшла</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr style="border-top:1px solid var(--line);cursor:pointer"
+          onclick="location='/admin/{{ r.id }}'">
+        <td style="padding:13px 14px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ r.id }}</td>
+        <td style="padding:13px 14px">
+          <a href="/admin/{{ r.id }}" style="font-weight:600;text-decoration:none">{{ r.child_name }}</a>
+          {% if r.has_allergy == 'так' %} <span class="pill alrg">алергія</span>{% endif %}
+        </td>
+        <td style="padding:13px 14px;color:var(--ink-2)">{{ r.grade }}</td>
+        <td style="padding:13px 14px;color:var(--ink-2)">{{ r.parent_name }}</td>
+        <td style="padding:13px 14px;white-space:nowrap">
+          <a href="tel:{{ r.parent_phone|replace(' ','') }}" style="text-decoration:none">{{ r.parent_phone }}</a>
+        </td>
+        <td style="padding:13px 14px"><span class="pill st-{{ r.status }}">{{ r.status }}</span></td>
+        <td style="padding:13px 14px;color:var(--ink-3);font-size:14px;white-space:nowrap">{{ r.created_at[:16] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% endif %}
+
+{% endblock %}

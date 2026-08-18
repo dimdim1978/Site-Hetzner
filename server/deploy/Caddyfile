@@ -1,0 +1,47 @@
+# ============================================================
+#  /etc/caddy/Caddyfile
+#  Caddy сам отримує й оновлює сертифікат Let's Encrypt.
+#  Перед першим запуском домен уже має вказувати на цей сервер.
+# ============================================================
+
+children.pp.ua {
+    encode zstd gzip
+
+    # ---- API та адмінка → у Flask ----
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8000
+    }
+    handle /admin* {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    # ---- решта — статика з робочої копії репозиторію ----
+    handle {
+        root * /var/www/beregynia
+        try_files {path} {path}/ {path}.html
+        file_server
+    }
+
+    # ---- заголовки безпеки ----
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "SAMEORIGIN"
+        Referrer-Policy           "same-origin"
+        -Server
+    }
+
+    # адмінку й вхід — не індексувати
+    @private path /admin* /enter.html
+    header @private X-Robots-Tag "noindex, nofollow"
+
+    log {
+        output file /var/log/caddy/beregynia.log
+        format console
+    }
+}
+
+# без www теж працює
+www.children.pp.ua {
+    redir https://children.pp.ua{uri} permanent
+}

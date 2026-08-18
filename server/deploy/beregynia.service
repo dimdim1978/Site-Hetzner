@@ -1,0 +1,36 @@
+# ============================================================
+#  /etc/systemd/system/beregynia.service
+#  systemctl daemon-reload && systemctl enable --now beregynia
+# ============================================================
+
+[Unit]
+Description=ГПД «Берегиня» — бекенд
+After=network.target
+
+[Service]
+Type=notify
+User=beregynia
+Group=beregynia
+WorkingDirectory=/opt/beregynia
+Environment="PATH=/opt/beregynia/venv/bin"
+ExecStart=/opt/beregynia/venv/bin/gunicorn \
+          --workers 2 \
+          --bind 127.0.0.1:8000 \
+          --access-logfile - \
+          --error-logfile - \
+          app:app
+Restart=always
+RestartSec=3
+
+# ---- обмеження прав: процес не має доступу нікуди зайвий ----
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/beregynia
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

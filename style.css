@@ -1,262 +1,281 @@
-/* --- ЗАГАЛЬНІ НАЛАШТУВАННЯ --- */
-:root {
-  --primary: #00a8e8; /* Блакитний */
-  --secondary: #ffcc00; /* Жовтий */
-  --text: #333;
-  --light: #f8f9fa;
-  --white: #ffffff;
+/* ============================================================
+   ГО «Берегиня» — спільні стилі сайту
+   Один файл на всі сторінки. Без зовнішніх шрифтів і картинок:
+   сторінка малюється миттєво й не залежить від чужих серверів.
+   Анкета (form.html) має власні вбудовані стилі — навмисно,
+   щоб правка сайту не могла її зламати.
+   ============================================================ */
+
+:root{
+  /* акцент — той самий зелений, що в анкеті */
+  --green:#2F6F4E;
+  --green-dark:#255A3E;
+  --green-soft:#EAF2ED;
+
+  /* теплий вторинний — картки й підкреслення */
+  --sand:#C77D2E;
+  --sand-soft:#FBF1E3;
+
+  /* третій — для довузівської підготовки */
+  --sky:#3D7EA6;
+  --sky-soft:#EAF1F6;
+
+  --ink:#101828;
+  --ink-2:#475467;
+  --ink-3:#667085;
+  --line:#E4E7EC;
+  --bg:#FFFFFF;
+  --bg-soft:#FAFAF7;
 }
 
-body {
-  font-family: "Montserrat", sans-serif;
-  margin: 0;
-  color: var(--text);
-  line-height: 1.6;
+*{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:17px;
+  line-height:1.55;
+  color:var(--ink);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
 }
 
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 20px;
+h1,h2,h3{margin:0;line-height:1.2;letter-spacing:-.015em;font-weight:700}
+
+a{color:var(--green)}
+
+.container{max-width:1000px;margin:0 auto;padding:0 20px}
+
+/* ============================================================
+   ШАПКА — спільна для всіх сторінок
+   ============================================================ */
+header{
+  background:rgba(255,255,255,.92);
+  backdrop-filter:saturate(180%) blur(8px);
+  -webkit-backdrop-filter:saturate(180%) blur(8px);
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:1000;
 }
 
-h1,
-h2,
-h3 {
-  font-family: "Ubuntu", sans-serif;
+nav{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:62px}
+
+.logo{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;white-space:nowrap}
+.logo span{color:var(--green);padding-left:.15em}   /* mudryk.html пише «Берегиня<span>Мудрик</span>» без пробілу */
+
+.nav-links{list-style:none;display:flex;margin:0;padding:0;gap:22px}
+.nav-links a{text-decoration:none;color:var(--ink-2);font-size:15px;font-weight:500}
+.nav-links a:hover{color:var(--green)}
+
+/* кнопка в шапці — видима на будь-якому екрані */
+.btn-header{
+  display:inline-flex;align-items:center;
+  background:var(--green);color:#fff;
+  text-decoration:none;font-size:15px;font-weight:600;
+  padding:10px 18px;border-radius:8px;white-space:nowrap;
+  min-height:42px;
+}
+.btn-header:hover{background:var(--green-dark)}
+
+/* ============================================================
+   ГОЛОВНА — герой
+   ============================================================ */
+.hub-hero{
+  background:linear-gradient(180deg,var(--green-soft) 0%,#fff 100%);
+  padding:56px 0 40px;
+  text-align:center;
+}
+.hub-hero .place{
+  font-size:14px;color:var(--green);font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px;
+}
+.hub-hero h1{font-size:38px;margin-bottom:16px}
+.hub-hero p{
+  font-size:18px;color:var(--ink-2);max-width:560px;margin:0 auto;
 }
 
-/* --- ШАПКА (Спільна для всіх сторінок) --- */
-header {
-  background: var(--white);
-  padding: 15px 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+/* ============================================================
+   ГОЛОВНИЙ ЗАКЛИК — блок запису
+   ============================================================ */
+.cta{
+  margin:-8px auto 0;max-width:660px;
+  background:var(--green);color:#fff;
+  border-radius:16px;padding:32px 28px;
+  text-align:center;
+  box-shadow:0 12px 30px rgba(47,111,78,.22);
+}
+.cta .tag{
+  display:inline-block;margin-bottom:14px;
+  background:rgba(255,255,255,.18);
+  border-radius:999px;padding:5px 14px;
+  font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+}
+.cta h2{font-size:27px;margin-bottom:10px;color:#fff}
+.cta .when{font-size:17px;font-weight:600;margin-bottom:6px}
+.cta .what{font-size:16px;color:rgba(255,255,255,.85);margin:0 auto 24px;max-width:420px;line-height:1.5}
+
+.cta .btn{
+  display:block;width:100%;max-width:340px;margin:0 auto;
+  background:#fff;color:var(--green);
+  text-decoration:none;font-size:18px;font-weight:700;
+  padding:17px 24px;border-radius:10px;
+  min-height:56px;
+  transition:transform .15s ease;
+}
+.cta .btn:hover{transform:translateY(-2px)}
+.cta .btn:active{transform:none}
+.cta .note{font-size:13px;color:rgba(255,255,255,.75);margin-top:14px}
+
+/* ============================================================
+   НАПРЯМИ — картки
+   ============================================================ */
+.services-section{padding:64px 0 24px;background:#fff}
+
+.services-head{text-align:center;margin-bottom:32px}
+.services-head h2{font-size:26px;margin-bottom:8px}
+.services-head p{color:var(--ink-3);font-size:16px;margin:0}
+
+.services-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;
 }
 
-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.service-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.service-card:hover{border-color:#CDD3DA;box-shadow:0 6px 20px rgba(16,24,40,.06)}
+
+/* кольорова смуга з піктограмою замість стокового фото */
+.card-img{
+  height:96px;display:flex;align-items:center;justify-content:center;
+  font-size:40px;line-height:1;
+}
+.img-mudryk{background:var(--sand-soft);border-bottom:3px solid var(--sand)}
+.img-gpd   {background:var(--green-soft);border-bottom:3px solid var(--green)}
+.img-prep  {background:var(--sky-soft);border-bottom:3px solid var(--sky)}
+
+.card-content{padding:22px 20px;flex-grow:1;display:flex;flex-direction:column}
+.card-content h3{font-size:19px;margin-bottom:6px}
+.card-content .age{
+  font-size:13px;font-weight:600;color:var(--ink-3);
+  letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;
+}
+.card-content p{margin:0 0 18px;font-size:15px;color:var(--ink-2);line-height:1.5;flex-grow:1}
+
+.btn-card{
+  display:block;text-align:center;text-decoration:none;
+  padding:13px 16px;min-height:46px;
+  border-radius:8px;font-weight:600;font-size:15px;
+}
+.btn-card.go{background:var(--green);color:#fff}
+.btn-card.go:hover{background:var(--green-dark)}
+.btn-card.ghost{background:#fff;color:var(--green);border:1px solid var(--green)}
+.btn-card.ghost:hover{background:var(--green-soft)}
+.btn-card.soon{
+  background:var(--bg-soft);color:var(--ink-3);
+  border:1px dashed var(--line);cursor:default;
 }
 
-.logo {
-  font-size: 1.6rem;
-  font-weight: bold;
-  color: var(--primary);
+/* ============================================================
+   КОНТАКТИ
+   ============================================================ */
+.contacts{background:var(--bg-soft);border-top:1px solid var(--line);padding:56px 0}
+.contacts h2{font-size:24px;margin-bottom:24px;text-align:center}
+.contacts-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));
+  gap:18px;max-width:720px;margin:0 auto;
 }
-.logo span {
-  color: var(--secondary);
+.contact-item{
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:20px;text-align:center;
+}
+.contact-item .ci-lab{font-size:13px;color:var(--ink-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.contact-item a,.contact-item .ci-val{
+  font-size:17px;font-weight:600;color:var(--ink);text-decoration:none;
+}
+.contact-item a:hover{color:var(--green)}
+
+/* ============================================================
+   ПІДВАЛ
+   ============================================================ */
+footer{padding:32px 0;border-top:1px solid var(--line);background:#fff}
+footer .f-in{text-align:center;font-size:14px;color:var(--ink-3);line-height:1.7}
+footer a{color:var(--ink-2);text-decoration:none}
+footer a:hover{color:var(--green);text-decoration:underline}
+
+/* ============================================================
+   СТОРІНКА САДОЧКА (mudryk.html) — ті самі класи, новий вигляд
+   ============================================================ */
+.hero{
+  background:linear-gradient(180deg,var(--sand-soft) 0%,#fff 100%);
+  padding:64px 0 56px;text-align:center;
+}
+.hero-content{max-width:640px;margin:0 auto}
+.hero h1{font-size:36px;margin-bottom:16px}
+.hero p{font-size:18px;color:var(--ink-2);margin:0 0 28px}
+
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-btns a{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:14px 26px;min-height:50px;
+  text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;
+}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-secondary{background:#fff;color:var(--green);border:1px solid var(--green)}
+.btn-secondary:hover{background:var(--green-soft)}
+
+.advantages{padding:64px 0;background:#fff}
+.section-title{text-align:center;font-size:26px;margin-bottom:36px}
+
+.advantages-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:20px;
+}
+.adv-card{
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:26px 20px;text-align:center;
+}
+.adv-card .icon{font-size:34px;margin-bottom:14px;line-height:1}
+.adv-card h3{font-size:17px;margin-bottom:8px}
+.adv-card p{margin:0;font-size:15px;color:var(--ink-2);line-height:1.5}
+
+/* ============================================================
+   ДОСТУПНІСТЬ І МОБІЛЬНА ВЕРСІЯ
+   ============================================================ */
+a:focus-visible,button:focus-visible{
+  outline:2px solid var(--green);outline-offset:3px;border-radius:6px;
 }
 
-.nav-links {
-  list-style: none;
-  display: flex;
-  margin: 0;
-  padding: 0;
-}
-.nav-links li {
-  margin-right: 25px;
-}
-.nav-links a {
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 600;
-  transition: 0.3s;
-}
-.nav-links a:hover {
-  color: var(--primary);
+@media (max-width:640px){
+  body{font-size:16px}
+  .container{padding:0 16px}
+
+  /* нав-посилання ховаємо, але кнопка й телефон лишаються доступні */
+  .nav-links{display:none}
+
+  .hub-hero{padding:36px 0 32px}
+  .hub-hero h1{font-size:28px}
+  .hub-hero p{font-size:16px}
+
+  .cta{padding:26px 20px;border-radius:14px;margin-left:0;margin-right:0}
+  .cta h2{font-size:23px}
+  .cta .btn{max-width:none;font-size:17px}
+
+  .services-section{padding:48px 0 16px}
+  .hero h1{font-size:28px}
+  .hero-btns a{width:100%}
 }
 
-/* --- ГОЛОВНА СТОРІНКА ОРГАНІЗАЦІЇ (HUB) --- */
-
-/* Темний банер з книгами */
-.hub-hero {
-  background:
-    linear-gradient(rgba(0, 50, 100, 0.7), rgba(0, 0, 0, 0.7)),
-    url("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=1500");
-  background-size: cover;
-  background-position: center;
-  height: 55vh;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding-top: 60px;
-}
-
-.hub-hero h1 {
-  font-size: 3rem;
-  margin-bottom: 10px;
-}
-
-/* Сітка карток */
-.services-section {
-  background: #f4f6f8;
-  padding-bottom: 80px;
-}
-
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-top: -60px; /* Картки заходять на банер */
-  position: relative;
-  z-index: 10;
-}
-
-.service-card {
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-.service-card:hover {
-  transform: translateY(-10px);
-}
-
-/* ФОТО КАРТОК (Ось тут була проблема) */
-.card-img {
-  height: 220px;
-  width: 100%;
-  background-size: cover;
-  background-position: center;
-}
-
-/* Фото 1: Мудрик (Діти ліплять/малюють) - ОНОВЛЕНЕ */
-.img-mudryk {
-  /* Нове надійне фото: фарби та творчий процес */
-  background-image: url("https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600");
-}
-
-/* Фото 2: ГПД (Зошит) */
-.img-gpd {
-  background-image: url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=600");
-}
-
-/* Фото 3: Підготовка (Ноутбук) */
-.img-prep {
-  background-image: url("https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600");
-}
-
-.card-content {
-  padding: 25px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.card-content h3 {
-  color: var(--primary);
-  margin-bottom: 10px;
-  font-size: 1.5rem;
-}
-
-/* Кнопки карток */
-.btn-card {
-  display: block;
-  width: 100%;
-  padding: 12px 0;
-  background: var(--secondary);
-  color: #333;
-  text-align: center;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 8px;
-  margin-top: 15px;
-  transition: 0.3s;
-}
-.btn-card:hover {
-  background: #ffdb4d;
-}
-.btn-card.disabled {
-  background: #e0e0e0;
-  color: #888;
-  cursor: not-allowed;
-}
-
-/* --- СТОРІНКА САДОЧКА (MUDRYK.HTML) --- */
-.hero {
-  background:
-    linear-gradient(rgba(0, 168, 232, 0.3), rgba(0, 0, 0, 0.3)),
-    url("https://images.unsplash.com/photo-1555431383-48c9960f0a94?q=80&w=1500&auto=format&fit=crop");
-  background-size: cover;
-  background-position: center;
-  height: 85vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--white);
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.hero-content {
-  max-width: 700px;
-  margin: 0 auto;
-}
-.hero h1 {
-  font-size: 3.5rem;
-  margin-bottom: 20px;
-  font-weight: 800;
-}
-.hero p {
-  font-size: 1.3rem;
-  margin-bottom: 35px;
-}
-
-.hero-btns a {
-  display: inline-block;
-  padding: 15px 35px;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: bold;
-  margin: 5px;
-}
-.btn-primary {
-  background: var(--secondary);
-  color: #333;
-}
-.btn-secondary {
-  border: 2px solid white;
-  color: white;
-}
-
-/* Переваги садочка */
-.advantages {
-  padding: 80px 0;
-  background: var(--light);
-}
-.section-title {
-  text-align: center;
-  font-size: 2.2rem;
-  margin-bottom: 50px;
-}
-.adv-card {
-  background: white;
-  padding: 40px 30px;
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-}
-.adv-card .icon {
-  font-size: 3rem;
-  margin-bottom: 20px;
-}
-
-/* МОБІЛЬНА ВЕРСІЯ */
-@media (max-width: 768px) {
-  .nav-links {
-    display: none;
-  }
-  .hero h1,
-  .hub-hero h1 {
-    font-size: 2.2rem;
-  }
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none !important}
 }
