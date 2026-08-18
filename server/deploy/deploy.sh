@@ -3,7 +3,7 @@
 #  Оновлення сайту з GitHub. Покласти як /opt/deploy.sh
 #  Запуск:  /opt/deploy.sh
 # ============================================================
-set -e
+set -euo pipefail
 
 SITE=/opt/site                  # робоча копія репозиторію
 WWW=/var/www/beregynia          # статика, яку роздає Caddy
@@ -20,24 +20,46 @@ if [ "$BEFORE" = "$AFTER" ]; then
   exit 0
 fi
 
+CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
+
 echo "→ Оновлюємо статику"
 cp "$SITE"/*.html "$SITE"/*.css "$WWW"/
 
-# бекенд чіпаємо лише якщо в ньому справді щось змінилось
-if git diff --name-only "$BEFORE" "$AFTER" | grep -q '^server/'; then
-  echo "→ Змінився бекенд — оновлюємо й перезапускаємо"
+if grep -q '^server/' <<< "$CHANGED"; then
+  echo "→ Змінився бекенд — оновлюємо файли"
   cp -r "$SITE"/server/* "$APP"/
   chown -R beregynia:beregynia "$APP"/templates
-  # .env і venv не чіпаємо: їх немає в репозиторії
-  if git diff --name-only "$BEFORE" "$AFTER" | grep -q 'requirements.txt'; then
-    echo "→ Змінились залежності"
+
+  if grep -q 'requirements.txt' <<< "$CHANGED"; then
+    echo "→ Змінились залежності — доставляємо"
     "$APP"/venv/bin/pip install -q -r "$APP"/requirements.txt
   fi
-  systemctl restart beregynia
-  sleep 2
-  systemctl is-active --quiet beregynia \
-    && echo "  Служба піднялась" \
-    || { echo "  ПОМИЛКА: служба не стартувала"; journalctl -u beregynia -n 20 --no-pager; exit 1; }
+
+  echo "→ Перезапускаємо службу"
+  # Обмежуємо час: якщо systemd із якоїсь причини затримається,
+  # скрипт не повисне мовчки, а скаже про це.
+  if ! timeout 45 systemctl restart beregynia; then
+    echo "  ✗ Перезапуск не завершився за 45 с"
+    systemctl status beregynia --no-pager --lines=15 || true
+    exit 1
+  fi
+
+  # Чекаємо, поки застосунок реально почне відповідати —
+  # «active» ще не означає, що він працює.
+  echo -n "→ Перевіряємо відповідь"
+  for i in $(seq 1 15); do
+    if curl -fsS --max-time 2 http://127.0.0.1:8000/api/whoami >/dev/null 2>&1; then
+      echo " — відповідає"
+      break
+    fi
+    echo -n "."
+    sleep 1
+    if [ "$i" = 15 ]; then
+      echo " ✗ не відповідає"
+      journalctl -u beregynia -n 25 --no-pager
+      exit 1
+    fi
+  done
 else
   echo "→ Бекенд не змінювався, перезапуск не потрібен"
 fi

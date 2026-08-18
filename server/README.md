@@ -127,7 +127,10 @@ venv/bin/pip install --upgrade pip
 venv/bin/pip install -r requirements.txt
 ```
 
-**Перевірка:** `venv/bin/python -c "import flask; print(flask.__version__)"`
+**Перевірка:** `venv/bin/pip list` — у списку мають бути `Flask` і `gunicorn`.
+
+> Не використовуйте `flask.__version__` — у Flask 3.0 цей атрибут оголошено застарілим
+> і він друкує попередження. На роботу це не впливає, але лякає.
 
 ---
 
@@ -255,9 +258,7 @@ curl -sI https://children.pp.ua/ | head -3
 6. Видалити тестову заявку:
    ```bash
    sqlite3 /var/lib/beregynia/beregynia.db "DELETE FROM children WHERE id=1;"
-
    ```
-sqlite3 /var/lib/beregynia/beregynia.db "DELETE FROM children WHERE child_name LIKE '%Тест%';"
 
 Якщо на кроці 3 написано «демо» — сторінка відкрита не з домену.
 Якщо «Не вдалося надіслати» — `journalctl -u beregynia -n 30`.
@@ -310,6 +311,7 @@ chmod +x /opt/deploy.sh
 | Симптом | Що робити |
 |---|---|
 | Служба не стартує | `journalctl -u beregynia -n 40 --no-pager` |
+| `systemctl restart` висить | перевірити тип служби: `systemctl show beregynia -p Type` — має бути `exec`. Якщо `notify`, значить юніт старий: `cp /opt/beregynia/deploy/beregynia.service /etc/systemd/system/ && systemctl daemon-reload` |
 | «Не задано SECRET_KEY» | не заповнений `.env` — це навмисно, застосунок без ключа не працює |
 | Сертифікат не береться | `journalctl -u caddy -n 40`; перевірити `nslookup children.pp.ua` |
 | Не приходять листи | `journalctl -u beregynia | grep -i лист`; найчастіше — звичайний пароль замість пароля додатка |

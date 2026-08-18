@@ -8,7 +8,10 @@ Description=ГПД «Берегиня» — бекенд
 After=network.target
 
 [Service]
-Type=notify
+# Type=exec, а не notify: systemd вважає службу запущеною одразу після
+# запуску процесу й не чекає сигналу готовності. З notify перезапуск міг
+# висіти до 90 секунд, якщо сигнал не доходив.
+Type=exec
 User=beregynia
 Group=beregynia
 WorkingDirectory=/opt/beregynia
@@ -19,11 +22,17 @@ Environment="PYTHONUNBUFFERED=1"
 ExecStart=/opt/beregynia/venv/bin/gunicorn \
           --workers 2 \
           --bind 127.0.0.1:8000 \
+          --graceful-timeout 15 \
+          --timeout 60 \
           --access-logfile - \
           --error-logfile - \
           app:app
 Restart=always
 RestartSec=3
+
+# Щоб перезапуск не міг зависнути надовго за жодних обставин
+TimeoutStartSec=30
+TimeoutStopSec=20
 
 # ---- обмеження прав: процес не має доступу нікуди зайвий ----
 NoNewPrivileges=true
