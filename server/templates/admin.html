@@ -5,60 +5,282 @@
 <h1>Заявки</h1>
 <div class="sub">Усього {{ total }}{% for st, n in counts.items() %} · {{ st }} {{ n }}{% endfor %}</div>
 
-<form class="card" method="get" action="/admin"
-      style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px">
-  <input type="search" name="q" value="{{ q }}" placeholder="Прізвище дитини, батьків або телефон"
-         style="flex:1;min-width:200px">
-  <select name="status" style="width:auto;min-width:150px">
+<form class="card filters" method="get" action="/admin">
+  <input type="search" name="q" value="{{ q }}" placeholder="Прізвище дитини, батьків або телефон">
+
+  <select name="grade" title="Клас">
+    <option value="">усі класи</option>
+    {% for g in grades %}
+      <option value="{{ g }}" {% if grade == g|string %}selected{% endif %}>{{ g }} клас</option>
+    {% endfor %}
+  </select>
+
+  <select name="status" title="Статус">
     <option value="">усі статуси</option>
     {% for st in ['нова','підтверджена','зарахована','відмова','архів'] %}
       <option value="{{ st }}" {% if status == st %}selected{% endif %}>{{ st }}</option>
     {% endfor %}
   </select>
-  <button class="btn primary" type="submit">Шукати</button>
-  {% if q or status %}<a class="btn ghost" href="/admin">Скинути</a>{% endif %}
+
+  <button class="btn primary" type="submit">Показати</button>
+  {% if q or status or grade %}<a class="btn ghost" href="/admin">Скинути</a>{% endif %}
 </form>
 
 {% if not rows %}
   <div class="card" style="text-align:center;color:var(--ink-3);padding:44px 20px">
-    {% if q or status %}За таким запитом нічого немає.{% else %}Заявок ще немає.{% endif %}
+    {% if q or status or grade %}За таким запитом нічого немає.{% else %}Заявок ще немає.{% endif %}
   </div>
 {% else %}
   <div class="card" style="padding:0;overflow-x:auto">
-  <table style="width:100%;border-collapse:collapse;min-width:760px">
+  <table class="list">
     <thead>
-      <tr style="background:var(--bg-soft);text-align:left">
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">№</th>
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Дитина</th>
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Клас</th>
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Батьки</th>
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Телефон</th>
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Статус</th>
-        <th style="padding:12px 14px;font-size:13px;color:var(--ink-3);font-weight:600">Надійшла</th>
+      <tr>
+        <th class="c-chk"><input type="checkbox" id="all" title="Обрати всі"></th>
+        <th>Дитина</th>
+        <th>Клас</th>
+        <th>Школа</th>
+        <th>Батьки</th>
+        <th>Телефон</th>
+        <th>Статус</th>
       </tr>
     </thead>
     <tbody>
     {% for r in rows %}
-      <tr style="border-top:1px solid var(--line);cursor:pointer"
-          onclick="location='/admin/{{ r.id }}'">
-        <td style="padding:13px 14px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ r.id }}</td>
-        <td style="padding:13px 14px">
-          <a href="/admin/{{ r.id }}" style="font-weight:600;text-decoration:none">{{ r.child_name }}</a>
+      <tr>
+        <td class="c-chk">
+          <input type="checkbox" class="pick" value="{{ r.id }}"
+                 data-name="{{ r.child_name }}" data-grade="{{ r.grade }}">
+        </td>
+        <td>
+          <a href="/admin/{{ r.id }}" class="nm">{{ r.child_name }}</a>
           {% if r.has_allergy == 'так' %} <span class="pill alrg">алергія</span>{% endif %}
           {% if r.c_photo != 'так' %} <span class="pill st-відмова">фото: ні</span>{% endif %}
         </td>
-        <td style="padding:13px 14px;color:var(--ink-2)">{{ r.grade }}</td>
-        <td style="padding:13px 14px;color:var(--ink-2)">{{ r.parent_name }}</td>
-        <td style="padding:13px 14px;white-space:nowrap">
-          <a href="tel:{{ r.parent_phone|replace(' ','') }}" style="text-decoration:none">{{ r.parent_phone }}</a>
-        </td>
-        <td style="padding:13px 14px"><span class="pill st-{{ r.status }}">{{ r.status }}</span></td>
-        <td style="padding:13px 14px;color:var(--ink-3);font-size:14px;white-space:nowrap">{{ r.created_at[:16] }}</td>
+        <td class="dim">{{ r.grade }}</td>
+        <td class="dim sm">{{ r.school }}</td>
+        <td class="dim">{{ r.parent_name }}</td>
+        <td class="nw"><a href="tel:{{ r.parent_phone|replace(' ','') }}">{{ r.parent_phone }}</a></td>
+        <td><span class="pill st-{{ r.status }}">{{ r.status }}</span></td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
 {% endif %}
+
+<!-- ================= СПИСОК, ЩО НАКОПИЧУЄТЬСЯ ================= -->
+<div class="card basket" id="basket" hidden>
+  <div class="b-head">
+    <h2>Список для друку · <span id="bcount">0</span></h2>
+    <button class="btn ghost sm" type="button" id="bclear">Очистити</button>
+  </div>
+
+  <div id="bbody"></div>
+
+  <div class="b-foot">
+    <label class="b-date">Тиждень з
+      <input type="date" id="from" value="{{ monday }}">
+    </label>
+    <a class="btn primary" id="printShort" target="_blank">Друк: прізвища й дати</a>
+    <a class="btn ghost"   id="printFull"  target="_blank">Повний список</a>
+  </div>
+</div>
+
+<!-- ================= НИЖНЯ ПАНЕЛЬ ================= -->
+<div class="bar" id="bar">
+  <div class="bar-in">
+    <span class="cnt">Обрано: <b id="cnt">0</b></span>
+    <button class="btn primary" type="button" id="addBtn">Додати до списку</button>
+  </div>
+</div>
+
+<style>
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px}
+.filters input[type=search]{flex:1;min-width:200px}
+.filters select{width:auto;min-width:130px}
+
+table.list{width:100%;border-collapse:collapse;min-width:820px}
+table.list thead tr{background:var(--bg-soft);text-align:left}
+table.list th{padding:11px 12px;font-size:13px;color:var(--ink-3);font-weight:600}
+table.list td{padding:12px;border-top:1px solid var(--line);vertical-align:middle}
+table.list tbody tr:hover{background:#FCFCFB}
+table.list .c-chk{width:44px;text-align:center;padding-left:14px}
+table.list .c-chk input{width:19px;height:19px;accent-color:var(--green);cursor:pointer;margin:0}
+table.list a.nm{font-weight:600;text-decoration:none}
+table.list .dim{color:var(--ink-2)}
+table.list .sm{font-size:14px}
+table.list .nw{white-space:nowrap}
+table.list tr.picked{background:var(--green-soft)}
+table.list tr.picked:hover{background:#E1EDE6}
+table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+
+/* кошик */
+.basket{padding:0;overflow:hidden}
+.b-head{display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;border-bottom:1px solid var(--line)}
+.b-head h2{font-size:17px}
+.btn.sm{min-height:34px;padding:6px 12px;font-size:14px}
+#bbody{padding:6px 20px 14px;max-height:340px;overflow-y:auto}
+.b-grade{font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.05em;
+  text-transform:uppercase;margin:12px 0 6px}
+.b-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:15px}
+.b-row .x{border:0;background:none;cursor:pointer;color:var(--ink-3);
+  font-size:16px;line-height:1;padding:4px 6px;border-radius:6px}
+.b-row .x:hover{background:var(--err-soft);color:var(--err)}
+.b-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  padding:14px 20px;background:var(--bg-soft);border-top:1px solid var(--line)}
+.b-date{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2)}
+.b-date input{width:auto;min-height:42px}
+.b-foot .btn{margin-left:0}
+.b-foot .btn.primary{margin-left:auto}
+@media (max-width:640px){
+  .b-foot .btn{width:100%;margin-left:0}
+  .b-date{width:100%}
+}
+
+.bar{position:sticky;bottom:0;margin:0 -20px;padding:0 20px;
+  background:#fff;border-top:1px solid var(--line);
+  box-shadow:0 -4px 16px rgba(16,24,40,.06);
+  transform:translateY(120%);transition:transform .18s ease;z-index:50}
+.bar.on{transform:none}
+.bar-in{max-width:1080px;margin:0 auto;padding:14px 0;
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.bar .cnt{font-size:15px;color:var(--ink-2)}
+.bar .cnt b{color:var(--ink);font-size:17px}
+.bar .btn{margin-left:auto}
+@media (max-width:640px){ .bar .btn{width:100%;margin-left:0} }
+</style>
+
+<script>
+(function(){
+  'use strict';
+  var $  = function(s){ return document.querySelector(s); };
+  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+  var picks = $$('.pick'), all = $('#all');
+  var bar = $('#bar'), cnt = $('#cnt');
+  var basket = $('#basket'), bbody = $('#bbody'), bcount = $('#bcount');
+
+  /* ------------------------------------------------------------
+     Список живе в sessionStorage: зміна фільтра класу
+     перезавантажує сторінку, і без цього накопичене губилося б.
+     Закрили вкладку — список зник, це навмисно.
+     ------------------------------------------------------------ */
+  var KEY = 'gpd_list_v1', DKEY = 'gpd_from_v1';
+  function load(){
+    try { return JSON.parse(sessionStorage.getItem(KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function save(list){
+    try { sessionStorage.setItem(KEY, JSON.stringify(list)); } catch(e){}
+  }
+  var list = load();
+
+  function ids(){ return list.map(function(x){ return x.id; }); }
+
+  function drawBasket(){
+    bcount.textContent = list.length;
+    basket.hidden = list.length === 0;
+    if(!list.length){ bbody.innerHTML = ''; return; }
+
+    // групуємо за класом, у межах класу — за абеткою
+    var byGrade = {};
+    list.forEach(function(x){ (byGrade[x.grade || '—'] = byGrade[x.grade || '—'] || []).push(x); });
+    var order = Object.keys(byGrade).sort(function(a,b){ return (+a || 99) - (+b || 99); });
+
+    bbody.innerHTML = order.map(function(g){
+      var items = byGrade[g].sort(function(a,b){ return a.name.localeCompare(b.name, 'uk'); });
+      return '<div class="b-grade">' + (g === '—' ? 'без класу' : g + ' клас') +
+             ' · ' + items.length + '</div>' +
+             items.map(function(x){
+               return '<div class="b-row"><button class="x" data-id="' + x.id +
+                      '" title="Прибрати">✕</button><span>' + esc(x.name) + '</span></div>';
+             }).join('');
+    }).join('');
+
+    $$('#bbody .x').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id = this.getAttribute('data-id');
+        list = list.filter(function(x){ return String(x.id) !== String(id); });
+        save(list); drawBasket(); markRows();
+      });
+    });
+
+    var q = 'ids=' + ids().join(',') + '&from=' + encodeURIComponent($('#from').value);
+    $('#printShort').href = '/admin/spysok?mode=short&' + q;
+    $('#printFull').href  = '/admin/spysok?' + q;
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* позначаємо в таблиці тих, хто вже в списку */
+  function markRows(){
+    var inList = ids().map(String);
+    picks.forEach(function(c){
+      c.closest('tr').classList.toggle('inlist', inList.indexOf(c.value) !== -1);
+    });
+  }
+
+  function chosen(){ return picks.filter(function(c){ return c.checked; }); }
+
+  function refresh(){
+    var n = chosen();
+    cnt.textContent = n.length;
+    bar.classList.toggle('on', n.length > 0);
+    if(all){
+      all.checked = picks.length > 0 && n.length === picks.length;
+      all.indeterminate = n.length > 0 && n.length < picks.length;
+    }
+    picks.forEach(function(c){ c.closest('tr').classList.toggle('picked', c.checked); });
+  }
+
+  picks.forEach(function(c){ c.addEventListener('change', refresh); });
+  if(all) all.addEventListener('change', function(){
+    picks.forEach(function(c){ c.checked = all.checked; });
+    refresh();
+  });
+
+  /* ---- додавання: нові прізвища дописуються В КІНЕЦЬ, дублі не множаться ---- */
+  $('#addBtn').addEventListener('click', function(){
+    var have = ids().map(String), added = 0;
+    chosen().forEach(function(c){
+      if(have.indexOf(c.value) === -1){
+        list.push({ id: c.value, name: c.getAttribute('data-name'),
+                    grade: c.getAttribute('data-grade') });
+        have.push(c.value); added++;
+      }
+    });
+    save(list); drawBasket(); markRows();
+    picks.forEach(function(c){ c.checked = false; });
+    refresh();
+    if(added) basket.scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+
+  $('#bclear').addEventListener('click', function(){
+    list = []; save(list); drawBasket(); markRows();
+  });
+
+  /* дата теж має пережити зміну фільтра класу, інакше вона
+     скидалася б на поточний понеділок при кожному перезавантаженні */
+  try {
+    var savedFrom = sessionStorage.getItem(DKEY);
+    if (savedFrom) $('#from').value = savedFrom;
+  } catch(e){}
+  $('#from').addEventListener('change', function(){
+    try { sessionStorage.setItem(DKEY, this.value); } catch(e){}
+    drawBasket();
+  });
+
+  /* Обрали клас у фільтрі — усі рядки позначаються самі,
+     лишається натиснути «Додати до списку». */
+  if (new URLSearchParams(location.search).get('grade')) {
+    picks.forEach(function(c){ c.checked = true; });
+  }
+
+  drawBasket(); markRows(); refresh();
+})();
+</script>
 
 {% endblock %}

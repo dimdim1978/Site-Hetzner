@@ -35,8 +35,10 @@ const CFG = {
     { n: 'КЗ «Шолоховський ліцей»', a: 'с. Шолохове' }
   ],
 
-  // Класи, які приймаємо
-  GRADES: [1,2,3,4,5,6,7,8]
+  // Класи, які приймаємо.
+  // 9–11 — для груп офлайн-підготовки до НМТ, невеликі й окремі
+  // від групи подовженого дня.
+  GRADES: [1,2,3,4,5,6,7,8,9,10,11]
 };
 </script>
 
@@ -166,6 +168,17 @@ legend.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:10px;fo
 .consent .c-text{font-size:15px;line-height:1.45;color:var(--ink)}
 .consent .c-text .c-opt{display:block;font-size:13px;color:var(--ink-3);margin-top:3px}
 .consent.bad{background:var(--err-soft);border-radius:8px;padding-left:10px;padding-right:10px}
+
+.consent-choice{padding:16px 0 4px;border-top:1px solid var(--line-soft)}
+.consent-choice legend{font-size:15px;font-weight:600;color:var(--ink);padding:0;margin-bottom:6px}
+.consent-choice .cc-note{font-size:13px;color:var(--ink-3);line-height:1.45;margin-bottom:10px}
+.consent-choice.bad{background:var(--err-soft);border-radius:8px;padding:14px 12px 6px}
+
+.gate{
+  display:none;margin-top:12px;font-size:14px;color:var(--ink-3);
+  text-align:center;line-height:1.4;
+}
+.gate.on{display:block}
 
 a.inline{color:var(--accent)}
 
@@ -415,7 +428,7 @@ footer a{color:var(--ink-2)}
     <!-- ================= 6. ЗГОДИ ================= -->
     <section class="block">
       <h2>Згоди</h2>
-      <p class="lead">Перші чотири пункти обов’язкові. Два останні — на ваш вибір.</p>
+      <p class="lead">Поки не заповните цей розділ, кнопка внизу лишається неактивною.</p>
 
       <label class="consent" data-req-check>
         <input type="checkbox" name="c_true">
@@ -438,21 +451,21 @@ footer a{color:var(--ink-2)}
         <span class="c-text">Даю згоду на надання дитині екстреної медичної допомоги, виклик швидкої та супровід дитини, якщо зі мною не вдається зв’язатися.</span>
       </label>
 
-      <label class="consent">
-        <input type="checkbox" name="c_photo">
-        <span class="c-text">Даю згоду на фото- та відеофіксацію дитини в роботі групи.
-        <span class="c-opt">Необов’язково. Знімки використовуємо для життя групи й привітань — у батьківському чаті.</span></span>
-      </label>
-
-      <label class="consent">
-        <input type="checkbox" name="c_messenger">
-        <span class="c-text">Хочу отримувати повідомлення в групі Viber або Telegram.
-        <span class="c-opt">Необов’язково.</span></span>
-      </label>
+      <fieldset class="consent-choice" data-req>
+        <legend>Фото- та відеофіксація дитини в роботі групи</legend>
+        <p class="cc-note">Знімки використовуємо для життя групи й привітань — у батьківському чаті.
+        Оберіть варіант, який вам підходить: на можливість відвідування групи це не впливає.</p>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="c_photo" value="так"><span>Даю згоду</span></label>
+          <label class="choice"><input type="radio" name="c_photo" value="ні"><span>Не даю згоди</span></label>
+        </div>
+        <div class="err">Оберіть варіант</div>
+      </fieldset>
     </section>
 
     <div class="submit-zone">
-      <button type="submit" class="go" id="go">Надіслати заявку</button>
+      <button type="submit" class="go" id="go" disabled>Надіслати заявку</button>
+      <div class="gate" id="gate">Щоб надіслати заявку, заповніть розділ «Згоди» вище</div>
       <div class="form-err" id="form_err"></div>
     </div>
   </form>
@@ -602,6 +615,30 @@ $$('.consent input').forEach(function(c){
   c.addEventListener('change', function(){ this.closest('.consent').classList.remove('bad'); });
 });
 
+/* =====================================================
+   ВОРОТА: кнопка «Надіслати» оживає лише коли заповнено
+   весь розділ згод. Решту форми перевіряємо як завжди —
+   при натисканні, з підсвічуванням конкретних полів.
+   ===================================================== */
+function gateOk(){
+  var allChecked = $$('.consent[data-req-check] input').every(function(c){ return c.checked; });
+  var photoDone  = $$('input[name=c_photo]').some(function(r){ return r.checked; });
+  return allChecked && photoDone;
+}
+function refreshGate(){
+  var ok = gateOk();
+  $('#go').disabled = !ok;
+  $('#gate').classList.toggle('on', !ok);
+}
+$$('.consent input, input[name=c_photo]').forEach(function(el){
+  el.addEventListener('change', function(){
+    var fs = el.closest('.consent-choice');
+    if(fs) fs.classList.remove('bad');
+    refreshGate();
+  });
+});
+refreshGate();
+
 /* ---------- перевірка перед надсиланням ---------- */
 function validate(){
   let first = null;
@@ -637,6 +674,12 @@ function validate(){
     c.classList.toggle('bad', bad);
     if(bad) fail(c);
   });
+
+  // вибір щодо фото має бути зроблений — будь-який
+  const photoFs = $('.consent-choice');
+  const photoBad = !$$('input[name=c_photo]').some(r=>r.checked);
+  photoFs.classList.toggle('bad', photoBad);
+  if(photoBad) fail(photoFs);
 
   return first;
 }
@@ -751,7 +794,8 @@ $('#again').addEventListener('click', function(){
   $('#school_other_wrap').classList.add('hidden');
   $('#done').classList.remove('on');
   $('#f').classList.remove('hidden');
-  $('#go').disabled=false; $('#go').textContent='Надіслати заявку';
+  $('#go').textContent='Надіслати заявку';
+  refreshGate();          // згоди лишились позначені — кнопка одразу жива
   window.scrollTo({top:0,behavior:'smooth'});
   $('#child_name').focus();
 });

@@ -80,6 +80,10 @@ def db():
         g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
         g.db.execute('PRAGMA foreign_keys = ON')
+        # Якщо базу саме зараз хтось пише (бекап, ручний sqlite3), не падаємо
+        # одразу, а чекаємо до 5 секунд. Інакше батько побачив би помилку
+        # надсилання через те, що адміністратор відкрив базу в консолі.
+        g.db.execute('PRAGMA busy_timeout = 5000')
     return g.db
 
 @app.teardown_appcontext
@@ -95,12 +99,48 @@ def init_db():
     _migrate(conn)
     conn.close()
 
+def _cleanup_orphans(conn):
+    """Прибирає рядки дочірніх таблиць, у яких більше немає дитини.
+
+    Каскадне видалення в SQLite працює лише коли для з'єднання ввімкнено
+    PRAGMA foreign_keys. Консольний sqlite3 його НЕ вмикає, тому після
+    ручного `DELETE FROM children` алергії та контакти лишаються висіти.
+    Далі новій дитині може дістатися той самий id — і в її картці
+    з'являться чужі медичні нотатки. Тому підчищаємо на кожному старті."""
+    total = 0
+    for table in ('sensitive', 'pickup_persons', 'schedule', 'attendance'):
+        try:
+            n = conn.execute(
+                'DELETE FROM {} WHERE child_id NOT IN (SELECT id FROM children)'.format(table)
+            ).rowcount
+            total += max(n, 0)
+        except sqlite3.OperationalError:
+            pass       # таблиці ще немає
+    if total:
+        conn.commit()
+        app.logger.warning('Прибрано %d осиротілих рядків у дочірніх таблицях', total)
+
+
 def _migrate(conn):
     """Догоняє наявну базу до поточного набору полів.
 
     CREATE TABLE IF NOT EXISTS нову колонку в стару таблицю не додасть, тому
     після кожного розширення анкети треба ALTER TABLE. Тут це робиться саме,
     за списками колонок вище — вручну нічого писати не доведеться."""
+    # Порожня таблиця → скидаємо лічильник, щоб наступна заявка була № 1.
+    # Робимо це ТІЛЬКИ коли рядків немає: тоді номери ні з чим не зіткнуться.
+    # Поки в базі є хоч одна заявка, номери не переспользовуються ніколи —
+    # інакше лист «заявка № 5» через місяць вказував би на іншу дитину.
+    _cleanup_orphans(conn)
+
+    try:
+        if conn.execute('SELECT COUNT(*) FROM children').fetchone()[0] == 0:
+            n = conn.execute("DELETE FROM sqlite_sequence WHERE name='children'").rowcount
+            if n:
+                app.logger.warning('База порожня — нумерацію заявок скинуто, наступна буде № 1')
+    except sqlite3.OperationalError:
+        pass          # sqlite_sequence ще немає — база щойно створена
+
     for table, cols in (('children', CHILD_COLS), ('sensitive', SENS_COLS)):
         have = {r[1] for r in conn.execute('PRAGMA table_info({})'.format(table))}
         if not have:                       # таблиці ще немає — її щойно створив скрипт
@@ -158,7 +198,6 @@ FIELDS = [
     ('c_health',       'Згода: дані про здоров’я',     False),
     ('c_medical',      'Згода: екстрена допомога',     False),
     ('c_photo',        'Згода: фото та відео',         False),
-    ('c_messenger',    'Згода: месенджер',             False),
 ]
 LABEL = {k: v for k, v, _ in FIELDS}
 
@@ -166,7 +205,7 @@ CHILD_COLS = ['child_name','child_dob','grade','school','school_addr','pickup_sc
               'parent_name','parent_role','parent_phone','parent_email',
               'contact2_name','contact2_phone','address',
               'self_leave','self_time','expectations','comment',
-              'c_true','c_data','c_health','c_medical','c_photo','c_messenger']
+              'c_true','c_data','c_health','c_medical','c_photo']
 
 SENS_COLS  = ['has_allergy','allergy_details','meal_limits','health_notes','do_not_release']
 
@@ -207,32 +246,56 @@ def zayavka():
     conn = db()
     cur = conn.cursor()
 
-    # --- сира копія: страховка на випадок зміни набору полів ---
+    # Якщо заявок не лишилось (усе видалили), скидаємо лічильник — щоб наступна
+    # була № 1, а не продовжувала стару нумерацію. Поки в базі є хоч один рядок,
+    # номери не переспользовуються: інакше лист «заявка № 5» через місяць
+    # указував би на іншу дитину.
+    if cur.execute('SELECT COUNT(*) FROM children').fetchone()[0] == 0:
+        cur.execute("DELETE FROM sqlite_sequence WHERE name='children'")
+
+    # --- сира копія: комітимо ОКРЕМО й одразу.
+    #     Навіть якщо далі щось піде не так, заявка не зникне безслідно. ---
     cur.execute('INSERT INTO raw_submissions (child_id, created_at, ip, payload) VALUES (?,?,?,?)',
                 (None, now(), client_ip(), json.dumps(dict(f), ensure_ascii=False)))
     raw_id = cur.lastrowid
-
-    # --- основний запис ---
-    cols = ['created_at', 'source', 'fill_seconds'] + CHILD_COLS
-    vals = [now(), 'site', secs] + [data[c] for c in CHILD_COLS]
-    cur.execute('INSERT INTO children ({}) VALUES ({})'.format(
-        ','.join(cols), ','.join('?' * len(cols))), vals)
-    child_id = cur.lastrowid
-
-    # --- чутливе — в окрему таблицю ---
-    cur.execute('INSERT INTO sensitive (child_id, {}) VALUES (?,{})'.format(
-        ','.join(SENS_COLS), ','.join('?' * len(SENS_COLS))),
-        [child_id] + [data[c] for c in SENS_COLS])
-
-    # --- хто забирає: рядок «Ім’я · телефон · ким доводиться | ...» ---
-    for i, part in enumerate(p for p in data['pickup'].split('|') if p.strip()):
-        bits = [b.strip() for b in part.split('·')]
-        bits += [''] * (3 - len(bits))
-        cur.execute('INSERT INTO pickup_persons (child_id, ord, name, phone, relation) VALUES (?,?,?,?,?)',
-                    (child_id, i + 1, bits[0], bits[1], bits[2]))
-
-    cur.execute('UPDATE raw_submissions SET child_id=? WHERE id=?', (child_id, raw_id))
     conn.commit()
+
+    try:
+        # Порожня таблиця → скидаємо лічильник, щоб наступна заявка була № 1.
+        # Поки в базі є хоч один рядок, номери не переспользовуються ніколи:
+        # інакше лист «заявка № 5» через місяць указував би на іншу дитину.
+        if cur.execute('SELECT COUNT(*) FROM children').fetchone()[0] == 0:
+            _cleanup_orphans(conn)
+            cur.execute("DELETE FROM sqlite_sequence WHERE name='children'")
+
+        cols = ['created_at', 'source', 'fill_seconds'] + CHILD_COLS
+        vals = [now(), 'site', secs] + [data[c] for c in CHILD_COLS]
+        cur.execute('INSERT INTO children ({}) VALUES ({})'.format(
+            ','.join(cols), ','.join('?' * len(cols))), vals)
+        child_id = cur.lastrowid
+
+        # чутливе — в окрему таблицю
+        cur.execute('INSERT INTO sensitive (child_id, {}) VALUES (?,{})'.format(
+            ','.join(SENS_COLS), ','.join('?' * len(SENS_COLS))),
+            [child_id] + [data[c] for c in SENS_COLS])
+
+        # хто забирає: рядок «Ім’я · телефон · ким доводиться | ...»
+        for i, part in enumerate(p for p in data['pickup'].split('|') if p.strip()):
+            bits = [b.strip() for b in part.split('·')]
+            bits += [''] * (3 - len(bits))
+            cur.execute('INSERT INTO pickup_persons (child_id, ord, name, phone, relation) '
+                        'VALUES (?,?,?,?,?)', (child_id, i + 1, bits[0], bits[1], bits[2]))
+
+        cur.execute('UPDATE raw_submissions SET child_id=? WHERE id=?', (child_id, raw_id))
+        conn.commit()
+
+    except Exception as e:
+        # Відкат обов'язковий: інакше незавершена транзакція тримає базу
+        # заблокованою, і наступні батьки взагалі не зможуть подати заявку.
+        conn.rollback()
+        app.logger.error('Заявку не збережено (сира копія № %s уціліла): %s', raw_id, e)
+        return jsonify(ok=False, error='save_failed'), 500
+
     log('нова заявка', child_id, who='форма')
 
     # жоден лист не має права зламати прийом заявки — вона вже в базі
@@ -442,23 +505,116 @@ def admin_list():
 
     q      = clean(request.args.get('q'), 60)
     status = clean(request.args.get('status'), 30)
+    grade  = clean(request.args.get('grade'), 4)
 
-    sql, args = 'SELECT c.*, s.has_allergy FROM children c LEFT JOIN sensitive s ON s.child_id=c.id WHERE 1=1', []
+    sql, args = ('SELECT c.*, s.has_allergy FROM children c '
+                 'LEFT JOIN sensitive s ON s.child_id=c.id WHERE 1=1'), []
     if q:
         sql += ' AND (c.child_name LIKE ? OR c.parent_name LIKE ? OR c.parent_phone LIKE ?)'
         args += ['%' + q + '%'] * 3
     if status:
         sql += ' AND c.status=?'
         args.append(status)
-    sql += ' ORDER BY c.id DESC'
+    if grade:
+        sql += ' AND c.grade=?'
+        args.append(grade)
+    # за прізвищем, а не за номером: список для друку має бути за абеткою
+    sql += ' ORDER BY c.child_name COLLATE NOCASE'
 
     rows = db().execute(sql, args).fetchall()
     counts = {r['status']: r['n'] for r in
               db().execute('SELECT status, COUNT(*) n FROM children GROUP BY status')}
+    grades = [r['grade'] for r in db().execute(
+        'SELECT DISTINCT grade FROM children WHERE grade<>"" ORDER BY CAST(grade AS INTEGER)')]
+
     log('перегляд списку')
-    return render_template('admin.html', rows=rows, q=q, status=status,
-                           counts=counts, total=sum(counts.values()),
-                           role=session.get('role'), who=session.get('name'))
+    return render_template('admin.html', rows=rows, q=q, status=status, grade=grade,
+                           grades=grades, counts=counts, total=sum(counts.values()),
+                           monday=_monday(), role=session.get('role'), who=session.get('name'))
+
+
+def _monday(d=None):
+    """Найближчий понеділок, від якого зручно починати тижневий список."""
+    d = d or datetime.now().date()
+    return (d - timedelta(days=d.weekday())).isoformat()
+
+
+# ============================================================
+#  СПИСОК НА ДРУК
+#  Тільки те, що потрібно педагогу на аркуші: діти, контакти
+#  і п'ять порожніх колонок під дати. Жодних статусів,
+#  номерів заявок та іншої службової інформації.
+# ============================================================
+MONTHS = ['січня','лютого','березня','квітня','травня','червня',
+          'липня','серпня','вересня','жовтня','листопада','грудня']
+
+@app.get('/admin/spysok')
+def admin_spysok():
+    r = require_login()
+    if r: return r
+
+    raw = clean(request.args.get('ids'), 4000)
+    ids = [int(x) for x in raw.split(',') if x.strip().isdigit()][:200]
+    if not ids:
+        return redirect('/admin')
+
+    ph = ','.join('?' * len(ids))
+    rows = [dict(x) for x in db().execute(
+        'SELECT id, child_name, grade, school, parent_name, parent_phone, '
+        'contact2_name, contact2_phone FROM children WHERE id IN ({}) '
+        'ORDER BY CAST(grade AS INTEGER), child_name COLLATE NOCASE'.format(ph), ids)]
+
+    pickups = {}
+    for p in db().execute(
+            'SELECT child_id, name, phone, relation FROM pickup_persons '
+            'WHERE child_id IN ({}) ORDER BY child_id, ord'.format(ph), ids):
+        pickups.setdefault(p['child_id'], []).append(dict(p))
+    for row in rows:
+        row['pickup'] = pickups.get(row['id'], [])
+
+    # п'ять робочих днів від обраної дати; вихідні пропускаємо —
+    # група працює лише з понеділка до п'ятниці
+    try:
+        start = datetime.strptime(clean(request.args.get('from'), 10), '%Y-%m-%d').date()
+    except ValueError:
+        start = datetime.strptime(_monday(), '%Y-%m-%d').date()
+
+    days, d = [], start
+    while len(days) < 5:
+        if d.weekday() < 5:
+            days.append(d)
+        d += timedelta(days=1)
+
+    # у заголовку — перелік класів, які потрапили до списку:
+    # «3 клас», «3 і 4 клас» або «2, 3, 7 клас»
+    gset = sorted({row['grade'] for row in rows if row['grade']},
+                  key=lambda x: int(x) if x.isdigit() else 99)
+    if not gset:
+        grades_label = ''
+    elif len(gset) == 1:
+        grades_label = '{} клас'.format(gset[0])
+    elif len(gset) == 2:
+        grades_label = '{} і {} клас'.format(*gset)
+    else:
+        grades_label = '{} клас'.format(', '.join(gset))
+
+    short = request.args.get('mode') == 'short'
+    other = '/admin/spysok?ids={}&from={}'.format(raw, request.args.get('from', ''))
+    if not short:
+        other = other.replace('?', '?mode=short&', 1)
+
+    today = datetime.now().date()
+    log('список на друк ({}): {} дітей'.format('короткий' if short else 'повний', len(rows)))
+    return render_template(
+        'spysok.html',
+        rows=rows,
+        short=short,
+        other_url=other,
+        days=['{:02d}.{:02d}'.format(x.day, x.month) for x in days],
+        period='{} – {} {}'.format(days[0].day, days[-1].day, MONTHS[days[-1].month - 1]),
+        grades_label=grades_label,
+        today='{} {} {}'.format(today.day, MONTHS[today.month - 1], today.year),
+        role=session.get('role'), who=session.get('name'))
 
 @app.get('/admin/<int:cid>')
 def admin_child(cid):

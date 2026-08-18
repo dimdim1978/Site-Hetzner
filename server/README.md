@@ -255,7 +255,9 @@ curl -sI https://children.pp.ua/ | head -3
 6. Видалити тестову заявку:
    ```bash
    sqlite3 /var/lib/beregynia/beregynia.db "DELETE FROM children WHERE id=1;"
+
    ```
+sqlite3 /var/lib/beregynia/beregynia.db "DELETE FROM children WHERE child_name LIKE '%Тест%';"
 
 Якщо на кроці 3 написано «демо» — сторінка відкрита не з домену.
 Якщо «Не вдалося надіслати» — `journalctl -u beregynia -n 30`.

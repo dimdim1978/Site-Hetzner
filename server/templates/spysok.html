@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Список групи · {{ period }}</title>
+<style>
+:root{
+  --green:#2F6F4E;--green-dark:#255A3E;
+  --ink:#101828;--ink-2:#475467;--ink-3:#667085;
+  --line:#D0D5DD;--line-soft:#E4E7EC;--bg-soft:#FAFAF7;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  color:var(--ink);background:var(--bg-soft);font-size:15px;line-height:1.4}
+
+.sheet{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
+
+/* ---------- панель дій: на друк не потрапляє ---------- */
+.tools{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  background:#fff;border:1px solid var(--line-soft);border-radius:10px;
+  padding:14px 16px;margin-bottom:20px;
+}
+.tools .sp{margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:10px 18px;
+  border:0;border-radius:8px;cursor:pointer;font-family:inherit;font-size:15px;
+  font-weight:600;text-decoration:none}
+.btn.primary{background:var(--green);color:#fff}
+.btn.primary:hover{background:var(--green-dark)}
+.btn.ghost{background:#fff;color:var(--ink-2);border:1px solid var(--line)}
+.tools .hint{font-size:13px;color:var(--ink-3);flex-basis:100%}
+
+/* ---------- аркуш ---------- */
+.paper{background:#fff;border:1px solid var(--line-soft);border-radius:10px;padding:22px}
+
+.head{display:flex;justify-content:space-between;align-items:flex-end;
+  gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.head h1{font-size:19px;font-weight:700}
+.head .org{font-size:13px;color:var(--ink-3);margin-bottom:3px}
+.head .per{font-size:14px;color:var(--ink-2);text-align:right;white-space:nowrap}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}
+thead th{background:var(--bg-soft);font-weight:600;font-size:12px;color:var(--ink-2)}
+tbody td{height:38px}
+.n   {width:26px;text-align:center;color:var(--ink-3)}
+.nm  {width:16%;font-weight:600}
+.gr  {width:34px;text-align:center}
+.sch {width:15%}
+.par {width:21%}
+.pick{width:21%}
+.day {width:44px;background:#fff}
+thead .day{text-align:center;font-size:11px;white-space:nowrap}
+.sub{display:block;color:var(--ink-3);font-weight:400;font-size:12px}
+.ph{white-space:nowrap}
+
+.foot{margin-top:14px;display:flex;justify-content:space-between;
+  font-size:12px;color:var(--ink-3);gap:16px;flex-wrap:wrap}
+
+/* короткий аркуш: широкі прізвища, великі клітинки під позначки */
+table.short{font-size:15px}
+table.short .nm{width:auto}
+table.short .day{width:62px}
+table.short tbody td{height:46px}
+table.short thead .day{font-size:13px}
+
+/* ---------- ДРУК ---------- */
+@page{size:A4 landscape;margin:10mm}
+@page short{size:A4 portrait;margin:12mm}
+body.short{--x:1}
+@media print{
+  body{background:#fff;font-size:11pt}
+  body.short{page:short}
+  body.short table{font-size:12pt}
+  body.short tbody td{height:11mm}
+  body.short thead .day{font-size:10pt}
+  .tools{display:none !important}
+  .sheet{max-width:none;padding:0}
+  .paper{border:0;border-radius:0;padding:0}
+  table{font-size:9.5pt}
+  th,td{padding:4px 6px}
+  tbody td{height:32px}
+  thead{display:table-header-group}     /* шапка повторюється на кожному аркуші */
+  tr{page-break-inside:avoid}
+  .foot{margin-top:10px}
+}
+</style>
+</head>
+<body{% if short %} class="short"{% endif %}>
+<div class="sheet">
+
+  <div class="tools">
+    <button class="btn primary" onclick="window.print()">Друк</button>
+    <a class="btn ghost" href="/admin">← до заявок</a>
+    <span class="sp"></span>
+    <span style="font-size:14px;color:var(--ink-2)">У списку: <b>{{ rows|length }}</b></span>
+    <a class="btn ghost" href="{{ other_url }}">{% if short %}Повний список{% else %}Тільки прізвища й дати{% endif %}</a>
+    <div class="hint">Друкується рівно те, що видно на цій сторінці — без статусів,
+      номерів заявок і службових полів.
+      {% if short %}Аркуш книжковий.{% else %}Аркуш альбомний.{% endif %}
+      Шапка повторюється на кожній сторінці.</div>
+  </div>
+
+  <div class="paper">
+    <div class="head">
+      <div>
+        <div class="org">ГО «Берегиня» · Освітній простір Покров</div>
+        <h1>{% if short %}Відвідування{% else %}Група подовженого дня{% endif %}{% if grades_label %} · {{ grades_label }}{% endif %}</h1>
+      </div>
+      <div class="per">{{ period }}</div>
+    </div>
+
+    {% if short %}
+    <!-- КОРОТКИЙ: тільки прізвища й дати. Більше нічого. -->
+    <table class="short">
+      <thead>
+        <tr>
+          <th class="n">№</th>
+          <th class="nm">Прізвище та ім’я</th>
+          {% for d in days %}<th class="day">{{ d }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="n">{{ loop.index }}</td>
+          <td class="nm">{{ r.child_name }}</td>
+          {% for d in days %}<td class="day"></td>{% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th class="n">№</th>
+          <th class="nm">Прізвище та ім’я</th>
+          <th class="gr">Кл.</th>
+          <th class="sch">Школа</th>
+          <th class="par">Батьки, телефони</th>
+          <th class="pick">Хто забирає</th>
+          {% for d in days %}<th class="day">{{ d }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="n">{{ loop.index }}</td>
+          <td class="nm">{{ r.child_name }}</td>
+          <td class="gr">{{ r.grade }}</td>
+          <td class="sch">{{ r.school }}</td>
+          <td class="par">
+            {{ r.parent_name }}<span class="sub ph">{{ r.parent_phone }}</span>
+            {% if r.contact2_name %}<span class="sub">{{ r.contact2_name }}</span>
+            <span class="sub ph">{{ r.contact2_phone }}</span>{% endif %}
+          </td>
+          <td class="pick">
+            {% for p in r.pickup %}
+              {{ p.name }}<span class="sub ph">{{ p.phone }}{% if p.relation %} · {{ p.relation }}{% endif %}</span>
+            {% else %}
+              <span class="sub">—</span>
+            {% endfor %}
+          </td>
+          {% for d in days %}<td class="day"></td>{% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <div class="foot">
+      <span>Педагог: ______________________</span>
+      <span>Підпис: ______________________</span>
+      <span>Складено {{ today }}</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
