@@ -11,14 +11,17 @@
      ========================================================== -->
 <script>
 const CFG = {
-  // Куди форма надсилає заявку. Порожній рядок = демо-режим:
-  // доводить до екрана успіху, але нікуди не пише.
-  // На бойовому сервері має бути '/api/zayavka'.
-  ENDPOINT: '/api/zayavka',
+  // Куди форма надсилає заявку.
+  // На GitHub Pages бекенду не існує — там сторінка лишається в демо-режимі
+  // (доводить до екрана успіху, але нікуди не пише), інакше батько побачив би
+  // помилку надсилання. На бойовому сервері працює '/api/zayavka'.
+  ENDPOINT: (location.protocol === 'file:' || location.hostname.endsWith('github.io'))
+              ? '' : '/api/zayavka',
 
-  // Телефон клубу — у підвалі й у тексті помилки
-  PHONE: '+380 97 000 00 00',
-  PHONE_HREF: 'tel:+380970000000',
+  // Телефони клубу — показуються в повідомленні про помилку надсилання.
+  // У самій сторінці вони вписані прямо в HTML (працюють і без JavaScript).
+  PHONE:  '+380 97 382 33 79',  PHONE_HREF:  'tel:+380973823379',
+  PHONE2: '+380 95 484 01 03',  PHONE2_HREF: 'tel:+380954840103',
 
   // Заклади освіти Покрова. Порядок такий, як у списку — не сортується.
   SCHOOLS: [
@@ -455,13 +458,13 @@ footer a{color:var(--ink-2)}
     <div class="num">Номер заявки: <b id="app_no">—</b></div>
     <p id="done_mail" class="hidden">Копію надіслали на вашу пошту.</p>
     <p>Ми зателефонуємо протягом двох робочих днів, щоб узгодити дні, години та перший день у групі.</p>
-    <p>Питання: <a href="" id="done_phone"></a></p>
+    <p>Питання: <a href="tel:+380973823379">+380 97 382 33 79</a><br><a href="tel:+380954840103">+380 95 484 01 03</a></p>
     <button type="button" class="again" id="again">Записати ще одну дитину</button>
   </div>
 
   <footer>
     ГО «Берегиня» · Освітній простір Покров<br>
-    <a href="" id="foot_phone"></a><br>
+    <a href="tel:+380973823379">+380 97 382 33 79</a> · <a href="tel:+380954840103">+380 95 484 01 03</a><br>
     <a href="dani.html">Обробка персональних даних</a>
   </footer>
 </div>
@@ -474,10 +477,10 @@ const $  = (s,r)=>(r||document).querySelector(s);
 const $$ = (s,r)=>Array.from((r||document).querySelectorAll(s));
 const started = Date.now();
 
-/* ---------- підстановка з CFG ---------- */
-$('#done_phone').textContent = CFG.PHONE; $('#done_phone').href = CFG.PHONE_HREF;
-$('#foot_phone').textContent = CFG.PHONE; $('#foot_phone').href = CFG.PHONE_HREF;
-
+/* ---------- підстановка з CFG ----------
+   Телефон навмисно вписаний прямо в HTML, а не підставляється звідси:
+   так він видно в коді сторінки й працює навіть без JavaScript.
+   CFG.PHONE лишається — його показує повідомлення про помилку надсилання. */
 CFG.GRADES.forEach(function(g){ $('#grade').appendChild(new Option(g + ' клас', g)); });
 
 CFG.SCHOOLS.forEach(function(s,i){ $('#school').appendChild(new Option(s.n, String(i))); });
@@ -721,7 +724,9 @@ $('#f').addEventListener('submit', function(ev){
   })
   .catch(function(){
     btn.disabled=false; btn.textContent='Надіслати заявку';
-    box.innerHTML = 'Не вдалося надіслати заявку. Спробуйте ще раз або зателефонуйте: <a href="'+CFG.PHONE_HREF+'">'+CFG.PHONE+'</a>. Заповнене не втрачено.';
+    box.innerHTML = 'Не вдалося надіслати заявку. Заповнене не втрачено — спробуйте ще раз '
+                  + 'або зателефонуйте: <a href="'+CFG.PHONE_HREF+'">'+CFG.PHONE+'</a>'
+                  + ' · <a href="'+CFG.PHONE2_HREF+'">'+CFG.PHONE2+'</a>';
     box.classList.add('on');
   });
 });

@@ -1,0 +1,21 @@
+# ---- секрети: ніколи не в git ----
+.env
+server/.env
+
+# ---- база даних ----
+*.db
+*.db-wal
+*.db-shm
+
+# ---- Python ----
+venv/
+__pycache__/
+*.pyc
+
+# ---- сміття ОС і редакторів ----
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+.vscode/
+.idea/

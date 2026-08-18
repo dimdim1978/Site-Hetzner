@@ -61,7 +61,9 @@ header{
 
 nav{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:62px}
 
-.logo{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;white-space:nowrap}
+a.logo,.logo{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em;
+  white-space:nowrap;text-decoration:none;display:inline-block}
+a.logo:hover{color:var(--green)}
 .logo span{color:var(--green);padding-left:.15em}   /* mudryk.html пише «Берегиня<span>Мудрик</span>» без пробілу */
 
 .nav-links{list-style:none;display:flex;margin:0;padding:0;gap:22px}
@@ -200,6 +202,8 @@ nav{display:flex;justify-content:space-between;align-items:center;gap:12px;min-h
 .contact-item a,.contact-item .ci-val{
   font-size:17px;font-weight:600;color:var(--ink);text-decoration:none;
 }
+.contact-item .ci-two a{display:block}
+.contact-item .ci-two a + a{margin-top:6px}
 .contact-item a:hover{color:var(--green)}
 
 /* ============================================================
