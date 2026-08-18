@@ -101,6 +101,13 @@
     {{ row('Обробка даних', c.c_data) }}
     {{ row('Дані про здоров’я', c.c_health) }}
     {{ row('Екстрена допомога', c.c_medical) }}
+    <tr>
+      <td style="padding:9px 0;color:var(--ink-3);font-size:14px;width:230px">Фото та відео</td>
+      <td style="padding:9px 0;font-size:15px">
+        {% if c.c_photo == 'так' %}так
+        {% else %}<span class="pill" style="background:var(--err-soft);color:var(--err)">ФОТО: НІ</span>{% endif %}
+      </td>
+    </tr>
     {{ row('Месенджер', c.c_messenger) }}
   </table>
 </div>

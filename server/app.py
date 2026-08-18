@@ -90,7 +90,24 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     conn.executescript(open(os.path.join(BASE, 'schema.sql'), encoding='utf-8').read())
     conn.commit()
+    _migrate(conn)
     conn.close()
+
+def _migrate(conn):
+    """Догоняє наявну базу до поточного набору полів.
+
+    CREATE TABLE IF NOT EXISTS нову колонку в стару таблицю не додасть, тому
+    після кожного розширення анкети треба ALTER TABLE. Тут це робиться саме,
+    за списками колонок вище — вручну нічого писати не доведеться."""
+    for table, cols in (('children', CHILD_COLS), ('sensitive', SENS_COLS)):
+        have = {r[1] for r in conn.execute('PRAGMA table_info({})'.format(table))}
+        if not have:                       # таблиці ще немає — її щойно створив скрипт
+            continue
+        for col in cols:
+            if col not in have:
+                conn.execute('ALTER TABLE {} ADD COLUMN {} TEXT'.format(table, col))
+                app.logger.warning('База: додано колонку %s.%s', table, col)
+    conn.commit()
 
 def now():
     return datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
@@ -138,6 +155,7 @@ FIELDS = [
     ('c_data',         'Згода: обробка даних',         False),
     ('c_health',       'Згода: дані про здоров’я',     False),
     ('c_medical',      'Згода: екстрена допомога',     False),
+    ('c_photo',        'Згода: фото та відео',         False),
     ('c_messenger',    'Згода: месенджер',             False),
 ]
 LABEL = {k: v for k, v, _ in FIELDS}
@@ -146,7 +164,7 @@ CHILD_COLS = ['child_name','child_dob','grade','school','school_addr','pickup_sc
               'parent_name','parent_role','parent_phone','parent_email',
               'contact2_name','contact2_phone','address',
               'self_leave','self_time','expectations','comment',
-              'c_true','c_data','c_health','c_medical','c_messenger']
+              'c_true','c_data','c_health','c_medical','c_photo','c_messenger']
 
 SENS_COLS  = ['has_allergy','allergy_details','meal_limits','health_notes','do_not_release']
 

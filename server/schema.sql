@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS children (
   c_data         TEXT,
   c_health       TEXT,
   c_medical      TEXT,
+  c_photo        TEXT,          -- необов'язкова згода на фото- й відеофіксацію
   c_messenger    TEXT,
 
   -- службове

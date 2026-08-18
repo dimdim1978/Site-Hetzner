@@ -45,6 +45,7 @@
         <td style="padding:13px 14px">
           <a href="/admin/{{ r.id }}" style="font-weight:600;text-decoration:none">{{ r.child_name }}</a>
           {% if r.has_allergy == 'так' %} <span class="pill alrg">алергія</span>{% endif %}
+          {% if r.c_photo != 'так' %} <span class="pill st-відмова">фото: ні</span>{% endif %}
         </td>
         <td style="padding:13px 14px;color:var(--ink-2)">{{ r.grade }}</td>
         <td style="padding:13px 14px;color:var(--ink-2)">{{ r.parent_name }}</td>

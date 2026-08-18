@@ -13,6 +13,9 @@ User=beregynia
 Group=beregynia
 WorkingDirectory=/opt/beregynia
 Environment="PATH=/opt/beregynia/venv/bin"
+# /opt лише для читання (ProtectSystem=strict), тож не намагаємось писати .pyc
+Environment="PYTHONDONTWRITEBYTECODE=1"
+Environment="PYTHONUNBUFFERED=1"
 ExecStart=/opt/beregynia/venv/bin/gunicorn \
           --workers 2 \
           --bind 127.0.0.1:8000 \
