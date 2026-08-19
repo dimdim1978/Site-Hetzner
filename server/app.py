@@ -91,6 +91,10 @@ def db():
         # одразу, а чекаємо до 5 секунд. Інакше батько побачив би помилку
         # надсилання через те, що адміністратор відкрив базу в консолі.
         g.db.execute('PRAGMA busy_timeout = 5000')
+        # Вбудований LIKE у SQLite опускає регістр лише для латиниці:
+        # «шевченко» не знайшло б «Шевченка». Тому нижній регістр робить
+        # Python — він знає і кирилицю.
+        g.db.create_function('lower_uk', 1, lambda v: (v or '').lower())
     return g.db
 
 @app.teardown_appcontext
@@ -175,6 +179,17 @@ def _migrate(conn):
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_children_login "
                      "ON children(login) WHERE login IS NOT NULL AND login <> ''")
         conn.execute('CREATE INDEX IF NOT EXISTS idx_attempts_login ON login_attempts(login, ts)')
+        # Статусів стало три. Старі не лишаємо висіти: їх не можна було б
+        # ні поставити, ні прибрати, а у фільтрі й лічильниках вони б
+        # плуталися. «Підтверджена» — це ще не зарахована, тож повертаємо
+        # в «нову»; «відмова» — питання закрите, тобто «архів».
+        for old, new in (('підтверджена', 'нова'), ('відмова', 'архів')):
+            n3 = conn.execute('UPDATE children SET status=? WHERE status=?',
+                              (new, old)).rowcount
+            if n3:
+                app.logger.warning('База: %d заявок зі статусу «%s» переведено в «%s»',
+                                   n3, old, new)
+
         # заявки, подані до появи цієї колонки, — цьогорічні
         n2 = conn.execute("UPDATE children SET school_year=? WHERE school_year IS NULL OR school_year=''",
                           (school_year(),)).rowcount
@@ -184,6 +199,17 @@ def _migrate(conn):
         pass
 
     conn.commit()
+
+@app.template_filter('dmy')
+def _dmy(v):
+    """2016-05-14 → 14.05.2016. У базі дата лежить у машинному вигляді
+    (щоб сортувалась), а на аркуші людина читає звичний порядок."""
+    try:
+        y, m, d = str(v).split('-')
+        return '{}.{}.{}'.format(d, m, y)
+    except (ValueError, AttributeError):
+        return v or ''
+
 
 def now():
     return datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
@@ -260,6 +286,11 @@ LABEL = {k: v for k, v, _ in FIELDS}
 #  так його неможливо підмінити й неможливо забути передати.
 # ============================================================
 PROGRAMS = ('ГПД', 'НМТ')
+
+# Статуси заявки. Три — і цього досить: заявка або щойно прийшла,
+# або дитина ходить, або з нею вже все скінчено. Проміжні
+# «підтверджена» й «відмова» лише плодили роботу з їх проставляння.
+STATUSES = ('нова', 'зарахована', 'архів')
 
 def school_year(d=None):
     """Навчальний рік у вигляді «2026/27».
@@ -814,8 +845,9 @@ def admin_list():
         sql += ' AND c.school_year=?'
         args.append(year)
     if q:
-        sql += ' AND (c.child_name LIKE ? OR c.parent_name LIKE ? OR c.parent_phone LIKE ?)'
-        args += ['%' + q + '%'] * 3
+        sql += (' AND (lower_uk(c.child_name) LIKE ? OR lower_uk(c.parent_name) LIKE ?'
+                ' OR c.parent_phone LIKE ?)')
+        args += ['%' + q.lower() + '%'] * 3
     if status:
         sql += ' AND c.status=?'
         args.append(status)
@@ -852,7 +884,7 @@ def admin_list():
                            program=prog, programs=PROGRAMS, prog_counts=progs,
                            year=year, years=years, this_year=school_year(),
                            grades=grades, counts=counts, total=sum(counts.values()),
-                           monday=_monday(), keep=BACKUP_KEEP,
+                           monday=_monday(), keep=BACKUP_KEEP, statuses=STATUSES,
                            role=session.get('role'), who=session.get('name'))
 
 
@@ -883,7 +915,7 @@ def admin_spysok():
 
     ph = ','.join('?' * len(ids))
     rows = [dict(x) for x in db().execute(
-        'SELECT c.id, c.child_name, c.grade, c.school, c.program, c.student_phone, '
+        'SELECT c.id, c.child_name, c.child_dob, c.grade, c.school, c.program, c.student_phone, '
         'c.parent_name, c.parent_phone, c.contact2_name, c.contact2_phone, n.subjects '
         'FROM children c LEFT JOIN nmt n ON n.child_id = c.id '
         'WHERE c.id IN ({}) '
@@ -928,24 +960,34 @@ def admin_spysok():
     program_label = list(pset)[0] if len(pset) == 1 else ''
 
     short = request.args.get('mode') == 'short'
-    other = '/admin/spysok?ids={}&from={}'.format(raw, request.args.get('from', ''))
+    # «Без дат»: заняття переносять, і не завжди по порядку. Тоді зручніше
+    # надрукувати порожні колонки й вписати числа ручкою просто на аркуші.
+    nodates = request.args.get('nodates') == '1'
+
+    other = '/admin/spysok?ids={}&from={}{}'.format(
+        raw, request.args.get('from', ''), '&nodates=1' if nodates else '')
     if not short:
         other = other.replace('?', '?mode=short&', 1)
 
     today = datetime.now().date()
-    log('список на друк ({}): {} дітей'.format('короткий' if short else 'повний', len(rows)))
+    log('список на друк ({}{}): {} дітей'.format(
+        'короткий' if short else 'повний', ', без дат' if nodates else '', len(rows)))
     return render_template(
         'spysok.html',
         rows=rows,
         short=short,
         other_url=other,
-        days=['{:02d}.{:02d}'.format(x.day, x.month) for x in days],
+        days=([''] * 5 if nodates
+              else ['{:02d}.{:02d}'.format(x.day, x.month) for x in days]),
+        nodates=nodates,
         period='{} – {} {}'.format(days[0].day, days[-1].day, MONTHS[days[-1].month - 1]),
         grades_label=grades_label,
         program_label=program_label,
-        # повний список НМТ — інший набір колонок; лише коли всі в списку
-        # одного напряму, інакше друкуємо звичний варіант із датами
+        # Повний список НМТ має інший набір колонок. Умова program_label
+        # означає «усі в списку одного напряму» — змішаних списків адмінка
+        # не дає зібрати, але посилання можна набрати й руками.
         nmt_full=(not short and program_label == 'НМТ'),
+        mixed=(len(pset) > 1),
         today='{} {} {}'.format(today.day, MONTHS[today.month - 1], today.year),
         role=session.get('role'), who=session.get('name'))
 
@@ -963,14 +1005,15 @@ def admin_child(cid):
 
     log('перегляд заявки', cid)
     return render_template('child.html', c=child, s=sens, pickup=pickup, nmt=nmt,
-                           label=LABEL, role=session.get('role'), who=session.get('name'))
+                           label=LABEL, statuses=STATUSES,
+                           role=session.get('role'), who=session.get('name'))
 
 @app.post('/admin/<int:cid>/status')
 def admin_status(cid):
     r = require_login()
     if r: return r
     st = clean(request.form.get('status'), 30)
-    if st in ('нова', 'підтверджена', 'зарахована', 'відмова', 'архів'):
+    if st in STATUSES:
         db().execute('UPDATE children SET status=? WHERE id=?', (st, cid))
         db().commit()
         log('статус → ' + st, cid)
@@ -998,6 +1041,35 @@ def admin_note(cid):
 #  повернення — копія бази, тому кнопка «Зробити копію бази»
 #  стоїть поруч.
 # ============================================================
+@app.post('/admin/status-bulk')
+def admin_status_bulk():
+    """Ставить один статус усім позначеним. Дія зворотна, тому окремого
+    підтвердження на сервері немає — воно є у браузері."""
+    r = require_login()
+    if r: return r
+
+    st = clean(request.form.get('status'), 30)
+    if st not in STATUSES:
+        return jsonify(ok=False, error='Невідомий статус'), 400
+
+    ids = [int(x) for x in (request.form.get('ids') or '').split(',')
+           if x.strip().isdigit()][:500]
+    if not ids:
+        return jsonify(ok=False, error='Не вибрано жодного учня'), 400
+
+    ph = ','.join('?' * len(ids))
+    conn = db()
+    # рахуємо лише тих, кому статус справді змінюється, — щоб у відповіді
+    # не було «змінено 12», коли 10 із них уже мали цей статус
+    n = conn.execute(
+        'SELECT COUNT(*) c FROM children WHERE id IN ({}) AND status<>?'.format(ph),
+        ids + [st]).fetchone()['c']
+    conn.execute('UPDATE children SET status=? WHERE id IN ({})'.format(ph), [st] + ids)
+    conn.commit()
+    log('статус → {} ({} заявок)'.format(st, n))
+    return jsonify(ok=True, status=st, changed=n, total=len(ids))
+
+
 @app.post('/admin/delete')
 def admin_delete():
     r = require_login()

@@ -38,7 +38,7 @@
 
   <select name="status" title="Статус">
     <option value="">усі статуси</option>
-    {% for st in ['нова','підтверджена','зарахована','відмова','архів'] %}
+    {% for st in statuses %}
       <option value="{{ st }}" {% if status == st %}selected{% endif %}>{{ st }}</option>
     {% endfor %}
   </select>
@@ -74,12 +74,13 @@
       <tr>
         <td class="c-chk">
           <input type="checkbox" class="pick" value="{{ r.id }}"
-                 data-name="{{ r.child_name }}" data-grade="{{ r.grade }}">
+                 data-name="{{ r.child_name }}" data-grade="{{ r.grade }}"
+                 data-program="{{ r.program }}">
         </td>
         <td>
           <a href="/admin/{{ r.id }}" class="nm">{{ r.child_name }}</a>
           {% if r.has_allergy == 'так' %} <span class="pill alrg">алергія</span>{% endif %}
-          {% if r.c_photo != 'так' %} <span class="pill st-відмова">фото: ні</span>{% endif %}
+          {% if r.c_photo != 'так' %} <span class="pill nofoto">фото: ні</span>{% endif %}
         </td>
         <td><span class="pill pr-{{ r.program }}">{{ r.program }}</span></td>
         {% if years|length > 1 %}<td class="dim sm nw">{{ r.school_year }}</td>{% endif %}
@@ -98,15 +99,20 @@
 <!-- ================= СПИСОК, ЩО НАКОПИЧУЄТЬСЯ ================= -->
 <div class="card basket" id="basket" hidden>
   <div class="b-head">
-    <h2>Список для друку · <span id="bcount">0</span></h2>
+    <h2>Список для друку<span id="bprog"></span> · <span id="bcount">0</span></h2>
     <button class="btn ghost sm" type="button" id="bclear">Очистити</button>
   </div>
 
   <div id="bbody"></div>
 
+  <div class="b-note" id="bnote" hidden></div>
+
   <div class="b-foot">
     <label class="b-date">Тиждень з
       <input type="date" id="from" value="{{ monday }}">
+    </label>
+    <label class="b-nodates" title="Заняття переносяться — впишете числа ручкою">
+      <input type="checkbox" id="nodates"> без дат
     </label>
     <a class="btn primary" id="printShort" target="_blank">Друк: прізвища й дати</a>
     <a class="btn ghost"   id="printFull"  target="_blank">Повний список</a>
@@ -134,6 +140,8 @@
     {% if role == 'admin' %}
       <button class="btn danger" type="button" id="delBtn">Видалити обраних</button>
     {% endif %}
+    <button class="btn ghost"   type="button" id="enrollBtn">Зарахувати</button>
+    <button class="btn ghost"   type="button" id="archBtn">В архів</button>
     <button class="btn ghost"   type="button" id="passBtn">Видати пароль</button>
     <button class="btn primary" type="button" id="addBtn">Додати до списку</button>
   </div>
@@ -233,10 +241,17 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .b-row .x{border:0;background:none;cursor:pointer;color:var(--ink-3);
   font-size:16px;line-height:1;padding:4px 6px;border-radius:6px}
 .b-row .x:hover{background:var(--err-soft);color:var(--err)}
+.b-note{margin:0 20px 12px;padding:9px 12px;border-radius:8px;font-size:13px;
+  background:var(--warn-soft);color:var(--warn)}
+#bprog{color:var(--ink-3);font-weight:600}
 .b-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
   padding:14px 20px;background:var(--bg-soft);border-top:1px solid var(--line)}
 .b-date{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2)}
 .b-date input{width:auto;min-height:42px}
+.b-date.off{opacity:.45}
+.b-nodates{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--ink-2);
+  cursor:pointer;white-space:nowrap}
+.b-nodates input{width:18px;height:18px;accent-color:var(--green);cursor:pointer;margin:0}
 .b-foot .btn{margin-left:0}
 .b-foot .btn.primary{margin-left:auto}
 @media (max-width:640px){
@@ -319,6 +334,7 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 (function(){
   'use strict';
   var $  = function(s){ return document.querySelector(s); };
+  var on2 = function(sel, fn){ var el = $(sel); if (el) el.addEventListener('click', fn); };
   var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
   var picks = $$('.pick'), all = $('#all');
@@ -330,7 +346,7 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
      перезавантажує сторінку, і без цього накопичене губилося б.
      Закрили вкладку — список зник, це навмисно.
      ------------------------------------------------------------ */
-  var KEY = 'gpd_list_v1', DKEY = 'gpd_from_v1';
+  var KEY = 'gpd_list_v1', DKEY = 'gpd_from_v1', NKEY = 'gpd_nodates_v1';
   function load(){
     try { return JSON.parse(sessionStorage.getItem(KEY)) || []; }
     catch(e){ return []; }
@@ -338,14 +354,26 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   function save(list){
     try { sessionStorage.setItem(KEY, JSON.stringify(list)); } catch(e){}
   }
-  var list = load();
+  var list = load().filter(function(x){ return x && x.program; });
 
   function ids(){ return list.map(function(x){ return x.id; }); }
+
+  /* Напрям списку. Один аркуш — один напрям: у ГПД і НМТ різні колонки,
+     і змішаний список неможливо структурувати так, щоб він був корисним. */
+  function basketProgram(){ return list.length ? list[0].program : null; }
+
+  function note(text){
+    var el = $('#bnote');
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
 
   function drawBasket(){
     bcount.textContent = list.length;
     basket.hidden = list.length === 0;
-    if(!list.length){ bbody.innerHTML = ''; return; }
+    var pr = basketProgram();
+    $('#bprog').textContent = pr ? ' · ' + pr : '';
+    if(!list.length){ bbody.innerHTML = ''; note(''); return; }
 
     // групуємо за класом, у межах класу — за абеткою
     var byGrade = {};
@@ -370,9 +398,15 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
       });
     });
 
-    var q = 'ids=' + ids().join(',') + '&from=' + encodeURIComponent($('#from').value);
+    var nd = $('#nodates').checked;
+    var q = 'ids=' + ids().join(',') + '&from=' + encodeURIComponent($('#from').value) +
+            (nd ? '&nodates=1' : '');
     $('#printShort').href = '/admin/spysok?mode=short&' + q;
     $('#printFull').href  = '/admin/spysok?' + q;
+    // тиждень уже ні на що не впливає — показуємо це, а не лишаємо гадати
+    $('.b-date').classList.toggle('off', nd);
+    $('#from').disabled = nd;
+    $('#printShort').textContent = nd ? 'Друк: прізвища' : 'Друк: прізвища й дати';
   }
 
   function esc(s){
@@ -408,22 +442,39 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 
   /* ---- додавання: нові прізвища дописуються В КІНЕЦЬ, дублі не множаться ---- */
   $('#addBtn').addEventListener('click', function(){
-    var have = ids().map(String), added = 0;
-    chosen().forEach(function(c){
+    var have = ids().map(String), added = 0, skipped = 0, other = '';
+    var pr = basketProgram();
+    var sel = chosen();
+
+    // порожній кошик набирає напрям від першого доданого учня
+    if(!pr && sel.length) pr = sel[0].getAttribute('data-program');
+
+    sel.forEach(function(c){
+      var cp = c.getAttribute('data-program');
+      if(cp !== pr){ skipped++; other = cp; return; }
       if(have.indexOf(c.value) === -1){
         list.push({ id: c.value, name: c.getAttribute('data-name'),
-                    grade: c.getAttribute('data-grade') });
+                    grade: c.getAttribute('data-grade'), program: cp });
         have.push(c.value); added++;
       }
     });
+
     save(list); drawBasket(); markRows();
     picks.forEach(function(c){ c.checked = false; });
     refresh();
+
+    // пояснення живе рівно до наступного додавання, інакше воно
+    // висіло б над уже виправленим списком і збивало з пантелику
+    note(skipped
+      ? 'Додано ' + added + '. Пропущено ' + skipped + ' — це напрям ' + other +
+        ', а список уже за напрямом ' + pr + '. Друкуйте ГПД і НМТ окремо: ' +
+        'у них різні колонки, спільний аркуш виходить нечитабельним.'
+      : '');
     if(added) basket.scrollIntoView({behavior:'smooth', block:'nearest'});
   });
 
   $('#bclear').addEventListener('click', function(){
-    list = []; save(list); drawBasket(); markRows();
+    list = []; save(list); drawBasket(); markRows(); note('');
   });
 
   /* дата теж має пережити зміну фільтра класу, інакше вона
@@ -434,6 +485,12 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   } catch(e){}
   $('#from').addEventListener('change', function(){
     try { sessionStorage.setItem(DKEY, this.value); } catch(e){}
+    drawBasket();
+  });
+
+  try { $('#nodates').checked = sessionStorage.getItem(NKEY) === '1'; } catch(e){}
+  $('#nodates').addEventListener('change', function(){
+    try { sessionStorage.setItem(NKEY, this.checked ? '1' : '0'); } catch(e){}
     drawBasket();
   });
 
@@ -497,6 +554,33 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
       document.body.removeChild(t);
     }
   });
+
+  /* ------------------------------------------------------------
+     Зарахувати / В архів. Дія зворотна, тому без окремого вікна —
+     але підтвердження потрібне: коли ввімкнено фільтр за класом,
+     усі рядки позначаються самі, і один необережний клік відправив
+     би в архів цілий клас.
+     ------------------------------------------------------------ */
+  function bulkStatus(st){
+    var n = chosen();
+    if(!n.length){ alert('Не вибрано жодного учня.'); return; }
+    if(!confirm('Поставити статус «' + st + '» — ' + n.length +
+                (n.length === 1 ? ' заявці?' : ' заявкам?'))) return;
+
+    var gone = n.map(function(c){ return String(c.value); });
+    fetch('/admin/status-bulk', {
+      method: 'POST', credentials: 'same-origin',
+      body: new URLSearchParams({ ids: gone.join(','), status: st })
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.ok) location.reload();
+        else alert((d && d.error) || 'Не вдалося змінити статус.');
+      })
+      .catch(function(){ alert('Немає звʼязку із сервером.'); });
+  }
+  on2('#enrollBtn', function(){ bulkStatus('зарахована'); });
+  on2('#archBtn',   function(){ bulkStatus('архів'); });
 
   /* ------------------------------------------------------------
      Видалення обраних. Показуємо поіменний список: погоджуватися

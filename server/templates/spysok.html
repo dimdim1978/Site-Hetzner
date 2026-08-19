@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>{% if nmt_full %}Список · підготовка до НМТ{% if grades_label %} · {{ grades_label }}{% endif %}{% else %}Список групи · {{ period }}{% endif %}</title>
+<title>{% if short %}Відвідування{% if not nodates %} · {{ period }}{% endif %}{% else %}Список{% if program_label %} · {{ program_label }}{% endif %}{% if grades_label %} · {{ grades_label }}{% endif %}{% endif %}</title>
 <style>
 :root{
   --green:#2F6F4E;--green-dark:#255A3E;
@@ -52,14 +52,21 @@ tbody td{height:38px}
 .par {width:21%}
 .pick{width:21%}
 .tel {width:120px;white-space:nowrap}
+.dob {width:86px;white-space:nowrap}
 .subj{width:24%}
 .day {width:44px;background:#fff}
 thead .day{text-align:center;font-size:11px;white-space:nowrap}
 .sub{display:block;color:var(--ink-3);font-weight:400;font-size:12px}
 .ph{white-space:nowrap}
 
+.warn{background:#FFFAEB;border:1px solid #FEC84B;color:#B54708;
+  border-radius:8px;padding:10px 13px;font-size:13px;margin-bottom:14px}
 .foot{margin-top:14px;display:flex;justify-content:space-between;
   font-size:12px;color:var(--ink-3);gap:16px;flex-wrap:wrap}
+
+/* без дат: у порожній заголовок теж треба вписати число ручкою,
+   тому він має бути не нижчим за клітинку в тілі таблиці */
+body.nodates thead .day{height:30px}
 
 /* короткий аркуш: широкі прізвища, великі клітинки під позначки */
 table.short{font-size:15px}
@@ -78,6 +85,7 @@ body.short{--x:1}
   body.short table{font-size:12pt}
   body.short tbody td{height:11mm}
   body.short thead .day{font-size:10pt}
+  body.nodates thead .day{height:10mm}
   .tools{display:none !important}
   .sheet{max-width:none;padding:0}
   .paper{border:0;border-radius:0;padding:0}
@@ -90,7 +98,7 @@ body.short{--x:1}
 }
 </style>
 </head>
-<body{% if short %} class="short"{% endif %}>
+<body class="{% if short %}short {% endif %}{% if nodates %}nodates{% endif %}">
 <div class="sheet">
 
   <div class="tools">
@@ -98,10 +106,11 @@ body.short{--x:1}
     <a class="btn ghost" href="/admin">← до заявок</a>
     <span class="sp"></span>
     <span style="font-size:14px;color:var(--ink-2)">У списку: <b>{{ rows|length }}</b></span>
-    <a class="btn ghost" href="{{ other_url }}">{% if short %}Повний список{% else %}Тільки прізвища й дати{% endif %}</a>
+    <a class="btn ghost" href="{{ other_url }}">{% if short %}Повний список{% elif nodates %}Тільки прізвища{% else %}Тільки прізвища й дати{% endif %}</a>
     <div class="hint">Друкується рівно те, що видно на цій сторінці — без статусів,
       номерів заявок і службових полів.
       {% if short %}Аркуш книжковий.{% else %}Аркуш альбомний.{% endif %}
+      {% if nodates %}Дати не надруковані — впишіть їх у порожні колонки.{% endif %}
       Шапка повторюється на кожній сторінці.</div>
   </div>
 
@@ -111,8 +120,13 @@ body.short{--x:1}
         <div class="org">ГО «Берегиня» · Освітній простір Покров</div>
         <h1>{% if short %}Відвідування{% elif program_label == 'НМТ' %}Підготовка до НМТ{% elif program_label %}Група подовженого дня{% else %}Список{% endif %}{% if grades_label %} · {{ grades_label }}{% endif %}</h1>
       </div>
-      {% if not nmt_full %}<div class="per">{{ period }}</div>{% endif %}
+      {% if short and not nodates %}<div class="per">{{ period }}</div>{% endif %}
     </div>
+
+    {% if mixed %}
+    <div class="warn">У списку є учні обох напрямів. Такий аркуш виходить
+      неструктурованим — збирайте список окремо для ГПД і окремо для НМТ.</div>
+    {% endif %}
 
     {% if short %}
     <!-- КОРОТКИЙ: тільки прізвища й дати. Більше нічого. -->
@@ -171,16 +185,18 @@ body.short{--x:1}
     </table>
 
     {% else %}
+    <!-- ПОВНИЙ, ГПД: дитина й усі дорослі при ній. Дат немає —
+         відвідування ведеться коротким списком, а це аркуш для звірки. -->
     <table>
       <thead>
         <tr>
           <th class="n">№</th>
           <th class="nm">Прізвище та ім’я</th>
           <th class="gr">Кл.</th>
+          <th class="dob">Дата нар.</th>
           <th class="sch">Школа</th>
           <th class="par">Батьки, телефони</th>
           <th class="pick">Хто забирає</th>
-          {% for d in days %}<th class="day">{{ d }}</th>{% endfor %}
         </tr>
       </thead>
       <tbody>
@@ -189,6 +205,7 @@ body.short{--x:1}
           <td class="n">{{ loop.index }}</td>
           <td class="nm">{{ r.child_name }}</td>
           <td class="gr">{{ r.grade }}</td>
+          <td class="dob">{{ r.child_dob | dmy }}</td>
           <td class="sch">{{ r.school }}</td>
           <td class="par">
             {{ r.parent_name }}<span class="sub ph">{{ r.parent_phone }}</span>
@@ -202,7 +219,6 @@ body.short{--x:1}
               <span class="sub">—</span>
             {% endfor %}
           </td>
-          {% for d in days %}<td class="day"></td>{% endfor %}
         </tr>
       {% endfor %}
       </tbody>

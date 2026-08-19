@@ -162,7 +162,7 @@
   <form method="post" action="/admin/{{ c.id }}/status"
         style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
     <select name="status" style="width:auto;min-width:170px">
-      {% for st in ['нова','підтверджена','зарахована','відмова','архів'] %}
+      {% for st in statuses %}
         <option value="{{ st }}" {% if c.status == st %}selected{% endif %}>{{ st }}</option>
       {% endfor %}
     </select>
