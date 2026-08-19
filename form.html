@@ -308,7 +308,7 @@ footer a{color:var(--ink-2)}
       </div>
 
       <div class="field grade-field" data-req>
-        <label class="lab" for="grade">Клас у <span id="ac_year">поточному</span> навчальному році</label>
+        <label class="lab" for="grade">Клас у поточному навчальному році</label>
         <select id="grade" name="grade"><option value="">— оберіть —</option></select>
         <div class="hint">Від класу залежить, які питання будуть далі</div>
         <div class="err">Оберіть клас</div>
@@ -741,16 +741,6 @@ const started = Date.now();
    Телефон навмисно вписаний прямо в HTML, а не підставляється звідси:
    так він видно в коді сторінки й працює навіть без JavaScript.
    CFG.PHONE лишається — його показує повідомлення про помилку надсилання. */
-/* Навчальний рік рахуємо самі: рік у розмітці довелося б правити щовересня,
-   а цього ніхто не зробить. Новий рік починається в серпні — саме тоді
-   відкривається набір. */
-function academicYear(){
-  var d = new Date(), y = d.getFullYear();
-  if (d.getMonth() < 7) y--;          // січень–липень — це ще попередній навчальний рік
-  return y + '/' + String(y + 1).slice(2);
-}
-$('#ac_year').textContent = academicYear();
-
 CFG.GRADES.forEach(function(g){ $('#grade').appendChild(new Option(g + ' клас', g)); });
 
 /* =====================================================

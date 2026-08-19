@@ -113,6 +113,20 @@
   </div>
 </div>
 
+{% if role == 'admin' %}
+<!-- ================= ОБСЛУГОВУВАННЯ ================= -->
+<div class="card maint">
+  <h2>Копія бази</h2>
+  <p>Надішлемо на <b>вашу службову пошту</b> таблицю з усіма заявками
+     (відкривається в Excel — редагуйте як завгодно) і резервну копію бази.
+     Лист міститиме персональні дані всіх дітей, зокрема про здоров'я.</p>
+  <div class="maint-row">
+    <button class="btn ghost" type="button" id="bkBtn">Надіслати копію бази на пошту</button>
+    <span id="bkMsg" class="maint-msg"></span>
+  </div>
+</div>
+{% endif %}
+
 <!-- ================= НИЖНЯ ПАНЕЛЬ ================= -->
 <div class="bar" id="bar">
   <div class="bar-in">
@@ -142,19 +156,6 @@
   </div>
 </div>
 
-{% if role == 'admin' %}
-<!-- ================= ОБСЛУГОВУВАННЯ ================= -->
-<div class="card maint">
-  <h2>Копія бази</h2>
-  <p>Надішлемо на <b>вашу службову пошту</b> таблицю з усіма заявками
-     (відкривається в Excel — редагуйте як завгодно) і резервну копію бази.
-     Лист міститиме персональні дані всіх дітей, зокрема про здоров'я.</p>
-  <div class="maint-row">
-    <button class="btn ghost" type="button" id="bkBtn">Надіслати копію бази на пошту</button>
-    <span id="bkMsg" class="maint-msg"></span>
-  </div>
-</div>
-{% endif %}
 
 <style>
 .tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
@@ -210,11 +211,17 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   .b-date{width:100%}
 }
 
+/* Панель мусить бути ОСТАННІМ елементом сторінки. Самого transform для
+   приховування замало: якщо після панелі щось стоїть, її природне місце
+   виявляється посеред сторінки, і опущена панель лягає просто на цей блок.
+   Тому ще й visibility — тоді вона не заважає, хоч би де опинилась. */
 .bar{position:sticky;bottom:0;margin:0 -20px;padding:0 20px;
   background:#fff;border-top:1px solid var(--line);
-  box-shadow:0 -4px 16px rgba(16,24,40,.06);
-  transform:translateY(120%);transition:transform .18s ease;z-index:50}
-.bar.on{transform:none}
+  box-shadow:0 -4px 16px rgba(16,24,40,.06);z-index:50;
+  transform:translateY(120%);opacity:0;visibility:hidden;
+  transition:transform .18s ease,opacity .18s ease,visibility 0s .18s}
+.bar.on{transform:none;opacity:1;visibility:visible;
+  transition:transform .18s ease,opacity .18s ease}
 .bar-in{max-width:1080px;margin:0 auto;padding:14px 0;
   display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .bar .cnt{font-size:15px;color:var(--ink-2)}
