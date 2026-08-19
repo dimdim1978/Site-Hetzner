@@ -77,21 +77,6 @@ body{
 .top a.back{font-size:15px;color:var(--ink-3);text-decoration:none;display:inline-block;padding:6px 0}
 .top a.back:hover{color:var(--accent)}
 
-header.head{padding:20px 0 28px;border-bottom:1px solid var(--line-soft)}
-/* Поки клас не обрано, у шапці не лишається жодного видимого блоку —
-   і вона висить порожньою смугою з лінійкою під нею. Згортаємо її,
-   доки всі діти сховані; щойно зʼявиться підказка напряму — розкриється. */
-header.head:not(:has(> :not(.hidden))){padding:0;border-bottom:0}
-header.head .org{font-size:14px;color:var(--ink-3);letter-spacing:.02em;margin-bottom:8px}
-header.head h1{font-size:26px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
-header.head .meta{
-  margin-top:14px;font-size:15px;color:var(--ink-2);
-  background:var(--bg-soft);border:1px solid var(--line-soft);
-  border-radius:8px;padding:12px 14px;
-}
-header.head .meta b{color:var(--ink)}
-header.head .time{font-size:13px;color:var(--ink-3);margin-top:10px}
-
 /* ---------- розділи ---------- */
 section.block{padding-top:32px;margin-top:8px}
 section.block > h2{font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.01em}
@@ -196,9 +181,6 @@ legend.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:10px;fo
 .sub-lab{font-size:13px;font-weight:700;color:var(--ink-3);letter-spacing:.04em;
   text-transform:uppercase;margin:14px 0 4px}
 .sub-lab:first-of-type{margin-top:2px}
-.locked-set .choice{cursor:default}
-.locked-set .choice input{cursor:default;opacity:.85}
-.locked-set .choice span{color:var(--ink-2)}
 fieldset.bad .sub-lab{color:var(--err)}
 
 .gate{
@@ -238,7 +220,6 @@ footer a{color:var(--ink-2)}
 
 @media (max-width:380px){
   body{font-size:16px}
-  header.head h1{font-size:22px}
   .wrap{padding:0 16px 56px}
 }
 </style>
@@ -259,22 +240,6 @@ footer a{color:var(--ink-2)}
 <div class="wrap">
 
   <div class="top"><a class="back" href="index.html">← ГО «Берегиня»</a></div>
-
-  <header class="head">
-    <div class="meta hidden" id="m_gpd">
-      <b>Щодня 12:00 – 17:00</b><br>
-      Забираємо зі школи, виконуємо домашні завдання, граємось.
-      <div class="time">Заповнення анкети — близько 3 хвилин.<br>
-      Дні й години узгодимо окремо, тут вони не потрібні.</div>
-    </div>
-
-    <div class="meta hidden" id="m_nmt">
-      <b>Центр довузівської підготовки</b><br>
-      Підготовка до НМТ, профорієнтація та допомога з вибором спеціальності.
-      <div class="time">Заповнення анкети — близько 5 хвилин.<br>
-      <a href="nmt.html" style="color:var(--accent)">Що входить у підготовку →</a></div>
-    </div>
-  </header>
 
   <form id="f" novalidate>
 
@@ -545,16 +510,16 @@ footer a{color:var(--ink-2)}
         <textarea id="career_interest" name="career_interest"></textarea>
       </div>
 
-      <fieldset class="field" id="subj_fs" data-req>
-        <legend class="lab">Оберіть предмети для підготовки до НМТ</legend>
+      <fieldset class="field" id="subj_fs">
+        <legend class="lab">Оберіть предмети для підготовки до НМТ <span class="opt">— необов’язково</span></legend>
 
         <div class="sub-lab">Обов’язкові предмети НМТ</div>
-        <div class="choices locked-set">
+        <div class="choices">
           <label class="choice"><input type="checkbox" class="subj lock" value="Українська мова" checked><span>Українська мова</span></label>
           <label class="choice"><input type="checkbox" class="subj lock" value="Математика" checked><span>Математика</span></label>
           <label class="choice"><input type="checkbox" class="subj lock" value="Історія України" checked><span>Історія України</span></label>
         </div>
-        <div class="hint" style="margin-top:2px">Ці три складають усі — зняти позначку не можна.</div>
+        <div class="hint" style="margin-top:2px">Ці три складають усі, тому позначені одразу. Якщо готуватись до них не плануєте — зніміть позначку.</div>
 
         <div class="sub-lab">Предмет на вибір</div>
         <div class="choices">
@@ -565,7 +530,6 @@ footer a{color:var(--ink-2)}
           <label class="choice"><input type="checkbox" class="subj" value="Хімія"><span>Хімія</span></label>
         </div>
         <div class="hint">Позначте той, який плануєте складати четвертим.</div>
-        <div class="err">Оберіть хоча б один предмет</div>
       </fieldset>
     </section>
 
@@ -832,7 +796,10 @@ function currentBranch(){
 function clearBranch(which){
   var box = $('#branch-' + which);
   $$('input, select, textarea', box).forEach(function(el){
-    if (el.classList.contains('lock')) return;      // обов'язкові предмети лишаються позначеними
+    // три предмети НМТ не просто лишаємо, а ПОВЕРТАЄМО до позначених:
+    // тепер позначку можна зняти, і без цього рядка наступна дитина
+    // починала б із порожнім списком замість типової заготовки
+    if (el.classList.contains('lock')) { el.checked = true; return; }
     if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
     else el.value = '';
     var f = el.closest('.field, fieldset');
@@ -848,13 +815,6 @@ on('#grade', 'change', function(){
 
   if (shown) clearBranch(shown);          // перемкнули клас — чужі відповіді не тягнемо
   shown = br;
-
-  txt('#h_title', br === 'nmt' ? 'Запис на підготовку до НМТ'
-                : br === 'gpd' ? 'Запис до групи подовженого дня'
-                : 'Запис на заняття');
-  hide('#m_none', !!br);
-  hide('#m_gpd', br !== 'gpd');
-  hide('#m_nmt', br !== 'nmt');
 
   if (br !== 'nmt') {                       // ховаємо — заразом і чистимо
     val('#student_phone', '');
@@ -990,19 +950,11 @@ function refreshGate(){
   $('#go').disabled = !ok;
   cls('#gate', 'on', !ok);
 }
-$$('.subj').forEach(function(c){
-  c.addEventListener('change', function(){ cls('#subj_fs', 'bad', false); });
-});
-
-/* Три предмети НМТ складають усі — вони позначені від початку
-   і зняти позначку не можна. Робимо це не через disabled:
-   вимкнене поле браузер не надсилає, і предмети зникли б із заявки. */
-$$('.subj.lock').forEach(function(c){
-  c.checked = true;
-  c.addEventListener('click', function(ev){
-    if (!this.checked) { ev.preventDefault(); this.checked = true; }
-  });
-});
+/* Три предмети НМТ складають усі, тому позначені від початку — але це
+   лише зручна заготовка: зняти позначку можна, і жодного мінімуму немає.
+   Позначку ставимо тут, а не атрибутом checked, щоб вона поверталась
+   і після «записати ще одну дитину». */
+$$('.subj.lock').forEach(function(c){ c.checked = true; });
 $$('.consent input, input[name=c_photo]').forEach(function(el){
   el.addEventListener('change', function(){
     var fs = el.closest('.consent-choice');
@@ -1034,14 +986,6 @@ function validate(){
     f.classList.toggle('bad', !ok);
     if(!ok) fail(f);
   });
-
-  // у гілці НМТ треба обрати хоча б один предмет
-  if (currentBranch() === 'nmt'){
-    const sfs = $('#subj_fs');
-    const bad2 = !$$('.subj:checked').length;
-    sfs.classList.toggle('bad', bad2);
-    if (bad2) fail(sfs);
-  }
 
   // пошта необов’язкова, але якщо заповнена — має бути коректна
   const em = $('#parent_email');
@@ -1191,7 +1135,7 @@ on('#again', 'click', function(){
   hide('#student_contacts', true);
   $$('.field.dob').forEach(function(b){
     $$('select', b).forEach(function(sel){ sel.value = ''; });
-    $('input[type=hidden]', b).value = '';
+    var h = $('input[type=hidden]', b); if (h) h.value = '';
   });
   if (shown) clearBranch(shown);
   shown = null;
