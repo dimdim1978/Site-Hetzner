@@ -174,6 +174,13 @@ legend.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:10px;fo
 .consent-choice .cc-note{font-size:13px;color:var(--ink-3);line-height:1.45;margin-bottom:10px}
 .consent-choice.bad{background:var(--err-soft);border-radius:8px;padding:14px 12px 6px}
 
+.dob-row{display:flex;gap:8px}
+.dob-row select{flex:1;min-width:0}
+.dob-row .d-day{flex:0 0 86px}
+.dob-row .d-year{flex:0 0 96px}
+.dob-row select{padding-right:30px;background-position:right 9px center}
+.field.bad .dob-row select{border-color:var(--err);background-color:var(--err-soft)}
+
 .await{
   margin:34px 0 0;padding:22px 18px;text-align:center;
   background:var(--bg-soft);border:1px dashed var(--line);border-radius:12px;
@@ -269,7 +276,7 @@ footer a{color:var(--ink-2)}
 
     <!-- ================= 0. СПІЛЬНИЙ ПОЧАТОК ================= -->
     <section class="block" style="padding-top:28px">
-      <h2>Хто записується</h2>
+      <h2>Учень</h2>
 
       <div class="field" data-req>
         <label class="lab" for="child_name">Прізвище, ім’я та по батькові учня</label>
@@ -277,24 +284,15 @@ footer a{color:var(--ink-2)}
         <div class="err">Вкажіть прізвище та ім’я</div>
       </div>
 
-      <div class="field" data-req>
-        <label class="lab" for="child_dob">Дата народження</label>
-        <input type="date" id="child_dob" name="child_dob">
+      <div class="field dob" data-req data-dob="child">
+        <label class="lab">Дата народження</label>
+        <div class="dob-row">
+          <select class="d-day"   aria-label="День"></select>
+          <select class="d-month" aria-label="Місяць"></select>
+          <select class="d-year"  aria-label="Рік"></select>
+        </div>
+        <input type="hidden" id="child_dob" name="child_dob">
         <div class="err">Вкажіть дату народження</div>
-      </div>
-
-      <div class="field" data-req data-phone>
-        <label class="lab" for="parent_phone">Контактний телефон</label>
-        <input type="tel" id="parent_phone" name="parent_phone" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __">
-        <div class="hint">На цей номер ми зателефонуємо</div>
-        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
-      </div>
-
-      <div class="field" data-email>
-        <label class="lab" for="parent_email">Електронна пошта <span class="opt">— необов’язково</span></label>
-        <input type="email" id="parent_email" name="parent_email" inputmode="email" autocomplete="email">
-        <div class="hint">Якщо вкажете — надішлемо копію заявки</div>
-        <div class="err">Перевірте адресу пошти</div>
       </div>
 
       <div class="field grade-field" data-req>
@@ -303,16 +301,6 @@ footer a{color:var(--ink-2)}
         <div class="hint">Від класу залежить, які питання будуть далі</div>
         <div class="err">Оберіть клас</div>
       </div>
-    </section>
-
-    <!-- ================= ПІДКАЗКА ДО ВИБОРУ КЛАСУ ================= -->
-    <div class="await" id="await">Оберіть клас — і з’являться решта питань</div>
-
-    <!-- ================= ГІЛКА: ГРУПА ПОДОВЖЕНОГО ДНЯ (1–8) ============ -->
-    <div class="branch hidden" id="branch-gpd">
-
-    <section class="block">
-      <h2>Школа</h2>
 
       <div class="field" data-req>
         <label class="lab" for="school">Заклад освіти</label>
@@ -327,8 +315,84 @@ footer a{color:var(--ink-2)}
         <div class="err">Напишіть назву закладу</div>
       </div>
 
-      <fieldset class="field" data-req>
-        <legend class="lab">Забирати дитину зі школи?</legend>
+      <div id="student_contacts" class="hidden">
+        <div class="field" data-phone>
+          <label class="lab" for="student_phone">Телефон учня <span class="opt">— необов’язково</span></label>
+          <input type="tel" id="student_phone" name="student_phone" inputmode="tel" placeholder="+380 __ ___ __ __">
+          <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
+        </div>
+
+        <div class="field" data-email>
+          <label class="lab" for="student_email">Пошта учня <span class="opt">— необов’язково</span></label>
+          <input type="email" id="student_email" name="student_email" inputmode="email">
+          <div class="err">Перевірте адресу пошти</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= БАТЬКИ — спільний блок ================= -->
+    <section class="block">
+      <h2>Батьки або законний представник</h2>
+      <p class="lead">Дані того, з ким ми зв’яжемось.</p>
+
+      <div class="field" data-req>
+        <label class="lab" for="parent_name">Прізвище, ім’я та по батькові</label>
+        <input type="text" id="parent_name" name="parent_name" autocomplete="name">
+        <div class="err">Вкажіть ПІБ</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="parent_role">Ким доводиться учневі</label>
+        <select id="parent_role" name="parent_role">
+          <option value="">— оберіть —</option>
+          <option>мати</option>
+          <option>батько</option>
+          <option>бабуся</option>
+          <option>дідусь</option>
+          <option>сестра, брат</option>
+          <option>тітка, дядько</option>
+          <option>опікун, законний представник</option>
+          <option>інше</option>
+        </select>
+        <div class="err">Оберіть варіант</div>
+      </div>
+
+      <div class="field dob" data-dob="parent">
+        <label class="lab">Дата народження <span class="opt">— необов’язково</span></label>
+        <div class="dob-row">
+          <select class="d-day"   aria-label="День"></select>
+          <select class="d-month" aria-label="Місяць"></select>
+          <select class="d-year"  aria-label="Рік"></select>
+        </div>
+        <input type="hidden" id="parent_dob" name="parent_dob">
+      </div>
+
+      <div class="field" data-req data-phone>
+        <label class="lab" for="parent_phone">Телефон</label>
+        <input type="tel" id="parent_phone" name="parent_phone" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __">
+        <div class="hint">На цей номер ми зателефонуємо</div>
+        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
+      </div>
+
+      <div class="field" data-email>
+        <label class="lab" for="parent_email">Електронна пошта <span class="opt">— необов’язково</span></label>
+        <input type="email" id="parent_email" name="parent_email" inputmode="email" autocomplete="email">
+        <div class="hint">Якщо вкажете — надішлемо копію заявки</div>
+        <div class="err">Перевірте адресу пошти</div>
+      </div>
+    </section>
+
+    <!-- ================= ПІДКАЗКА ДО ВИБОРУ КЛАСУ ================= -->
+    <div class="await" id="await">Оберіть клас — і з’являться решта питань</div>
+
+    <!-- ================= ГІЛКА: ГРУПА ПОДОВЖЕНОГО ДНЯ (1–8) ============ -->
+    <div class="branch hidden" id="branch-gpd">
+
+    <section class="block">
+      <h2>Дорога зі школи</h2>
+
+      <fieldset class="field">
+        <legend class="lab">Забирати дитину зі школи? <span class="opt">— необов’язково</span></legend>
         <div class="choices">
           <label class="choice"><input type="radio" name="pickup_school" value="так"><span>Так, забирайте зі школи</span></label>
           <label class="choice"><input type="radio" name="pickup_school" value="ні"><span>Ні, дитину приведуть</span></label>
@@ -339,35 +403,17 @@ footer a{color:var(--ink-2)}
 
     <!-- ================= 2. БАТЬКИ ================= -->
     <section class="block">
-      <h2>Батьки або законні представники</h2>
-      <p class="lead">Другий контакт потрібен на випадок, якщо з вами не вдасться зв’язатися.</p>
+      <h2>Другий контакт <span class="opt" style="font-weight:400;font-size:15px;color:var(--ink-3)">— необов’язково</span></h2>
+      <p class="lead">Кому телефонувати, якщо з вами не вдасться зв’язатися. Зазвичай це другий із батьків.</p>
 
-      <div class="field" data-req>
-        <label class="lab" for="parent_name">Ваше прізвище, ім’я та по батькові</label>
-        <input type="text" id="parent_name" name="parent_name" autocomplete="name">
-        <div class="err">Вкажіть ПІБ</div>
-      </div>
-
-      <div class="field" data-req>
-        <label class="lab" for="parent_role">Ким доводитесь дитині</label>
-        <select id="parent_role" name="parent_role">
-          <option value="">— оберіть —</option>
-          <option>мати</option><option>батько</option>
-          <option>бабуся, дідусь</option>
-          <option>опікун, законний представник</option>
-          <option>інше</option>
-        </select>
-        <div class="err">Оберіть варіант</div>
-      </div>
-
-      <div class="field" data-req>
-        <label class="lab" for="contact2_name">Другий контакт — прізвище та ім’я</label>
+      <div class="field">
+        <label class="lab" for="contact2_name">Прізвище, ім’я та по батькові</label>
         <input type="text" id="contact2_name" name="contact2_name">
         <div class="err">Вкажіть другу контактну особу</div>
       </div>
 
-      <div class="field" data-req data-phone>
-        <label class="lab" for="contact2_phone">Другий контакт — телефон</label>
+      <div class="field" data-phone>
+        <label class="lab" for="contact2_phone">Телефон</label>
         <input type="tel" id="contact2_phone" name="contact2_phone" inputmode="tel" placeholder="+380 __ ___ __ __">
         <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
       </div>
@@ -389,8 +435,9 @@ footer a{color:var(--ink-2)}
       <div id="people"></div>
       <button type="button" class="add-btn" id="add_person">+ Додати ще одну особу</button>
 
-      <fieldset class="field" data-req style="margin-top:24px">
-        <legend class="lab">Чи може дитина йти додому самостійно?</legend>
+      <fieldset class="field" style="margin-top:24px">
+        <legend class="lab">Чи може дитина йти додому самостійно? <span class="opt">— необов’язково</span></legend>
+        <div class="hint" style="margin-bottom:8px">Якщо не відповісти — вважаємо, що ні.</div>
         <div class="choices">
           <label class="choice"><input type="radio" name="self_leave" value="ні"><span>Ні, тільки з дорослим</span></label>
           <label class="choice"><input type="radio" name="self_leave" value="так"><span>Так, у будь-який час</span></label>
@@ -399,7 +446,7 @@ footer a{color:var(--ink-2)}
         <div class="err">Оберіть варіант</div>
       </fieldset>
 
-      <div class="field hidden" id="self_time_wrap" data-req>
+      <div class="field hidden" id="self_time_wrap">
         <label class="lab" for="self_time">Не раніше якої години</label>
         <input type="time" id="self_time" name="self_time" value="16:00">
         <div class="err">Вкажіть час</div>
@@ -417,8 +464,8 @@ footer a{color:var(--ink-2)}
       <h2>Що нам варто знати</h2>
       <p class="lead">Кілька дрібниць, щоб ми могли подбати про дитину так, як вдома. Ці відповіді зберігаються окремо від решти анкети — доступ до них мають дві особи.</p>
 
-      <fieldset class="field" data-req>
-        <legend class="lab">Чи є в дитини алергії?</legend>
+      <fieldset class="field">
+        <legend class="lab">Чи є в дитини алергії? <span class="opt">— необов’язково</span></legend>
         <div class="choices">
           <label class="choice"><input type="radio" name="has_allergy" value="ні"><span>Немає</span></label>
           <label class="choice"><input type="radio" name="has_allergy" value="так"><span>Є</span></label>
@@ -473,48 +520,12 @@ footer a{color:var(--ink-2)}
     <div class="branch hidden" id="branch-nmt">
 
     <section class="block">
-      <h2>Заклад освіти та контакти</h2>
-      <p class="lead">Прізвище, дату народження й контактний телефон ви вже вказали на початку.</p>
-
-      <div class="field" data-req>
-        <label class="lab" for="n_school">Заклад освіти</label>
-        <select id="n_school" name="school_n"><option value="">— оберіть —</option></select>
-        <div class="hint" id="n_school_addr"></div>
-        <div class="err">Оберіть заклад освіти</div>
-      </div>
-
-      <div class="field hidden" id="n_school_other_wrap" data-req>
-        <label class="lab" for="n_school_other">Назва закладу</label>
-        <input type="text" id="n_school_other" name="school_other_n">
-        <div class="err">Напишіть назву закладу</div>
-      </div>
-
-      <div class="field" data-phone>
-        <label class="lab" for="student_phone">Телефон учня <span class="opt">— необов’язково</span></label>
-        <input type="tel" id="student_phone" name="student_phone" inputmode="tel" placeholder="+380 __ ___ __ __">
-        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
-      </div>
-
-      <div class="field" data-email>
-        <label class="lab" for="student_email">Пошта учня <span class="opt">— необов’язково</span></label>
-        <input type="email" id="student_email" name="student_email" inputmode="email">
-        <div class="err">Перевірте адресу пошти</div>
-      </div>
-
-      <div class="field" data-req style="margin-top:26px;padding-top:22px;border-top:1px solid var(--line-soft)">
-        <label class="lab" for="n_parent">Прізвище, ім’я та по батькові одного з батьків або законного представника</label>
-        <input type="text" id="n_parent" name="parent_name_n">
-        <div class="err">Вкажіть ПІБ</div>
-      </div>
-    </section>
-
-    <section class="block">
       <h2>Напрям підготовки</h2>
       <p class="lead">Допомагаємо визначитися зі спеціальністю та освітньою траєкторією.
         Якщо ще не знаєте, чого хочете, — це нормально, для того й консультація.</p>
 
-      <fieldset class="field" data-req>
-        <legend class="lab">Чи потрібна профорієнтаційна консультація?</legend>
+      <fieldset class="field">
+        <legend class="lab">Чи потрібна профорієнтаційна консультація? <span class="opt">— необов’язково</span></legend>
         <div class="choices">
           <label class="choice"><input type="radio" name="career_help" value="так"><span>Так</span></label>
           <label class="choice"><input type="radio" name="career_help" value="ні"><span>Ні</span></label>
@@ -575,8 +586,8 @@ footer a{color:var(--ink-2)}
         <input type="text" id="needs_other" name="needs_other">
       </div>
 
-      <fieldset class="field" data-req>
-        <legend class="lab">Як ви оцінюєте свій рівень підготовки?</legend>
+      <fieldset class="field">
+        <legend class="lab">Як ви оцінюєте свій рівень підготовки? <span class="opt">— необов’язково</span></legend>
         <div class="choices">
           <label class="choice"><input type="radio" name="level" value="початковий"><span>Початковий</span></label>
           <label class="choice"><input type="radio" name="level" value="середній"><span>Середній</span></label>
@@ -730,18 +741,65 @@ $('#ac_year').textContent = academicYear();
 
 CFG.GRADES.forEach(function(g){ $('#grade').appendChild(new Option(g + ' клас', g)); });
 
-/* однаковий список закладів у обох гілках */
-['#school', '#n_school'].forEach(function(sel){
-  var el = $(sel);
-  CFG.SCHOOLS.forEach(function(s,i){ el.appendChild(new Option(s.n, String(i))); });
-  el.appendChild(new Option('Інший заклад','__other__'));
-  el.addEventListener('change', function(){
-    var other = this.value === '__other__';
-    $(sel === '#school' ? '#school_other_wrap' : '#n_school_other_wrap')
-      .classList.toggle('hidden', !other);
-    var s = CFG.SCHOOLS[Number(this.value)];
-    $(sel === '#school' ? '#school_addr' : '#n_school_addr').textContent = (!other && s) ? s.a : '';
-  });
+/* =====================================================
+   ДАТА НАРОДЖЕННЯ — три списки замість <input type="date">
+
+   Нативне поле дати малюється в мові БРАУЗЕРА, а не сторінки.
+   В українця з англійським Chrome воно показує mm/dd/yyyy —
+   і людина вписує день у поле місяця. Плюс воно саме перескакує
+   на наступне поле після першої цифри, тож «2» перетворюється
+   на «02» і курсор тікає.
+
+   Три списки цього позбавлені: місяць названий словом, переплутати
+   з днем неможливо, нічого нікуди не стрибає.
+   ===================================================== */
+var MONTHS = ['січня','лютого','березня','квітня','травня','червня',
+              'липня','серпня','вересня','жовтня','листопада','грудня'];
+
+function buildDob(box){
+  var kind = box.getAttribute('data-dob');
+  var day = $('.d-day', box), mon = $('.d-month', box), yr = $('.d-year', box);
+  var hidden = $('input[type=hidden]', box);
+  var now = new Date().getFullYear();
+  var from = kind === 'parent' ? now - 80 : now - 20;
+  var to   = kind === 'parent' ? now - 16 : now - 4;
+
+  day.appendChild(new Option('день',''));
+  for (var d = 1; d <= 31; d++) day.appendChild(new Option(d, d < 10 ? '0'+d : String(d)));
+
+  mon.appendChild(new Option('місяць',''));
+  MONTHS.forEach(function(m, i){ mon.appendChild(new Option(m, i < 9 ? '0'+(i+1) : String(i+1))); });
+
+  yr.appendChild(new Option('рік',''));
+  for (var y = to; y >= from; y--) yr.appendChild(new Option(y, String(y)));
+
+  function sync(){
+    // 31 лютого обрати не можна: прибираємо зайві дні в короткому місяці
+    var m = parseInt(mon.value, 10), y = parseInt(yr.value, 10) || 2000;
+    if (m) {
+      var max = new Date(y, m, 0).getDate();
+      Array.prototype.forEach.call(day.options, function(o){
+        if (o.value) o.hidden = parseInt(o.value, 10) > max;
+      });
+      if (day.value && parseInt(day.value, 10) > max) day.value = '';
+    }
+    hidden.value = (day.value && mon.value && yr.value)
+                 ? yr.value + '-' + mon.value + '-' + day.value : '';
+    box.classList.remove('bad');
+  }
+  [day, mon, yr].forEach(function(el){ el.addEventListener('change', sync); });
+  sync();
+}
+$$('.field.dob').forEach(buildDob);
+
+/* заклад освіти — один список на обидва напрями */
+CFG.SCHOOLS.forEach(function(s,i){ $('#school').appendChild(new Option(s.n, String(i))); });
+$('#school').appendChild(new Option('Інший заклад','__other__'));
+$('#school').addEventListener('change', function(){
+  var other = this.value === '__other__';
+  $('#school_other_wrap').classList.toggle('hidden', !other);
+  var s = CFG.SCHOOLS[Number(this.value)];
+  $('#school_addr').textContent = (!other && s) ? s.a : '';
 });
 
 /* =====================================================
@@ -785,6 +843,11 @@ $('#grade').addEventListener('change', function(){
   $('#m_gpd').classList.toggle('hidden', br !== 'gpd');
   $('#m_nmt').classList.toggle('hidden', br !== 'nmt');
 
+  if (br !== 'nmt') {                       // ховаємо — заразом і чистимо
+    $('#student_phone').value = '';
+    $('#student_email').value = '';
+  }
+  $('#student_contacts').classList.toggle('hidden', br !== 'nmt');
   $('#branch-gpd').classList.toggle('hidden', br !== 'gpd');
   $('#branch-nmt').classList.toggle('hidden', br !== 'nmt');
   $('#consents').classList.toggle('hidden', !br);
@@ -993,6 +1056,10 @@ function validate(){
 function collect(){
   const d = {};
   $$('#f input[name], #f select[name], #f textarea[name]').forEach(function(el){
+    // Приховане не надсилаємо. Інакше значення, введене в одній гілці,
+    // поїхало б у заявку іншої: обрав 11 клас, вписав телефон учня,
+    // передумав на 3 — і телефон однаково потрапив би в базу.
+    if(el.type !== 'hidden' && el.closest('.hidden')) return;
     if(el.type === 'checkbox')   { d[el.name] = el.checked ? 'так' : 'ні'; }
     else if(el.type === 'radio') { if(el.checked) d[el.name] = el.value; }
     else                         { d[el.name] = el.value.trim(); }
@@ -1014,17 +1081,12 @@ function collect(){
      інакше два однойменні поля на одній сторінці конфліктували б.
      Тут зводимо їх до тих самих ключів, що й у гілці ГПД. */
   if (currentBranch() === 'nmt'){
-    d.parent_name = $('#n_parent').value.trim();
-    var ni = $('#n_school').value;
-    if (ni === '__other__')      { d.school = $('#n_school_other').value.trim(); d.school_addr = ''; }
-    else if (ni !== '')          { d.school = CFG.SCHOOLS[Number(ni)].n; d.school_addr = CFG.SCHOOLS[Number(ni)].a; }
     d.subjects    = $$('.subj:checked').map(c=>c.value).join(', ');
     d.needs       = $$('.need:checked').map(c=>c.value).join(', ');
     d.format_pref = $$('.fmt:checked').map(c=>c.value).join(', ');
     d.time_pref   = $$('.tim:checked').map(c=>c.value).join(', ');
     d.pickup = '';                       // у цій гілці такого питання немає
   }
-  delete d.child_dob_n; delete d.school_n; delete d.school_other_n; delete d.parent_name_n;
   d.pickup = $$('.person').map(function(p){
     const n=$('.p-name',p).value.trim(), t=$('.p-phone',p).value.trim(), r=$('.p-rel',p).value.trim();
     return n ? (n+' · '+t+' · '+r) : '';
@@ -1103,7 +1165,7 @@ $('#f').addEventListener('submit', function(ev){
 
 /* ---------- «записати ще одну дитину» ---------- */
 $('#again').addEventListener('click', function(){
-  ['child_name','child_dob','grade','school','school_other',
+  ['child_name','grade','school','school_other',
    'meal_limits','allergy_details','health_notes','comment','do_not_release'].forEach(function(id){
     const e=$('#'+id); if(e) e.value='';
   });
@@ -1113,7 +1175,11 @@ $('#again').addEventListener('click', function(){
     .forEach(function(r){ r.checked=false; });
   $('#allergy_wrap').classList.add('hidden');
   $('#school_other_wrap').classList.add('hidden');
-  $('#n_school_other_wrap').classList.add('hidden');
+  $('#student_contacts').classList.add('hidden');
+  $$('.field.dob').forEach(function(b){
+    $$('select', b).forEach(function(sel){ sel.value = ''; });
+    $('input[type=hidden]', b).value = '';
+  });
   if (shown) clearBranch(shown);
   shown = null;
   $('#branch-gpd').classList.add('hidden');

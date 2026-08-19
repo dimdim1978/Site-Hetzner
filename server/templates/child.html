@@ -34,6 +34,7 @@
   <table style="width:100%;border-collapse:collapse">
     {{ row('ПІБ заявника', c.parent_name) }}
     {{ row('Ким доводиться', c.parent_role) }}
+    {{ row('Дата народження', c.parent_dob) }}
     <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px;width:230px">Телефон</td>
         <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.parent_phone|replace(' ','') }}">{{ c.parent_phone }}</a></td></tr>
     {% if c.parent_email %}

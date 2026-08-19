@@ -199,6 +199,7 @@ FIELDS = [
     ('pickup_school',  'Забирати зі школи',            False),
     ('parent_name',    'ПІБ заявника',                 False),
     ('parent_role',    'Ким доводиться дитині',        False),
+    ('parent_dob',     'Дата народження заявника',     False),
     ('parent_phone',   'Телефон',                      False),
     ('parent_email',   'Пошта',                        False),
     ('student_phone',  'Телефон учня',                 False),
@@ -267,14 +268,18 @@ def program_for(grade):
 
 # Обов'язкові поля відрізняються: одинадцятикласник іде додому сам,
 # вимагати від нього перелік осіб, які його забирають, безглуздо.
+# Однаковий для обох напрямів: дані учня, один із батьків і все.
+# Решту питаємо, але не тримаємо людину — перевантажена анкета
+# просто не заповнюється до кінця.
 REQUIRED_BY_PROGRAM = {
-    'ГПД': ['child_name', 'parent_name', 'parent_phone',
-            'contact2_name', 'contact2_phone'],
-    'НМТ': ['child_name', 'parent_phone', 'school', 'parent_name', 'subjects', 'level'],
+    'ГПД': ['child_name', 'child_dob', 'grade', 'school',
+            'parent_name', 'parent_role', 'parent_phone'],
+    'НМТ': ['child_name', 'child_dob', 'grade', 'school',
+            'parent_name', 'parent_role', 'parent_phone'],
 }
 
 CHILD_COLS = ['child_name','child_dob','grade','school','school_addr','pickup_school',
-              'parent_name','parent_role','parent_phone','parent_email',
+              'parent_name','parent_role','parent_dob','parent_phone','parent_email',
               'student_phone','student_email',
               'contact2_name','contact2_phone','address',
               'self_leave','self_time','expectations','comment',

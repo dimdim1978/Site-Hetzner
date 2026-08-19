@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS children (
   -- батьки та контакти
   parent_name    TEXT,
   parent_role    TEXT,
+  parent_dob     TEXT,          -- дата народження того з батьків, хто подав заявку
   parent_phone   TEXT,
   parent_email   TEXT,
   student_phone  TEXT,          -- телефон самого учня (напрям НМТ)
