@@ -184,6 +184,9 @@ legend.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:10px;fo
 .sub-lab{font-size:13px;font-weight:700;color:var(--ink-3);letter-spacing:.04em;
   text-transform:uppercase;margin:14px 0 4px}
 .sub-lab:first-of-type{margin-top:2px}
+.locked-set .choice{cursor:default}
+.locked-set .choice input{cursor:default;opacity:.85}
+.locked-set .choice span{color:var(--ink-2)}
 fieldset.bad .sub-lab{color:var(--err)}
 
 .gate{
@@ -274,6 +277,12 @@ footer a{color:var(--ink-2)}
         <div class="err">Вкажіть прізвище та ім’я</div>
       </div>
 
+      <div class="field" data-req>
+        <label class="lab" for="child_dob">Дата народження</label>
+        <input type="date" id="child_dob" name="child_dob">
+        <div class="err">Вкажіть дату народження</div>
+      </div>
+
       <div class="field" data-req data-phone>
         <label class="lab" for="parent_phone">Контактний телефон</label>
         <input type="tel" id="parent_phone" name="parent_phone" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __">
@@ -289,7 +298,7 @@ footer a{color:var(--ink-2)}
       </div>
 
       <div class="field grade-field" data-req>
-        <label class="lab" for="grade">Клас у 2026/27 навчальному році</label>
+        <label class="lab" for="grade">Клас у <span id="ac_year">поточному</span> навчальному році</label>
         <select id="grade" name="grade"><option value="">— оберіть —</option></select>
         <div class="hint">Від класу залежить, які питання будуть далі</div>
         <div class="err">Оберіть клас</div>
@@ -303,13 +312,7 @@ footer a{color:var(--ink-2)}
     <div class="branch hidden" id="branch-gpd">
 
     <section class="block">
-      <h2>Дитина</h2>
-
-      <div class="field" data-req>
-        <label class="lab" for="child_dob">Дата народження</label>
-        <input type="date" id="child_dob" name="child_dob">
-        <div class="err">Вкажіть дату народження</div>
-      </div>
+      <h2>Школа</h2>
 
       <div class="field" data-req>
         <label class="lab" for="school">Заклад освіти</label>
@@ -378,8 +381,10 @@ footer a{color:var(--ink-2)}
 
     <!-- ================= 3. БЕЗПЕКА ================= -->
     <section class="block safety">
-      <h2>Хто забирає дитину</h2>
-      <p class="lead">Дитину передамо лише особам із цього списку й лише за пред’явленням документа. Список можна змінити в будь-який момент — просто скажіть педагогу.</p>
+      <h2>Хто забирає дитину <span class="opt" style="font-weight:400;font-size:15px;color:var(--ink-3)">— необов’язково</span></h2>
+      <p class="lead">Якщо забирають мати або батько, чиї дані ви вже вказали, — цей блок можна пропустити.
+        Заповніть, якщо дитину забиратиме хтось інший: бабуся, тітка, старший брат.
+        Дитину передамо лише особам зі списку й лише за пред’явленням документа.</p>
 
       <div id="people"></div>
       <button type="button" class="add-btn" id="add_person">+ Додати ще одну особу</button>
@@ -468,13 +473,8 @@ footer a{color:var(--ink-2)}
     <div class="branch hidden" id="branch-nmt">
 
     <section class="block">
-      <h2>Дані учня</h2>
-
-      <div class="field" data-req>
-        <label class="lab" for="n_dob">Дата народження</label>
-        <input type="date" id="n_dob" name="child_dob_n">
-        <div class="err">Вкажіть дату народження</div>
-      </div>
+      <h2>Заклад освіти та контакти</h2>
+      <p class="lead">Прізвище, дату народження й контактний телефон ви вже вказали на початку.</p>
 
       <div class="field" data-req>
         <label class="lab" for="n_school">Заклад освіти</label>
@@ -500,14 +500,9 @@ footer a{color:var(--ink-2)}
         <input type="email" id="student_email" name="student_email" inputmode="email">
         <div class="err">Перевірте адресу пошти</div>
       </div>
-    </section>
 
-    <section class="block">
-      <h2>Один із батьків або законний представник</h2>
-      <p class="lead">Контактний телефон ви вже вказали на початку.</p>
-
-      <div class="field" data-req>
-        <label class="lab" for="n_parent">Прізвище, ім’я та по батькові</label>
+      <div class="field" data-req style="margin-top:26px;padding-top:22px;border-top:1px solid var(--line-soft)">
+        <label class="lab" for="n_parent">Прізвище, ім’я та по батькові одного з батьків або законного представника</label>
         <input type="text" id="n_parent" name="parent_name_n">
         <div class="err">Вкажіть ПІБ</div>
       </div>
@@ -537,11 +532,12 @@ footer a{color:var(--ink-2)}
         <legend class="lab">Оберіть предмети для підготовки до НМТ</legend>
 
         <div class="sub-lab">Обов’язкові предмети НМТ</div>
-        <div class="choices">
-          <label class="choice"><input type="checkbox" class="subj" value="Українська мова"><span>Українська мова</span></label>
-          <label class="choice"><input type="checkbox" class="subj" value="Математика"><span>Математика</span></label>
-          <label class="choice"><input type="checkbox" class="subj" value="Історія України"><span>Історія України</span></label>
+        <div class="choices locked-set">
+          <label class="choice"><input type="checkbox" class="subj lock" value="Українська мова" checked><span>Українська мова</span></label>
+          <label class="choice"><input type="checkbox" class="subj lock" value="Математика" checked><span>Математика</span></label>
+          <label class="choice"><input type="checkbox" class="subj lock" value="Історія України" checked><span>Історія України</span></label>
         </div>
+        <div class="hint" style="margin-top:2px">Ці три складають усі — зняти позначку не можна.</div>
 
         <div class="sub-lab">Предмет на вибір</div>
         <div class="choices">
@@ -551,7 +547,7 @@ footer a{color:var(--ink-2)}
           <label class="choice"><input type="checkbox" class="subj" value="Фізика"><span>Фізика</span></label>
           <label class="choice"><input type="checkbox" class="subj" value="Хімія"><span>Хімія</span></label>
         </div>
-        <div class="hint">Позначте ті, з яких хочете займатися — не обов’язково всі.</div>
+        <div class="hint">Позначте той, який плануєте складати четвертим.</div>
         <div class="err">Оберіть хоча б один предмет</div>
       </fieldset>
     </section>
@@ -722,6 +718,16 @@ const started = Date.now();
    Телефон навмисно вписаний прямо в HTML, а не підставляється звідси:
    так він видно в коді сторінки й працює навіть без JavaScript.
    CFG.PHONE лишається — його показує повідомлення про помилку надсилання. */
+/* Навчальний рік рахуємо самі: рік у розмітці довелося б правити щовересня,
+   а цього ніхто не зробить. Новий рік починається в серпні — саме тоді
+   відкривається набір. */
+function academicYear(){
+  var d = new Date(), y = d.getFullYear();
+  if (d.getMonth() < 7) y--;          // січень–липень — це ще попередній навчальний рік
+  return y + '/' + String(y + 1).slice(2);
+}
+$('#ac_year').textContent = academicYear();
+
 CFG.GRADES.forEach(function(g){ $('#grade').appendChild(new Option(g + ' клас', g)); });
 
 /* однаковий список закладів у обох гілках */
@@ -755,6 +761,7 @@ function currentBranch(){
 function clearBranch(which){
   var box = $('#branch-' + which);
   $$('input, select, textarea', box).forEach(function(el){
+    if (el.classList.contains('lock')) return;      // обов'язкові предмети лишаються позначеними
     if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
     else el.value = '';
     var f = el.closest('.field, fieldset');
@@ -834,17 +841,17 @@ function addPerson(required){
   const d = document.createElement('div');
   d.className = 'person';
   d.innerHTML =
-    '<div class="p-head"><span>Особа '+n+(required?'':' — необов’язково')+'</span>'+
+    '<div class="p-head"><span>Особа '+n+'</span>'+
     (required?'':'<button type="button" class="p-del">прибрати</button>')+'</div>'+
-    '<div class="field"'+(required?' data-req':'')+'>'+
+    '<div class="field">'+
       '<label class="lab" for="pn'+pid+'">Прізвище та ім’я</label>'+
       '<input type="text" id="pn'+pid+'" class="p-name">'+
       '<div class="err">Вкажіть, хто забиратиме дитину</div></div>'+
-    '<div class="field"'+(required?' data-req data-phone':'')+'>'+
+    '<div class="field" data-phone>'+
       '<label class="lab" for="pp'+pid+'">Телефон</label>'+
       '<input type="tel" id="pp'+pid+'" class="p-phone" inputmode="tel" placeholder="+380 __ ___ __ __">'+
       '<div class="err">Введіть номер у форматі +380 XX XXX XX XX</div></div>'+
-    '<div class="field"'+(required?' data-req':'')+'>'+
+    '<div class="field">'+
       '<label class="lab" for="pr'+pid+'">Ким доводиться дитині</label>'+
       '<input type="text" id="pr'+pid+'" class="p-rel" placeholder="мати, бабуся, тітка…">'+
       '<div class="err">Вкажіть ступінь спорідненості</div></div>';
@@ -858,7 +865,7 @@ function addPerson(required){
 }
 function renumber(){
   $$('.person').forEach(function(p,i){
-    $('.p-head span', p).textContent = 'Особа '+(i+1)+(i===0?'':' — необов’язково');
+    $('.p-head span', p).textContent = 'Особа '+(i+1);
   });
   $('#add_person').classList.remove('hidden');
 }
@@ -909,6 +916,16 @@ function refreshGate(){
 }
 $$('.subj').forEach(function(c){
   c.addEventListener('change', function(){ $('#subj_fs').classList.remove('bad'); });
+});
+
+/* Три предмети НМТ складають усі — вони позначені від початку
+   і зняти позначку не можна. Робимо це не через disabled:
+   вимкнене поле браузер не надсилає, і предмети зникли б із заявки. */
+$$('.subj.lock').forEach(function(c){
+  c.checked = true;
+  c.addEventListener('click', function(ev){
+    if (!this.checked) { ev.preventDefault(); this.checked = true; }
+  });
 });
 $$('.consent input, input[name=c_photo]').forEach(function(el){
   el.addEventListener('change', function(){
@@ -997,7 +1014,6 @@ function collect(){
      інакше два однойменні поля на одній сторінці конфліктували б.
      Тут зводимо їх до тих самих ключів, що й у гілці ГПД. */
   if (currentBranch() === 'nmt'){
-    d.child_dob   = $('#n_dob').value;
     d.parent_name = $('#n_parent').value.trim();
     var ni = $('#n_school').value;
     if (ni === '__other__')      { d.school = $('#n_school_other').value.trim(); d.school_addr = ''; }

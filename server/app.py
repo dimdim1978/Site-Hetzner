@@ -141,7 +141,7 @@ def _migrate(conn):
     except sqlite3.OperationalError:
         pass          # sqlite_sequence ще немає — база щойно створена
 
-    for table, cols in (('children', CHILD_COLS + ['program']),
+    for table, cols in (('children', CHILD_COLS + ['program', 'school_year']),
                         ('sensitive', SENS_COLS), ('nmt', NMT_COLS)):
         have = {r[1] for r in conn.execute('PRAGMA table_info({})'.format(table))}
         if not have:                       # таблиці ще немає — її щойно створив скрипт
@@ -161,6 +161,12 @@ def _migrate(conn):
             app.logger.warning('База: %d заявкам проставлено напрям «ГПД»', n)
         # індекси на щойно доданих колонках — тільки тут, коли колонки вже є
         conn.execute('CREATE INDEX IF NOT EXISTS idx_children_program ON children(program)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_children_year ON children(school_year)')
+        # заявки, подані до появи цієї колонки, — цьогорічні
+        n2 = conn.execute("UPDATE children SET school_year=? WHERE school_year IS NULL OR school_year=''",
+                          (school_year(),)).rowcount
+        if n2:
+            app.logger.warning('База: %d заявкам проставлено навчальний рік %s', n2, school_year())
     except sqlite3.OperationalError:
         pass
 
@@ -240,6 +246,18 @@ LABEL = {k: v for k, v, _ in FIELDS}
 #  так його неможливо підмінити й неможливо забути передати.
 # ============================================================
 PROGRAMS = ('ГПД', 'НМТ')
+
+def school_year(d=None):
+    """Навчальний рік у вигляді «2026/27».
+
+    Рахуємо, а не зашиваємо: інакше щовересня хтось мав би правити код,
+    і рано чи пізно не виправив би. Новий рік починається в серпні —
+    тоді ж відкривається набір.
+    """
+    d = d or datetime.now()
+    y = d.year - (1 if d.month < 8 else 0)
+    return '{}/{}'.format(y, str(y + 1)[2:])
+
 
 def program_for(grade):
     try:
@@ -330,8 +348,8 @@ def zayavka():
             _cleanup_orphans(conn)
             cur.execute("DELETE FROM sqlite_sequence WHERE name='children'")
 
-        cols = ['created_at', 'source', 'fill_seconds', 'program'] + CHILD_COLS
-        vals = [now(), 'site', secs, program] + [data[c] for c in CHILD_COLS]
+        cols = ['created_at', 'source', 'fill_seconds', 'program', 'school_year'] + CHILD_COLS
+        vals = [now(), 'site', secs, program, school_year()] + [data[c] for c in CHILD_COLS]
         cur.execute('INSERT INTO children ({}) VALUES ({})'.format(
             ','.join(cols), ','.join('?' * len(cols))), vals)
         child_id = cur.lastrowid
@@ -575,12 +593,16 @@ def admin_list():
     status = clean(request.args.get('status'), 30)
     grade  = clean(request.args.get('grade'), 4)
     prog   = clean(request.args.get('program'), 8)
+    year   = clean(request.args.get('year'), 9)
 
     sql, args = ('SELECT c.*, s.has_allergy FROM children c '
                  'LEFT JOIN sensitive s ON s.child_id=c.id WHERE 1=1'), []
     if prog in PROGRAMS:
         sql += ' AND c.program=?'
         args.append(prog)
+    if year:
+        sql += ' AND c.school_year=?'
+        args.append(year)
     if q:
         sql += ' AND (c.child_name LIKE ? OR c.parent_name LIKE ? OR c.parent_phone LIKE ?)'
         args += ['%' + q + '%'] * 3
@@ -609,9 +631,16 @@ def admin_list():
     progs = {r['program']: r['n'] for r in db().execute(
         'SELECT program, COUNT(*) n FROM children GROUP BY program')}
 
+    # Перемикач років показуємо лише коли років справді кілька —
+    # у перший рік роботи він був би зайвим елементом на екрані.
+    years = [r['school_year'] for r in db().execute(
+        'SELECT DISTINCT school_year FROM children '
+        'WHERE school_year IS NOT NULL AND school_year<>"" ORDER BY school_year DESC')]
+
     log('перегляд списку')
     return render_template('admin.html', rows=rows, q=q, status=status, grade=grade,
                            program=prog, programs=PROGRAMS, prog_counts=progs,
+                           year=year, years=years, this_year=school_year(),
                            grades=grades, counts=counts, total=sum(counts.values()),
                            monday=_monday(), role=session.get('role'), who=session.get('name'))
 

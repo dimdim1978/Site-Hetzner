@@ -78,7 +78,7 @@
 
 <div class="container">
   <div class="cta blue">
-    <span class="tag">Набір на 2026/27</span>
+    <span class="tag">Набір на <span class="ac-year">2026/27</span></span>
     <h2>Запис на курси</h2>
     <div class="when">9–11 клас · індивідуально, у малій групі або онлайн</div>
     <p class="what">Заповніть анкету — ми зателефонуємо, узгодимо предмети,
@@ -153,6 +153,14 @@
 </footer>
 
 <script>
+/* Навчальний рік — з коду, щоб не правити розмітку щовересня */
+(function(){
+  var d = new Date(), y = d.getFullYear();
+  if (d.getMonth() < 7) y--;
+  var t = y + '/' + String(y + 1).slice(2);
+  Array.prototype.forEach.call(document.querySelectorAll('.ac-year'), function(e){ e.textContent = t; });
+})();
+
 /* Перелік предметів тримаємо тут одним масивом: правити зміст
    зручніше в одному місці, ніж у восьми блоках розмітки. */
 var SUBJECTS = [

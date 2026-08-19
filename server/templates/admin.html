@@ -16,6 +16,17 @@
 
 <form class="card filters" method="get" action="/admin">
   <input type="hidden" name="program" value="{{ program }}">
+
+  {% if years|length > 1 %}
+  <select name="year" title="Навчальний рік">
+    <option value="">усі роки</option>
+    {% for y in years %}
+      <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }} н. р.</option>
+    {% endfor %}
+  </select>
+  {% else %}
+    <input type="hidden" name="year" value="{{ year }}">
+  {% endif %}
   <input type="search" name="q" value="{{ q }}" placeholder="Прізвище дитини, батьків або телефон">
 
   <select name="grade" title="Клас">
@@ -50,6 +61,7 @@
         <th class="c-chk"><input type="checkbox" id="all" title="Обрати всі"></th>
         <th>Дитина</th>
         <th>Напрям</th>
+        {% if years|length > 1 %}<th>Рік</th>{% endif %}
         <th>Клас</th>
         <th>Школа</th>
         <th>Батьки</th>
@@ -70,6 +82,7 @@
           {% if r.c_photo != 'так' %} <span class="pill st-відмова">фото: ні</span>{% endif %}
         </td>
         <td><span class="pill pr-{{ r.program }}">{{ r.program }}</span></td>
+        {% if years|length > 1 %}<td class="dim sm nw">{{ r.school_year }}</td>{% endif %}
         <td class="dim">{{ r.grade }}</td>
         <td class="dim sm">{{ r.school }}</td>
         <td class="dim">{{ r.parent_name }}</td>

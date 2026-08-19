@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS children (
   created_at     TEXT NOT NULL,
   status         TEXT NOT NULL DEFAULT 'нова',   -- нова / підтверджена / зарахована / відмова / архів
   program        TEXT NOT NULL DEFAULT 'ГПД',    -- ГПД (1–8 клас) / НМТ (9–11 клас)
+  school_year    TEXT,                           -- «2026/27»: на який навчальний рік заявка
 
   -- дитина
   child_name     TEXT NOT NULL,
