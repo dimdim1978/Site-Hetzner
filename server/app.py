@@ -754,7 +754,9 @@ def kabinet():
     if not row:                       # дитину видалили, поки сесія жила
         session.clear()
         return redirect('/uchen.html')
-    return render_template('kabinet.html', c=row, year=school_year())
+    # Рік показуємо той, що записаний у самій заявці, а не порахований
+    # від сьогоднішньої дати: так на екрані завжди те, що в базі.
+    return render_template('kabinet.html', c=row)
 
 
 @app.post('/admin/pupil-password')
@@ -881,9 +883,11 @@ def admin_spysok():
 
     ph = ','.join('?' * len(ids))
     rows = [dict(x) for x in db().execute(
-        'SELECT id, child_name, grade, school, program, parent_name, parent_phone, '
-        'contact2_name, contact2_phone FROM children WHERE id IN ({}) '
-        'ORDER BY CAST(grade AS INTEGER), child_name COLLATE NOCASE'.format(ph), ids)]
+        'SELECT c.id, c.child_name, c.grade, c.school, c.program, c.student_phone, '
+        'c.parent_name, c.parent_phone, c.contact2_name, c.contact2_phone, n.subjects '
+        'FROM children c LEFT JOIN nmt n ON n.child_id = c.id '
+        'WHERE c.id IN ({}) '
+        'ORDER BY CAST(c.grade AS INTEGER), c.child_name COLLATE NOCASE'.format(ph), ids)]
 
     pickups = {}
     for p in db().execute(
@@ -939,6 +943,9 @@ def admin_spysok():
         period='{} – {} {}'.format(days[0].day, days[-1].day, MONTHS[days[-1].month - 1]),
         grades_label=grades_label,
         program_label=program_label,
+        # повний список НМТ — інший набір колонок; лише коли всі в списку
+        # одного напряму, інакше друкуємо звичний варіант із датами
+        nmt_full=(not short and program_label == 'НМТ'),
         today='{} {} {}'.format(today.day, MONTHS[today.month - 1], today.year),
         role=session.get('role'), who=session.get('name'))
 

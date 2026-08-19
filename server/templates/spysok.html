@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Список групи · {{ period }}</title>
+<title>{% if nmt_full %}Список · підготовка до НМТ{% if grades_label %} · {{ grades_label }}{% endif %}{% else %}Список групи · {{ period }}{% endif %}</title>
 <style>
 :root{
   --green:#2F6F4E;--green-dark:#255A3E;
@@ -51,6 +51,8 @@ tbody td{height:38px}
 .sch {width:15%}
 .par {width:21%}
 .pick{width:21%}
+.tel {width:120px;white-space:nowrap}
+.subj{width:24%}
 .day {width:44px;background:#fff}
 thead .day{text-align:center;font-size:11px;white-space:nowrap}
 .sub{display:block;color:var(--ink-3);font-weight:400;font-size:12px}
@@ -109,7 +111,7 @@ body.short{--x:1}
         <div class="org">ГО «Берегиня» · Освітній простір Покров</div>
         <h1>{% if short %}Відвідування{% elif program_label == 'НМТ' %}Підготовка до НМТ{% elif program_label %}Група подовженого дня{% else %}Список{% endif %}{% if grades_label %} · {{ grades_label }}{% endif %}</h1>
       </div>
-      <div class="per">{{ period }}</div>
+      {% if not nmt_full %}<div class="per">{{ period }}</div>{% endif %}
     </div>
 
     {% if short %}
@@ -128,6 +130,41 @@ body.short{--x:1}
           <td class="n">{{ loop.index }}</td>
           <td class="nm">{{ r.child_name }}</td>
           {% for d in days %}<td class="day"></td>{% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% elif nmt_full %}
+    <!-- ПОВНИЙ, НМТ: список для звірки на перших заняттях.
+         Ні дат, ні «хто забирає» — старшокласників ніхто не забирає,
+         а відвідування ведеться коротким списком. -->
+    <table>
+      <thead>
+        <tr>
+          <th class="n">№</th>
+          <th class="nm">Прізвище та ім’я</th>
+          <th class="gr">Кл.</th>
+          <th class="tel">Телефон учня</th>
+          <th class="sch">Школа</th>
+          <th class="subj">Предмети</th>
+          <th class="par">Батьки, телефони</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="n">{{ loop.index }}</td>
+          <td class="nm">{{ r.child_name }}</td>
+          <td class="gr">{{ r.grade }}</td>
+          <td class="tel">{% if r.student_phone %}{{ r.student_phone }}{% else %}<span class="sub">—</span>{% endif %}</td>
+          <td class="sch">{{ r.school }}</td>
+          <td class="subj">{% if r.subjects %}{{ r.subjects }}{% else %}<span class="sub">—</span>{% endif %}</td>
+          <td class="par">
+            {{ r.parent_name }}<span class="sub ph">{{ r.parent_phone }}</span>
+            {% if r.contact2_name %}<span class="sub">{{ r.contact2_name }}</span>
+            <span class="sub ph">{{ r.contact2_phone }}</span>{% endif %}
+          </td>
         </tr>
       {% endfor %}
       </tbody>
