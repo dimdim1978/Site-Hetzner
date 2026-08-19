@@ -14,10 +14,11 @@
 
 <h1 style="margin-top:10px">{{ c.child_name }}</h1>
 <div class="sub">Заявка № {{ c.id }} · надійшла {{ c.created_at[:16] }}
-  · <span class="pill st-{{ c.status }}">{{ c.status }}</span></div>
+  · <span class="pill st-{{ c.status }}">{{ c.status }}</span>
+  {% if c.program %}· <span class="pill pr-{{ c.program }}">{{ c.program }}</span>{% endif %}</div>
 
 <div class="card">
-  <h2 style="font-size:17px;margin-bottom:12px">Дитина</h2>
+  <h2 style="font-size:17px;margin-bottom:12px">{% if c.program == 'НМТ' %}Учень{% else %}Дитина{% endif %}</h2>
   <table style="width:100%;border-collapse:collapse">
     {{ row('Дата народження', c.child_dob) }}
     {{ row('Клас', c.grade) }}
@@ -38,13 +39,24 @@
     <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Пошта</td>
         <td style="padding:9px 0;font-size:15px"><a href="mailto:{{ c.parent_email }}">{{ c.parent_email }}</a></td></tr>
     {% endif %}
+    {% if c.student_phone %}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Телефон учня</td>
+        <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.student_phone|replace(' ','') }}">{{ c.student_phone }}</a></td></tr>
+    {% endif %}
+    {% if c.student_email %}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Пошта учня</td>
+        <td style="padding:9px 0;font-size:15px"><a href="mailto:{{ c.student_email }}">{{ c.student_email }}</a></td></tr>
+    {% endif %}
     {{ row('Другий контакт', c.contact2_name) }}
+    {% if c.contact2_phone %}
     <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Телефон другого контакту</td>
         <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.contact2_phone|replace(' ','') }}">{{ c.contact2_phone }}</a></td></tr>
+    {% endif %}
     {{ row('Адреса проживання', c.address) }}
   </table>
 </div>
 
+{% if c.program != 'НМТ' %}
 <div class="card" style="background:var(--bg-soft)">
   <h2 style="font-size:17px;margin-bottom:12px">Хто забирає дитину</h2>
   {% for p in pickup %}
@@ -91,6 +103,37 @@
     {{ row('Що ще варто знати', s.health_notes if s else '') }}
   </table>
 </div>
+{% endif %}
+
+{% if nmt %}
+<div class="card" style="border-color:#C7DBEA">
+  <h2 style="font-size:17px;margin-bottom:4px">Довузівська підготовка</h2>
+  <p style="font-size:13px;color:var(--ink-3);margin-bottom:12px">Відповіді з анкети НМТ</p>
+
+  {% if nmt.subjects %}
+  <div style="margin-bottom:14px">
+    <div style="font-size:14px;color:var(--ink-3);margin-bottom:6px">Предмети для підготовки</div>
+    {% for sj in nmt.subjects.split(', ') %}
+      <span class="pill" style="background:#EFF4FF;color:#3538CD;margin:0 4px 4px 0;display:inline-block">{{ sj }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <table style="width:100%;border-collapse:collapse">
+    {{ row('Рівень підготовки', nmt.level) }}
+    {{ row('Профорієнтаційна консультація', nmt.career_help) }}
+    {{ row('Які професії цікавлять', nmt.career_interest) }}
+    {{ row('Чого очікує від навчання', nmt.needs) }}
+    {{ row('Інше', nmt.needs_other) }}
+    {{ row('Що дається найважче', nmt.hard_topics) }}
+    {{ row('Бажаний формат', nmt.format_pref) }}
+    {{ row('Зручний час', nmt.time_pref) }}
+    {{ row('Очікуваний результат', nmt.goal) }}
+    {{ row('Бажана спеціальність', nmt.speciality) }}
+    {{ row('Заклад вищої освіти', nmt.university) }}
+  </table>
+</div>
+{% endif %}
 
 <div class="card">
   <h2 style="font-size:17px;margin-bottom:12px">Очікування та згоди</h2>

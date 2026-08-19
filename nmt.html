@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Підготовка до НМТ · Центр довузівської підготовки «Берегиня»</title>
+  <meta name="description" content="Комплексна підготовка до НМТ у Покрові: українська мова, математика, історія України, література, англійська, біологія, фізика, хімія. Профорієнтація та допомога зі вступом.">
+  <meta name="theme-color" content="#3D7EA6">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ---- сторінка напряму НМТ: синій акцент замість зеленого ---- */
+    .nmt-hero{background:linear-gradient(180deg,var(--sky-soft) 0%,#fff 100%);
+      padding:52px 0 40px;text-align:center}
+    .nmt-hero .tag{display:inline-block;margin-bottom:14px;padding:5px 14px;border-radius:999px;
+      background:#fff;border:1px solid #C7DBEA;color:var(--sky);
+      font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+    .nmt-hero h1{font-size:36px;margin-bottom:16px}
+    .nmt-hero p{font-size:17px;color:var(--ink-2);max-width:620px;margin:0 auto;line-height:1.6}
+
+    .cta.blue{background:var(--sky);box-shadow:0 12px 30px rgba(61,126,166,.22)}
+    .cta.blue .btn{color:var(--sky)}
+    /* на цій сторінці все синє, зокрема кнопка в шапці */
+    .btn-header{background:var(--sky)}
+    .btn-header:hover{background:#33698A}
+    a.logo:hover{color:var(--sky)}
+    .contact-item a:hover{color:var(--sky)}
+
+    .subjects{padding:56px 0 24px}
+    .subjects .lead{text-align:center;margin-bottom:34px}
+    .subjects .lead h2{font-size:26px;margin-bottom:8px}
+    .subjects .lead p{color:var(--ink-3);font-size:16px;margin:0}
+
+    .subj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+    .subj{background:#fff;border:1px solid var(--line);border-radius:14px;
+      padding:22px 20px;display:flex;flex-direction:column}
+    .subj h3{font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:9px}
+    .subj h3 .ic{font-size:20px;line-height:1}
+    .subj ul{margin:0;padding-left:19px;color:var(--ink-2);font-size:15px;line-height:1.55}
+    .subj li{margin-bottom:5px}
+    .subj li:last-child{margin-bottom:0}
+    .subj.req{border-color:#C7DBEA;background:var(--sky-soft)}
+    .subj .badge{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.04em;
+      text-transform:uppercase;color:var(--sky);background:#fff;
+      border:1px solid #C7DBEA;border-radius:999px;padding:3px 9px;white-space:nowrap}
+
+    .career{background:var(--bg-soft);border-top:1px solid var(--line);padding:56px 0}
+    .career .in{max-width:760px;margin:0 auto}
+    .career h2{font-size:24px;margin-bottom:12px;text-align:center}
+    .career > .in > p{color:var(--ink-2);text-align:center;margin:0 auto 26px;max-width:620px;line-height:1.6}
+    .career ul{columns:2;column-gap:34px;margin:0;padding-left:20px;color:var(--ink-2);font-size:15px;line-height:1.6}
+    .career li{margin-bottom:7px;break-inside:avoid}
+    @media (max-width:640px){ .career ul{columns:1} .nmt-hero h1{font-size:27px} }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <nav>
+      <a class="logo" href="index.html">ГО <span>«Берегиня»</span></a>
+      <ul class="nav-links">
+        <li><a href="#predmety">Предмети</a></li>
+        <li><a href="#proforiyentatsiya">Профорієнтація</a></li>
+      </ul>
+      <a href="form.html" class="btn-header">Стати слухачем курсів</a>
+    </nav>
+  </div>
+</header>
+
+<section class="nmt-hero">
+  <div class="container">
+    <div class="tag">Центр довузівської підготовки</div>
+    <h1>Підготовка до НМТ</h1>
+    <p>Систематизація знань, опрацювання прогалин, практика виконання тестових завдань,
+       робота з часом та стратегіями складання НМТ.</p>
+  </div>
+</section>
+
+<div class="container">
+  <div class="cta blue">
+    <span class="tag">Набір на 2026/27</span>
+    <h2>Запис на курси</h2>
+    <div class="when">9–11 клас · індивідуально, у малій групі або онлайн</div>
+    <p class="what">Заповніть анкету — ми зателефонуємо, узгодимо предмети,
+       формат і зручний час занять.</p>
+    <a href="form.html" class="btn">Стати слухачем курсів →</a>
+    <div class="note">Анкета заповнюється приблизно за 5 хвилин</div>
+  </div>
+</div>
+
+<!-- ================= ПРЕДМЕТИ ================= -->
+<section class="subjects" id="predmety">
+  <div class="container">
+    <div class="lead">
+      <h2>Предмети</h2>
+      <p>Три предмети складають усі, четвертий — на вибір</p>
+    </div>
+
+    <div class="subj-grid" id="grid"></div>
+  </div>
+</section>
+
+<!-- ================= ПРОФОРІЄНТАЦІЯ ================= -->
+<section class="career" id="proforiyentatsiya">
+  <div class="container in">
+    <h2>Профорієнтація</h2>
+    <p>Допомагаємо учням краще зрозуміти власні здібності, інтереси та професійні нахили,
+       визначитися з майбутньою спеціальністю та освітньою траєкторією.</p>
+    <ul>
+      <li>визначення інтересів, здібностей та сильних сторін</li>
+      <li>профорієнтаційне тестування</li>
+      <li>ознайомлення з актуальними професіями та напрямами діяльності</li>
+      <li>визначення професійних схильностей</li>
+      <li>допомога у виборі спеціальності та професії</li>
+      <li>аналіз відповідності інтересів, здібностей та обраної професії</li>
+      <li>ознайомлення з напрямами навчання у закладах вищої та фахової передвищої освіти</li>
+      <li>формування індивідуальної освітньої траєкторії</li>
+      <li>допомога у виборі предметів для вступу</li>
+      <li>консультації щодо подальшого навчання та вступу</li>
+    </ul>
+  </div>
+</section>
+
+<section class="contacts" id="kontakty">
+  <div class="container">
+    <h2>Як з нами зв'язатися</h2>
+    <div class="contacts-grid">
+      <div class="contact-item">
+        <div class="ci-lab">Телефони</div>
+        <div class="ci-two">
+          <a href="tel:+380973823379">+380 97 382 33 79</a>
+          <a href="tel:+380954840103">+380 95 484 01 03</a>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-lab">Адреса</div>
+        <div class="ci-val">м. Покров</div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-lab">Запис на курси</div>
+        <a href="form.html">Заповнити анкету →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container f-in">
+    © 2026 Громадська організація «Берегиня»<br>
+    <a href="tel:+380973823379">+380 97 382 33 79</a> · <a href="tel:+380954840103">+380 95 484 01 03</a><br>
+    <a href="index.html">На головну</a> · <a href="dani.html">Обробка персональних даних</a>
+  </div>
+</footer>
+
+<script>
+/* Перелік предметів тримаємо тут одним масивом: правити зміст
+   зручніше в одному місці, ніж у восьми блоках розмітки. */
+var SUBJECTS = [
+  { ic:'📗', name:'Українська мова', req:true, topics:[
+    'лексикологія та фразеологія','фонетика, орфоепія, орфографія',
+    'будова слова та словотвір','морфологія','синтаксис і пунктуація',
+    'стилістика','робота з текстом','практичне виконання тестових завдань']},
+  { ic:'📐', name:'Математика', req:true, topics:[
+    'числа та вирази','рівняння та нерівності','функції','планіметрія','стереометрія',
+    'координати та вектори','комбінаторика','ймовірність і статистика',
+    'розв’язування тестових та практичних завдань']},
+  { ic:'🏛️', name:'Історія України', req:true, topics:[
+    'історія України від найдавніших часів до сучасності','ключові історичні події та дати',
+    'персоналії','історичні документи','пам’ятки культури','карти та історичні джерела',
+    'встановлення хронологічної послідовності','аналіз історичних подій і процесів']},
+  { ic:'📖', name:'Українська література', topics:[
+    'літературні напрями та жанри','творчість письменників','програмові літературні твори',
+    'персонажі та сюжети','літературознавчі поняття','цитати та аналіз творів',
+    'практичне виконання тестових завдань']},
+  { ic:'🇬🇧', name:'Англійська мова', topics:[
+    'граматика','лексика','читання та розуміння тексту','робота з контекстом',
+    'словниковий запас','виконання тестових завдань','стратегії роботи з тестом']},
+  { ic:'🧬', name:'Біологія', topics:[
+    'клітина','організм людини','генетика','еволюція','ботаніка','зоологія','екологія',
+    'основи загальної біології','робота з біологічними схемами та тестами']},
+  { ic:'⚛️', name:'Фізика', topics:[
+    'механіка','молекулярна фізика та термодинаміка','електродинаміка','коливання та хвилі',
+    'оптика','атомна та ядерна фізика','розв’язування фізичних задач']},
+  { ic:'🧪', name:'Хімія', topics:[
+    'загальна хімія','неорганічна хімія','органічна хімія','періодичний закон',
+    'хімічні реакції','розрахункові задачі','робота з хімічними формулами та рівняннями']}
+];
+
+document.getElementById('grid').innerHTML = SUBJECTS.map(function(s){
+  return '<div class="subj' + (s.req ? ' req' : '') + '">' +
+    '<h3><span class="ic">' + s.ic + '</span>' + s.name +
+      (s.req ? '<span class="badge">обов’язковий</span>' : '') + '</h3>' +
+    '<ul>' + s.topics.map(function(t){ return '<li>' + t + '</li>'; }).join('') + '</ul></div>';
+}).join('');
+</script>
+
+</body>
+</html>

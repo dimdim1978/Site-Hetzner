@@ -5,7 +5,17 @@
 <h1>Заявки</h1>
 <div class="sub">Усього {{ total }}{% for st, n in counts.items() %} · {{ st }} {{ n }}{% endfor %}</div>
 
+<div class="tabs">
+  <a href="/admin" class="tab {% if not program %}on{% endif %}">Усі напрями</a>
+  {% for pr in programs %}
+    <a href="/admin?program={{ pr }}" class="tab {% if program == pr %}on{% endif %}">
+      {{ pr }}{% if prog_counts.get(pr) %} <b>{{ prog_counts[pr] }}</b>{% endif %}
+    </a>
+  {% endfor %}
+</div>
+
 <form class="card filters" method="get" action="/admin">
+  <input type="hidden" name="program" value="{{ program }}">
   <input type="search" name="q" value="{{ q }}" placeholder="Прізвище дитини, батьків або телефон">
 
   <select name="grade" title="Клас">
@@ -23,7 +33,9 @@
   </select>
 
   <button class="btn primary" type="submit">Показати</button>
-  {% if q or status or grade %}<a class="btn ghost" href="/admin">Скинути</a>{% endif %}
+  {% if q or status or grade %}
+    <a class="btn ghost" href="/admin{% if program %}?program={{ program }}{% endif %}">Скинути</a>
+  {% endif %}
 </form>
 
 {% if not rows %}
@@ -37,6 +49,7 @@
       <tr>
         <th class="c-chk"><input type="checkbox" id="all" title="Обрати всі"></th>
         <th>Дитина</th>
+        <th>Напрям</th>
         <th>Клас</th>
         <th>Школа</th>
         <th>Батьки</th>
@@ -56,6 +69,7 @@
           {% if r.has_allergy == 'так' %} <span class="pill alrg">алергія</span>{% endif %}
           {% if r.c_photo != 'так' %} <span class="pill st-відмова">фото: ні</span>{% endif %}
         </td>
+        <td><span class="pill pr-{{ r.program }}">{{ r.program }}</span></td>
         <td class="dim">{{ r.grade }}</td>
         <td class="dim sm">{{ r.school }}</td>
         <td class="dim">{{ r.parent_name }}</td>
@@ -95,6 +109,16 @@
 </div>
 
 <style>
+.tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:999px;
+  font-size:14px;font-weight:600;text-decoration:none;color:var(--ink-2);
+  background:#fff;border:1px solid var(--line)}
+.tab:hover{border-color:var(--ink-3)}
+.tab.on{background:var(--green);color:#fff;border-color:var(--green)}
+.tab b{font-weight:700;opacity:.75}
+.pill.pr-ГПД{background:var(--green-soft);color:var(--green)}
+.pill.pr-НМТ{background:#EFF4FF;color:#3538CD}
+
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px}
 .filters input[type=search]{flex:1;min-width:200px}
 .filters select{width:auto;min-width:130px}
@@ -275,7 +299,8 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 
   /* Обрали клас у фільтрі — усі рядки позначаються самі,
      лишається натиснути «Додати до списку». */
-  if (new URLSearchParams(location.search).get('grade')) {
+  var qs = new URLSearchParams(location.search);
+  if (qs.get('grade') || qs.get('program')) {
     picks.forEach(function(c){ c.checked = true; });
   }
 

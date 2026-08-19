@@ -128,6 +128,11 @@ a.logo:hover{color:var(--green)}
 .cta .btn:hover{transform:translateY(-2px)}
 .cta .btn:active{transform:none}
 .cta .note{font-size:13px;color:rgba(255,255,255,.75);margin-top:14px}
+.cta .note a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+
+/* другий напрям — синій, щоб два блоки заклику не зливались */
+.cta.blue{background:var(--sky);box-shadow:0 12px 30px rgba(61,126,166,.22);margin-top:18px}
+.cta.blue .btn{color:var(--sky)}
 
 /* ============================================================
    НАПРЯМИ — картки

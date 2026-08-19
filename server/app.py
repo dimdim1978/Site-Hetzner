@@ -108,7 +108,7 @@ def _cleanup_orphans(conn):
     Далі новій дитині може дістатися той самий id — і в її картці
     з'являться чужі медичні нотатки. Тому підчищаємо на кожному старті."""
     total = 0
-    for table in ('sensitive', 'pickup_persons', 'schedule', 'attendance'):
+    for table in ('sensitive', 'nmt', 'pickup_persons', 'schedule', 'attendance'):
         try:
             n = conn.execute(
                 'DELETE FROM {} WHERE child_id NOT IN (SELECT id FROM children)'.format(table)
@@ -141,7 +141,8 @@ def _migrate(conn):
     except sqlite3.OperationalError:
         pass          # sqlite_sequence ще немає — база щойно створена
 
-    for table, cols in (('children', CHILD_COLS), ('sensitive', SENS_COLS)):
+    for table, cols in (('children', CHILD_COLS + ['program']),
+                        ('sensitive', SENS_COLS), ('nmt', NMT_COLS)):
         have = {r[1] for r in conn.execute('PRAGMA table_info({})'.format(table))}
         if not have:                       # таблиці ще немає — її щойно створив скрипт
             continue
@@ -149,6 +150,20 @@ def _migrate(conn):
             if col not in have:
                 conn.execute('ALTER TABLE {} ADD COLUMN {} TEXT'.format(table, col))
                 app.logger.warning('База: додано колонку %s.%s', table, col)
+
+    # Усі заявки, подані до появи напрямів, — це ГПД.
+    # ALTER TABLE ADD COLUMN не проставляє DEFAULT наявним рядкам,
+    # тому проставляємо самі, інакше вони випадуть з усіх фільтрів.
+    try:
+        n = conn.execute(
+            "UPDATE children SET program='ГПД' WHERE program IS NULL OR program=''").rowcount
+        if n:
+            app.logger.warning('База: %d заявкам проставлено напрям «ГПД»', n)
+        # індекси на щойно доданих колонках — тільки тут, коли колонки вже є
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_children_program ON children(program)')
+    except sqlite3.OperationalError:
+        pass
+
     conn.commit()
 
 def now():
@@ -180,6 +195,8 @@ FIELDS = [
     ('parent_role',    'Ким доводиться дитині',        False),
     ('parent_phone',   'Телефон',                      False),
     ('parent_email',   'Пошта',                        False),
+    ('student_phone',  'Телефон учня',                 False),
+    ('student_email',  'Пошта учня',                   False),
     ('contact2_name',  'Другий контакт',               False),
     ('contact2_phone', 'Телефон другого контакту',     False),
     ('address',        'Адреса проживання',            False),
@@ -193,6 +210,19 @@ FIELDS = [
     ('do_not_release', 'Кому не віддавати дитину',     True),
     ('expectations',   'Що важливо для батьків',       False),
     ('comment',        'Коментар',                     False),
+    # --- довузівська підготовка (НМТ) ---
+    ('career_help',    'Профорієнтаційна консультація', False),
+    ('career_interest','Які професії цікавлять',       False),
+    ('subjects',       'Предмети для підготовки',      False),
+    ('needs',          'Чого очікує від навчання',     False),
+    ('needs_other',    'Інше (потреби)',               False),
+    ('level',          'Самооцінка рівня',             False),
+    ('hard_topics',    'Що дається найважче',          False),
+    ('format_pref',    'Бажаний формат занять',        False),
+    ('time_pref',      'Бажаний час занять',           False),
+    ('goal',           'Очікуваний результат',         False),
+    ('speciality',     'Бажана спеціальність',         False),
+    ('university',     'Заклад вищої освіти',          False),
     ('c_true',         'Згода: достовірність',         False),
     ('c_data',         'Згода: обробка даних',         False),
     ('c_health',       'Згода: дані про здоров’я',     False),
@@ -201,15 +231,46 @@ FIELDS = [
 ]
 LABEL = {k: v for k, v, _ in FIELDS}
 
+# ============================================================
+#  НАПРЯМИ
+#  ГПД — група подовженого дня, 1–8 клас.
+#  НМТ — офлайн-підготовка до НМТ, 9–11 клас: інші поля,
+#        інший перелік обов'язкових, окремі списки в адмінці.
+#  Напрям НЕ приходить із форми, а виводиться з класу на сервері:
+#  так його неможливо підмінити й неможливо забути передати.
+# ============================================================
+PROGRAMS = ('ГПД', 'НМТ')
+
+def program_for(grade):
+    try:
+        return 'НМТ' if int(grade) >= 9 else 'ГПД'
+    except (TypeError, ValueError):
+        return 'ГПД'
+
+# Обов'язкові поля відрізняються: одинадцятикласник іде додому сам,
+# вимагати від нього перелік осіб, які його забирають, безглуздо.
+REQUIRED_BY_PROGRAM = {
+    'ГПД': ['child_name', 'parent_name', 'parent_phone',
+            'contact2_name', 'contact2_phone'],
+    'НМТ': ['child_name', 'parent_phone', 'school', 'parent_name', 'subjects', 'level'],
+}
+
 CHILD_COLS = ['child_name','child_dob','grade','school','school_addr','pickup_school',
               'parent_name','parent_role','parent_phone','parent_email',
+              'student_phone','student_email',
               'contact2_name','contact2_phone','address',
               'self_leave','self_time','expectations','comment',
               'c_true','c_data','c_health','c_medical','c_photo']
 
 SENS_COLS  = ['has_allergy','allergy_details','meal_limits','health_notes','do_not_release']
 
-REQUIRED   = ['child_name','parent_name','parent_phone','contact2_name','contact2_phone']
+# усе, що стосується лише довузівської підготовки — в окрему таблицю
+NMT_COLS   = ['career_help','career_interest','subjects','needs','needs_other','level',
+              'hard_topics','format_pref','time_pref','goal','speciality','university']
+
+# застарілий загальний перелік лишається як запобіжник,
+# фактично використовується REQUIRED_BY_PROGRAM
+REQUIRED   = ['child_name', 'parent_name', 'parent_phone']
 
 def clean(v, limit=2000):
     """Обрізаємо довжину й прибираємо керівні символи. Порожнє → ''."""
@@ -237,7 +298,8 @@ def zayavka():
 
     # --- мінімальна перевірка ---
     data = {k: clean(f.get(k)) for k, _, _ in FIELDS}
-    for k in REQUIRED:
+    program = program_for(data.get('grade'))
+    for k in REQUIRED_BY_PROGRAM.get(program, REQUIRED):
         if not data[k]:
             return jsonify(ok=False, error='missing:' + k), 400
     if data['parent_email'] and not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$', data['parent_email']):
@@ -268,8 +330,8 @@ def zayavka():
             _cleanup_orphans(conn)
             cur.execute("DELETE FROM sqlite_sequence WHERE name='children'")
 
-        cols = ['created_at', 'source', 'fill_seconds'] + CHILD_COLS
-        vals = [now(), 'site', secs] + [data[c] for c in CHILD_COLS]
+        cols = ['created_at', 'source', 'fill_seconds', 'program'] + CHILD_COLS
+        vals = [now(), 'site', secs, program] + [data[c] for c in CHILD_COLS]
         cur.execute('INSERT INTO children ({}) VALUES ({})'.format(
             ','.join(cols), ','.join('?' * len(cols))), vals)
         child_id = cur.lastrowid
@@ -278,6 +340,12 @@ def zayavka():
         cur.execute('INSERT INTO sensitive (child_id, {}) VALUES (?,{})'.format(
             ','.join(SENS_COLS), ','.join('?' * len(SENS_COLS))),
             [child_id] + [data[c] for c in SENS_COLS])
+
+        # довузівська підготовка — теж окремо, і тільки для свого напряму
+        if program == 'НМТ':
+            cur.execute('INSERT INTO nmt (child_id, {}) VALUES (?,{})'.format(
+                ','.join(NMT_COLS), ','.join('?' * len(NMT_COLS))),
+                [child_id] + [data[c] for c in NMT_COLS])
 
         # хто забирає: рядок «Ім’я · телефон · ким доводиться | ...»
         for i, part in enumerate(p for p in data['pickup'].split('|') if p.strip()):
@@ -324,7 +392,7 @@ def send_admin_mail(child_id, data):
     for key, label, _sens in FIELDS:
         val = data.get(key, '')
         if not val:
-            continue
+            continue      # порожні поля іншого напряму просто не показуємо
         rows.append(
             '<tr><td style="padding:7px 12px;border-bottom:1px solid #E4E7EC;'
             'color:#475467;font-size:14px;white-space:nowrap;vertical-align:top">{}</td>'
@@ -506,9 +574,13 @@ def admin_list():
     q      = clean(request.args.get('q'), 60)
     status = clean(request.args.get('status'), 30)
     grade  = clean(request.args.get('grade'), 4)
+    prog   = clean(request.args.get('program'), 8)
 
     sql, args = ('SELECT c.*, s.has_allergy FROM children c '
                  'LEFT JOIN sensitive s ON s.child_id=c.id WHERE 1=1'), []
+    if prog in PROGRAMS:
+        sql += ' AND c.program=?'
+        args.append(prog)
     if q:
         sql += ' AND (c.child_name LIKE ? OR c.parent_name LIKE ? OR c.parent_phone LIKE ?)'
         args += ['%' + q + '%'] * 3
@@ -524,11 +596,22 @@ def admin_list():
     rows = db().execute(sql, args).fetchall()
     counts = {r['status']: r['n'] for r in
               db().execute('SELECT status, COUNT(*) n FROM children GROUP BY status')}
+    # класи показуємо лише ті, що є в межах обраного напряму —
+    # інакше у фільтрі ГПД висіли б 9–11, яких там ніколи не буде
+    gsql = 'SELECT DISTINCT grade FROM children WHERE grade<>""'
+    gargs = []
+    if prog in PROGRAMS:
+        gsql += ' AND program=?'
+        gargs.append(prog)
     grades = [r['grade'] for r in db().execute(
-        'SELECT DISTINCT grade FROM children WHERE grade<>"" ORDER BY CAST(grade AS INTEGER)')]
+        gsql + ' ORDER BY CAST(grade AS INTEGER)', gargs)]
+
+    progs = {r['program']: r['n'] for r in db().execute(
+        'SELECT program, COUNT(*) n FROM children GROUP BY program')}
 
     log('перегляд списку')
     return render_template('admin.html', rows=rows, q=q, status=status, grade=grade,
+                           program=prog, programs=PROGRAMS, prog_counts=progs,
                            grades=grades, counts=counts, total=sum(counts.values()),
                            monday=_monday(), role=session.get('role'), who=session.get('name'))
 
@@ -560,7 +643,7 @@ def admin_spysok():
 
     ph = ','.join('?' * len(ids))
     rows = [dict(x) for x in db().execute(
-        'SELECT id, child_name, grade, school, parent_name, parent_phone, '
+        'SELECT id, child_name, grade, school, program, parent_name, parent_phone, '
         'contact2_name, contact2_phone FROM children WHERE id IN ({}) '
         'ORDER BY CAST(grade AS INTEGER), child_name COLLATE NOCASE'.format(ph), ids)]
 
@@ -598,6 +681,10 @@ def admin_spysok():
     else:
         grades_label = '{} клас'.format(', '.join(gset))
 
+    # якщо всі в списку одного напряму — пишемо його в заголовку аркуша
+    pset = {row['program'] for row in rows if row.get('program')}
+    program_label = list(pset)[0] if len(pset) == 1 else ''
+
     short = request.args.get('mode') == 'short'
     other = '/admin/spysok?ids={}&from={}'.format(raw, request.args.get('from', ''))
     if not short:
@@ -613,6 +700,7 @@ def admin_spysok():
         days=['{:02d}.{:02d}'.format(x.day, x.month) for x in days],
         period='{} – {} {}'.format(days[0].day, days[-1].day, MONTHS[days[-1].month - 1]),
         grades_label=grades_label,
+        program_label=program_label,
         today='{} {} {}'.format(today.day, MONTHS[today.month - 1], today.year),
         role=session.get('role'), who=session.get('name'))
 
@@ -626,9 +714,10 @@ def admin_child(cid):
         abort(404)
     sens   = db().execute('SELECT * FROM sensitive WHERE child_id=?', (cid,)).fetchone()
     pickup = db().execute('SELECT * FROM pickup_persons WHERE child_id=? ORDER BY ord', (cid,)).fetchall()
+    nmt    = db().execute('SELECT * FROM nmt WHERE child_id=?', (cid,)).fetchone()
 
     log('перегляд заявки', cid)
-    return render_template('child.html', c=child, s=sens, pickup=pickup,
+    return render_template('child.html', c=child, s=sens, pickup=pickup, nmt=nmt,
                            label=LABEL, role=session.get('role'), who=session.get('name'))
 
 @app.post('/admin/<int:cid>/status')

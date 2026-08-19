@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS children (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at     TEXT NOT NULL,
   status         TEXT NOT NULL DEFAULT 'нова',   -- нова / підтверджена / зарахована / відмова / архів
+  program        TEXT NOT NULL DEFAULT 'ГПД',    -- ГПД (1–8 клас) / НМТ (9–11 клас)
 
   -- дитина
   child_name     TEXT NOT NULL,
@@ -27,6 +28,8 @@ CREATE TABLE IF NOT EXISTS children (
   parent_role    TEXT,
   parent_phone   TEXT,
   parent_email   TEXT,
+  student_phone  TEXT,          -- телефон самого учня (напрям НМТ)
+  student_email  TEXT,          -- пошта самого учня (напрям НМТ)
   contact2_name  TEXT,
   contact2_phone TEXT,
   address        TEXT,
@@ -54,6 +57,8 @@ CREATE TABLE IF NOT EXISTS children (
 );
 
 CREATE INDEX IF NOT EXISTS idx_children_status  ON children(status);
+-- індекс на program створюється в міграції (app.py, _migrate):
+-- на наявній базі колонки ще немає, і CREATE INDEX тут зламав би запуск
 CREATE INDEX IF NOT EXISTS idx_children_created ON children(created_at);
 CREATE INDEX IF NOT EXISTS idx_children_name    ON children(child_name);
 
@@ -82,6 +87,27 @@ CREATE TABLE IF NOT EXISTS sensitive (
   meal_limits     TEXT,
   health_notes    TEXT,
   do_not_release  TEXT           -- кому дитину віддавати не можна
+);
+
+-- ------------------------------------------------------------
+--  ДОВУЗІВСЬКА ПІДГОТОВКА — усе, що стосується лише напряму НМТ.
+--  Окрема таблиця, а не 11 колонок у children: для заявок ГПД
+--  вони були б завжди порожні.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS nmt (
+  child_id        INTEGER PRIMARY KEY REFERENCES children(id) ON DELETE CASCADE,
+  career_help     TEXT,          -- чи потрібна профорієнтаційна консультація
+  career_interest TEXT,          -- які професії цікавлять
+  subjects        TEXT,          -- предмети для підготовки, через кому
+  needs           TEXT,          -- що хоче отримати від навчання
+  needs_other     TEXT,          -- варіант «інше»
+  level           TEXT,          -- самооцінка рівня підготовки
+  hard_topics     TEXT,          -- що дається найважче
+  format_pref     TEXT,          -- бажаний формат занять
+  time_pref       TEXT,          -- бажаний час занять
+  goal            TEXT,          -- очікуваний результат
+  speciality      TEXT,          -- бажана спеціальність
+  university      TEXT           -- заклад вищої освіти
 );
 
 -- ------------------------------------------------------------

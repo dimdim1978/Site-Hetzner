@@ -107,7 +107,7 @@ body.short{--x:1}
     <div class="head">
       <div>
         <div class="org">ГО «Берегиня» · Освітній простір Покров</div>
-        <h1>{% if short %}Відвідування{% else %}Група подовженого дня{% endif %}{% if grades_label %} · {{ grades_label }}{% endif %}</h1>
+        <h1>{% if short %}Відвідування{% elif program_label == 'НМТ' %}Підготовка до НМТ{% elif program_label %}Група подовженого дня{% else %}Список{% endif %}{% if grades_label %} · {{ grades_label }}{% endif %}</h1>
       </div>
       <div class="per">{{ period }}</div>
     </div>

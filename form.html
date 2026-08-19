@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Запис до групи подовженого дня | ГО «Берегиня»</title>
-<meta name="description" content="Реєстрація дитини до групи подовженого дня ГО «Берегиня», Покров. Щодня 12:00–17:00.">
+<title>Запис на заняття | ГО «Берегиня»</title>
+<meta name="description" content="Реєстрація до групи подовженого дня (1–8 клас) та на курси підготовки до НМТ (9–11 клас). ГО «Берегиня», Покров.">
 
 <!-- ==========================================================
      НАЛАШТУВАННЯ — усе, що треба міняти, зібрано тут
@@ -174,6 +174,18 @@ legend.lab{display:block;font-size:15px;color:var(--ink-2);margin-bottom:10px;fo
 .consent-choice .cc-note{font-size:13px;color:var(--ink-3);line-height:1.45;margin-bottom:10px}
 .consent-choice.bad{background:var(--err-soft);border-radius:8px;padding:14px 12px 6px}
 
+.await{
+  margin:34px 0 0;padding:22px 18px;text-align:center;
+  background:var(--bg-soft);border:1px dashed var(--line);border-radius:12px;
+  font-size:15px;color:var(--ink-3);
+}
+.await.hidden{display:none}
+.grade-field select{border-color:var(--accent);border-width:2px}
+.sub-lab{font-size:13px;font-weight:700;color:var(--ink-3);letter-spacing:.04em;
+  text-transform:uppercase;margin:14px 0 4px}
+.sub-lab:first-of-type{margin-top:2px}
+fieldset.bad .sub-lab{color:var(--err)}
+
 .gate{
   display:none;margin-top:12px;font-size:14px;color:var(--ink-3);
   text-align:center;line-height:1.4;
@@ -224,12 +236,26 @@ footer a{color:var(--ink-2)}
 
   <header class="head">
     <div class="org">ГО «Берегиня» · Освітній простір Покров</div>
-    <h1>Запис до групи подовженого дня</h1>
-    <div class="meta">
+    <h1 id="h_title">Запис на заняття</h1>
+
+    <div class="meta" id="m_none">
+      <b>Два напрями</b><br>
+      Група подовженого дня для 1–8 класу та підготовка до НМТ для 9–11.
+      <div class="time">Оберіть клас нижче — анкета підлаштується.</div>
+    </div>
+
+    <div class="meta hidden" id="m_gpd">
       <b>Щодня 12:00 – 17:00</b><br>
       Забираємо зі школи, виконуємо домашні завдання, граємось.
       <div class="time">Заповнення анкети — близько 3 хвилин.<br>
       Дні й години узгодимо окремо, тут вони не потрібні.</div>
+    </div>
+
+    <div class="meta hidden" id="m_nmt">
+      <b>Центр довузівської підготовки</b><br>
+      Підготовка до НМТ, профорієнтація та допомога з вибором спеціальності.
+      <div class="time">Заповнення анкети — близько 5 хвилин.<br>
+      <a href="nmt.html" style="color:var(--accent)">Що входить у підготовку →</a></div>
     </div>
   </header>
 
@@ -238,27 +264,51 @@ footer a{color:var(--ink-2)}
     <!-- honeypot: люди його не бачать, боти заповнюють -->
     <div class="hp"><label>Не заповнюйте це поле<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 
-    <!-- ================= 1. ДИТИНА ================= -->
-    <section class="block">
-      <h2>Дитина</h2>
+    <!-- ================= 0. СПІЛЬНИЙ ПОЧАТОК ================= -->
+    <section class="block" style="padding-top:28px">
+      <h2>Хто записується</h2>
 
       <div class="field" data-req>
-        <label class="lab" for="child_name">Прізвище та ім’я дитини</label>
+        <label class="lab" for="child_name">Прізвище, ім’я та по батькові учня</label>
         <input type="text" id="child_name" name="child_name" autocomplete="off">
-        <div class="hint">Як у свідоцтві про народження</div>
-        <div class="err">Вкажіть прізвище та ім’я дитини</div>
+        <div class="err">Вкажіть прізвище та ім’я</div>
       </div>
+
+      <div class="field" data-req data-phone>
+        <label class="lab" for="parent_phone">Контактний телефон</label>
+        <input type="tel" id="parent_phone" name="parent_phone" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __">
+        <div class="hint">На цей номер ми зателефонуємо</div>
+        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
+      </div>
+
+      <div class="field" data-email>
+        <label class="lab" for="parent_email">Електронна пошта <span class="opt">— необов’язково</span></label>
+        <input type="email" id="parent_email" name="parent_email" inputmode="email" autocomplete="email">
+        <div class="hint">Якщо вкажете — надішлемо копію заявки</div>
+        <div class="err">Перевірте адресу пошти</div>
+      </div>
+
+      <div class="field grade-field" data-req>
+        <label class="lab" for="grade">Клас у 2026/27 навчальному році</label>
+        <select id="grade" name="grade"><option value="">— оберіть —</option></select>
+        <div class="hint">Від класу залежить, які питання будуть далі</div>
+        <div class="err">Оберіть клас</div>
+      </div>
+    </section>
+
+    <!-- ================= ПІДКАЗКА ДО ВИБОРУ КЛАСУ ================= -->
+    <div class="await" id="await">Оберіть клас — і з’являться решта питань</div>
+
+    <!-- ================= ГІЛКА: ГРУПА ПОДОВЖЕНОГО ДНЯ (1–8) ============ -->
+    <div class="branch hidden" id="branch-gpd">
+
+    <section class="block">
+      <h2>Дитина</h2>
 
       <div class="field" data-req>
         <label class="lab" for="child_dob">Дата народження</label>
         <input type="date" id="child_dob" name="child_dob">
         <div class="err">Вкажіть дату народження</div>
-      </div>
-
-      <div class="field" data-req>
-        <label class="lab" for="grade">Клас у 2026/27 навчальному році</label>
-        <select id="grade" name="grade"><option value="">— оберіть —</option></select>
-        <div class="err">Оберіть клас</div>
       </div>
 
       <div class="field" data-req>
@@ -305,19 +355,6 @@ footer a{color:var(--ink-2)}
           <option>інше</option>
         </select>
         <div class="err">Оберіть варіант</div>
-      </div>
-
-      <div class="field" data-req data-phone>
-        <label class="lab" for="parent_phone">Ваш телефон</label>
-        <input type="tel" id="parent_phone" name="parent_phone" inputmode="tel" autocomplete="tel" placeholder="+380 __ ___ __ __">
-        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
-      </div>
-
-      <div class="field" data-email>
-        <label class="lab" for="parent_email">Електронна пошта <span class="opt">— необов’язково</span></label>
-        <input type="email" id="parent_email" name="parent_email" inputmode="email" autocomplete="email">
-        <div class="hint">Якщо вкажете — надішлемо копію заявки</div>
-        <div class="err">Перевірте адресу пошти</div>
       </div>
 
       <div class="field" data-req>
@@ -425,8 +462,193 @@ footer a{color:var(--ink-2)}
       </div>
     </section>
 
-    <!-- ================= 6. ЗГОДИ ================= -->
+    </div><!-- /branch-gpd -->
+
+    <!-- ================= ГІЛКА: ДОВУЗІВСЬКА ПІДГОТОВКА (9–11) ========== -->
+    <div class="branch hidden" id="branch-nmt">
+
     <section class="block">
+      <h2>Дані учня</h2>
+
+      <div class="field" data-req>
+        <label class="lab" for="n_dob">Дата народження</label>
+        <input type="date" id="n_dob" name="child_dob_n">
+        <div class="err">Вкажіть дату народження</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="n_school">Заклад освіти</label>
+        <select id="n_school" name="school_n"><option value="">— оберіть —</option></select>
+        <div class="hint" id="n_school_addr"></div>
+        <div class="err">Оберіть заклад освіти</div>
+      </div>
+
+      <div class="field hidden" id="n_school_other_wrap" data-req>
+        <label class="lab" for="n_school_other">Назва закладу</label>
+        <input type="text" id="n_school_other" name="school_other_n">
+        <div class="err">Напишіть назву закладу</div>
+      </div>
+
+      <div class="field" data-phone>
+        <label class="lab" for="student_phone">Телефон учня <span class="opt">— необов’язково</span></label>
+        <input type="tel" id="student_phone" name="student_phone" inputmode="tel" placeholder="+380 __ ___ __ __">
+        <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
+      </div>
+
+      <div class="field" data-email>
+        <label class="lab" for="student_email">Пошта учня <span class="opt">— необов’язково</span></label>
+        <input type="email" id="student_email" name="student_email" inputmode="email">
+        <div class="err">Перевірте адресу пошти</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>Один із батьків або законний представник</h2>
+      <p class="lead">Контактний телефон ви вже вказали на початку.</p>
+
+      <div class="field" data-req>
+        <label class="lab" for="n_parent">Прізвище, ім’я та по батькові</label>
+        <input type="text" id="n_parent" name="parent_name_n">
+        <div class="err">Вкажіть ПІБ</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>Напрям підготовки</h2>
+      <p class="lead">Допомагаємо визначитися зі спеціальністю та освітньою траєкторією.
+        Якщо ще не знаєте, чого хочете, — це нормально, для того й консультація.</p>
+
+      <fieldset class="field" data-req>
+        <legend class="lab">Чи потрібна профорієнтаційна консультація?</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="career_help" value="так"><span>Так</span></label>
+          <label class="choice"><input type="radio" name="career_help" value="ні"><span>Ні</span></label>
+          <label class="choice"><input type="radio" name="career_help" value="ще не визначився"><span>Ще не визначився / визначилася</span></label>
+        </div>
+        <div class="err">Оберіть варіант</div>
+      </fieldset>
+
+      <div class="field">
+        <label class="lab" for="career_interest">Які професії або спеціальності вас цікавлять? <span class="opt">— необов’язково</span></label>
+        <textarea id="career_interest" name="career_interest"></textarea>
+      </div>
+
+      <fieldset class="field" id="subj_fs" data-req>
+        <legend class="lab">Оберіть предмети для підготовки до НМТ</legend>
+
+        <div class="sub-lab">Обов’язкові предмети НМТ</div>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" class="subj" value="Українська мова"><span>Українська мова</span></label>
+          <label class="choice"><input type="checkbox" class="subj" value="Математика"><span>Математика</span></label>
+          <label class="choice"><input type="checkbox" class="subj" value="Історія України"><span>Історія України</span></label>
+        </div>
+
+        <div class="sub-lab">Предмет на вибір</div>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" class="subj" value="Українська література"><span>Українська література</span></label>
+          <label class="choice"><input type="checkbox" class="subj" value="Англійська мова"><span>Англійська мова</span></label>
+          <label class="choice"><input type="checkbox" class="subj" value="Біологія"><span>Біологія</span></label>
+          <label class="choice"><input type="checkbox" class="subj" value="Фізика"><span>Фізика</span></label>
+          <label class="choice"><input type="checkbox" class="subj" value="Хімія"><span>Хімія</span></label>
+        </div>
+        <div class="hint">Позначте ті, з яких хочете займатися — не обов’язково всі.</div>
+        <div class="err">Оберіть хоча б один предмет</div>
+      </fieldset>
+    </section>
+
+    <section class="block">
+      <h2>Освітні потреби</h2>
+
+      <fieldset class="field">
+        <legend class="lab">Що саме ви хотіли б отримати від навчання? <span class="opt">— необов’язково</span></legend>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" class="need" value="підвищити рівень знань"><span>Підвищити рівень знань</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="підготуватися до НМТ"><span>Підготуватися до НМТ</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="визначитися з професією"><span>Визначитися з майбутньою професією</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="обрати спеціальність"><span>Обрати спеціальність</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="обрати заклад освіти"><span>Обрати заклад освіти</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="підвищити результат НМТ"><span>Підвищити результат НМТ</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="заповнити прогалини"><span>Заповнити прогалини у знаннях</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="навчитися готуватися самостійно"><span>Навчитися ефективно готуватися самостійно</span></label>
+          <label class="choice"><input type="checkbox" class="need" value="консультація щодо вступу"><span>Отримати консультацію щодо вступу</span></label>
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label class="lab" for="needs_other">Інше <span class="opt">— необов’язково</span></label>
+        <input type="text" id="needs_other" name="needs_other">
+      </div>
+
+      <fieldset class="field" data-req>
+        <legend class="lab">Як ви оцінюєте свій рівень підготовки?</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="level" value="початковий"><span>Початковий</span></label>
+          <label class="choice"><input type="radio" name="level" value="середній"><span>Середній</span></label>
+          <label class="choice"><input type="radio" name="level" value="достатній"><span>Достатній</span></label>
+          <label class="choice"><input type="radio" name="level" value="високий"><span>Високий</span></label>
+          <label class="choice"><input type="radio" name="level" value="важко визначити"><span>Важко визначити</span></label>
+        </div>
+        <div class="hint">Відповідайте як є — від цього залежить, з чого почнемо.</div>
+        <div class="err">Оберіть варіант</div>
+      </fieldset>
+
+      <div class="field">
+        <label class="lab" for="hard_topics">Які теми або предмети викликають найбільші труднощі? <span class="opt">— необов’язково</span></label>
+        <textarea id="hard_topics" name="hard_topics"></textarea>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>Бажаний формат навчання</h2>
+
+      <fieldset class="field">
+        <legend class="lab">Формат <span class="opt">— необов’язково</span></legend>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" class="fmt" value="індивідуальні заняття"><span>Індивідуальні заняття</span></label>
+          <label class="choice"><input type="checkbox" class="fmt" value="мала група"><span>Заняття в малій групі</span></label>
+          <label class="choice"><input type="checkbox" class="fmt" value="групові заняття"><span>Групові заняття</span></label>
+          <label class="choice"><input type="checkbox" class="fmt" value="онлайн"><span>Онлайн</span></label>
+          <label class="choice"><input type="checkbox" class="fmt" value="офлайн"><span>Офлайн</span></label>
+          <label class="choice"><input type="checkbox" class="fmt" value="комбінований"><span>Комбінований формат</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="lab">Зручний час <span class="opt">— необов’язково</span></legend>
+        <div class="choices">
+          <label class="choice"><input type="checkbox" class="tim" value="ранок"><span>Ранок</span></label>
+          <label class="choice"><input type="checkbox" class="tim" value="день"><span>День</span></label>
+          <label class="choice"><input type="checkbox" class="tim" value="після уроків"><span>Після уроків</span></label>
+          <label class="choice"><input type="checkbox" class="tim" value="вечір"><span>Вечір</span></label>
+          <label class="choice"><input type="checkbox" class="tim" value="вихідні"><span>Вихідні</span></label>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="block">
+      <h2>Очікуваний результат</h2>
+      <p class="lead">Необов’язково, але допоможе нам скласти план саме під вас.</p>
+
+      <div class="field">
+        <label class="lab" for="goal">Якого результату ви хотіли б досягти?</label>
+        <textarea id="goal" name="goal"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="speciality">Бажана спеціальність або професія</label>
+        <input type="text" id="speciality" name="speciality">
+      </div>
+
+      <div class="field">
+        <label class="lab" for="university">Заклад вищої освіти, який розглядаєте</label>
+        <input type="text" id="university" name="university">
+      </div>
+    </section>
+
+    </div><!-- /branch-nmt -->
+
+    <!-- ================= ЗГОДИ — спільні для всіх напрямів =========== -->
+    <section class="block hidden" id="consents">
       <h2>Згоди</h2>
       <p class="lead">Поки не заповните цей розділ, кнопка внизу лишається неактивною.</p>
 
@@ -443,7 +665,7 @@ footer a{color:var(--ink-2)}
 
       <label class="consent" data-req-check>
         <input type="checkbox" name="c_health">
-        <span class="c-text">Даю окрему згоду на обробку відомостей про стан здоров’я дитини, зазначених вище, для забезпечення її безпеки під час перебування в групі.</span>
+        <span class="c-text">Даю окрему згоду на обробку відомостей про стан здоров’я, якщо я зазначив(ла) їх у цій анкеті, — для забезпечення безпеки під час занять.</span>
       </label>
 
       <label class="consent" data-req-check>
@@ -463,7 +685,7 @@ footer a{color:var(--ink-2)}
       </fieldset>
     </section>
 
-    <div class="submit-zone">
+    <div class="submit-zone hidden">
       <button type="submit" class="go" id="go" disabled>Надіслати заявку</button>
       <div class="gate" id="gate">Щоб надіслати заявку, заповніть розділ «Згоди» вище</div>
       <div class="form-err" id="form_err"></div>
@@ -502,14 +724,68 @@ const started = Date.now();
    CFG.PHONE лишається — його показує повідомлення про помилку надсилання. */
 CFG.GRADES.forEach(function(g){ $('#grade').appendChild(new Option(g + ' клас', g)); });
 
-CFG.SCHOOLS.forEach(function(s,i){ $('#school').appendChild(new Option(s.n, String(i))); });
-$('#school').appendChild(new Option('Інший заклад','__other__'));
+/* однаковий список закладів у обох гілках */
+['#school', '#n_school'].forEach(function(sel){
+  var el = $(sel);
+  CFG.SCHOOLS.forEach(function(s,i){ el.appendChild(new Option(s.n, String(i))); });
+  el.appendChild(new Option('Інший заклад','__other__'));
+  el.addEventListener('change', function(){
+    var other = this.value === '__other__';
+    $(sel === '#school' ? '#school_other_wrap' : '#n_school_other_wrap')
+      .classList.toggle('hidden', !other);
+    var s = CFG.SCHOOLS[Number(this.value)];
+    $(sel === '#school' ? '#school_addr' : '#n_school_addr').textContent = (!other && s) ? s.a : '';
+  });
+});
 
-$('#school').addEventListener('change', function(){
-  const other = this.value === '__other__';
-  $('#school_other_wrap').classList.toggle('hidden', !other);
-  const s = CFG.SCHOOLS[Number(this.value)];
-  $('#school_addr').textContent = (!other && s) ? s.a : '';
+/* =====================================================
+   РОЗГАЛУЖЕННЯ ЗА КЛАСОМ
+   1–8  → група подовженого дня
+   9–11 → довузівська підготовка
+   Ховаємо гілку разом із її полями: validate() пропускає
+   все, що лежить усередині .hidden, тож питання чужого
+   напряму ніколи не блокують надсилання.
+   ===================================================== */
+function currentBranch(){
+  var g = parseInt($('#grade').value, 10);
+  if (!g) return null;
+  return g >= 9 ? 'nmt' : 'gpd';
+}
+
+function clearBranch(which){
+  var box = $('#branch-' + which);
+  $$('input, select, textarea', box).forEach(function(el){
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+    else el.value = '';
+    var f = el.closest('.field, fieldset');
+    if (f) f.classList.remove('bad');
+  });
+  $$('.hidden-target', box).forEach(function(x){ x.classList.add('hidden'); });
+}
+
+var shown = null;
+$('#grade').addEventListener('change', function(){
+  var br = currentBranch();
+  if (br === shown) return;
+
+  if (shown) clearBranch(shown);          // перемкнули клас — чужі відповіді не тягнемо
+  shown = br;
+
+  $('#h_title').textContent = br === 'nmt' ? 'Запис на підготовку до НМТ'
+                            : br === 'gpd' ? 'Запис до групи подовженого дня'
+                            : 'Запис на заняття';
+  $('#m_none').classList.toggle('hidden', !!br);
+  $('#m_gpd').classList.toggle('hidden', br !== 'gpd');
+  $('#m_nmt').classList.toggle('hidden', br !== 'nmt');
+
+  $('#branch-gpd').classList.toggle('hidden', br !== 'gpd');
+  $('#branch-nmt').classList.toggle('hidden', br !== 'nmt');
+  $('#consents').classList.toggle('hidden', !br);
+  $('#await').classList.toggle('hidden', !!br);
+  $('.submit-zone').classList.toggle('hidden', !br);
+
+  if (br === 'gpd' && !$$('.person').length) addPerson(true);
+  refreshGate();
 });
 
 /* ---------- помічники ---------- */
@@ -621,6 +897,7 @@ $$('.consent input').forEach(function(c){
    при натисканні, з підсвічуванням конкретних полів.
    ===================================================== */
 function gateOk(){
+  if (!currentBranch()) return false;
   var allChecked = $$('.consent[data-req-check] input').every(function(c){ return c.checked; });
   var photoDone  = $$('input[name=c_photo]').some(function(r){ return r.checked; });
   return allChecked && photoDone;
@@ -630,6 +907,9 @@ function refreshGate(){
   $('#go').disabled = !ok;
   $('#gate').classList.toggle('on', !ok);
 }
+$$('.subj').forEach(function(c){
+  c.addEventListener('change', function(){ $('#subj_fs').classList.remove('bad'); });
+});
 $$('.consent input, input[name=c_photo]').forEach(function(el){
   el.addEventListener('change', function(){
     var fs = el.closest('.consent-choice');
@@ -661,6 +941,14 @@ function validate(){
     f.classList.toggle('bad', !ok);
     if(!ok) fail(f);
   });
+
+  // у гілці НМТ треба обрати хоча б один предмет
+  if (currentBranch() === 'nmt'){
+    const sfs = $('#subj_fs');
+    const bad2 = !$$('.subj:checked').length;
+    sfs.classList.toggle('bad', bad2);
+    if (bad2) fail(sfs);
+  }
 
   // пошта необов’язкова, але якщо заповнена — має бути коректна
   const em = $('#parent_email');
@@ -704,6 +992,23 @@ function collect(){
   }
 
   d.expectations = $$('.exp:checked').map(c=>c.value).join(', ');
+
+  /* Гілка НМТ має власні поля дати народження, закладу й ПІБ батька —
+     інакше два однойменні поля на одній сторінці конфліктували б.
+     Тут зводимо їх до тих самих ключів, що й у гілці ГПД. */
+  if (currentBranch() === 'nmt'){
+    d.child_dob   = $('#n_dob').value;
+    d.parent_name = $('#n_parent').value.trim();
+    var ni = $('#n_school').value;
+    if (ni === '__other__')      { d.school = $('#n_school_other').value.trim(); d.school_addr = ''; }
+    else if (ni !== '')          { d.school = CFG.SCHOOLS[Number(ni)].n; d.school_addr = CFG.SCHOOLS[Number(ni)].a; }
+    d.subjects    = $$('.subj:checked').map(c=>c.value).join(', ');
+    d.needs       = $$('.need:checked').map(c=>c.value).join(', ');
+    d.format_pref = $$('.fmt:checked').map(c=>c.value).join(', ');
+    d.time_pref   = $$('.tim:checked').map(c=>c.value).join(', ');
+    d.pickup = '';                       // у цій гілці такого питання немає
+  }
+  delete d.child_dob_n; delete d.school_n; delete d.school_other_n; delete d.parent_name_n;
   d.pickup = $$('.person').map(function(p){
     const n=$('.p-name',p).value.trim(), t=$('.p-phone',p).value.trim(), r=$('.p-rel',p).value.trim();
     return n ? (n+' · '+t+' · '+r) : '';
@@ -792,6 +1097,14 @@ $('#again').addEventListener('click', function(){
     .forEach(function(r){ r.checked=false; });
   $('#allergy_wrap').classList.add('hidden');
   $('#school_other_wrap').classList.add('hidden');
+  $('#n_school_other_wrap').classList.add('hidden');
+  if (shown) clearBranch(shown);
+  shown = null;
+  $('#branch-gpd').classList.add('hidden');
+  $('#branch-nmt').classList.add('hidden');
+  $('#consents').classList.add('hidden');
+  $('.submit-zone').classList.add('hidden');
+  $('#await').classList.remove('hidden');
   $('#done').classList.remove('on');
   $('#f').classList.remove('hidden');
   $('#go').textContent='Надіслати заявку';
