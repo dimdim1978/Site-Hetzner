@@ -22,6 +22,17 @@ children.pp.ua {
         file_server
     }
 
+    # HTML не кешуємо «намертво»: no-cache означає не «не зберігати»,
+    # а «щоразу перепитати, чи не змінилось». Браузер отримує 304 і майже
+    # нічого не качає, зате після деплою одразу бачить нову версію —
+    # без Ctrl+F5 і без «у мене стара сторінка».
+    @html path *.html /
+    header @html Cache-Control "no-cache"
+
+    # css і решта статики можуть лежати в кеші довше
+    @assets path *.css *.js *.svg *.png *.ico *.woff2
+    header @assets Cache-Control "public, max-age=3600"
+
     # ---- заголовки безпеки ----
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
