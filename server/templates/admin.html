@@ -131,8 +131,25 @@
 <div class="bar" id="bar">
   <div class="bar-in">
     <span class="cnt">Обрано: <b id="cnt">0</b></span>
+    {% if role == 'admin' %}
+      <button class="btn danger" type="button" id="delBtn">Видалити обраних</button>
+    {% endif %}
     <button class="btn ghost"   type="button" id="passBtn">Видати пароль</button>
     <button class="btn primary" type="button" id="addBtn">Додати до списку</button>
+  </div>
+</div>
+
+<!-- ================= ВИДАЛЕННЯ ================= -->
+<div class="modal" id="delBox" hidden>
+  <div class="modal-in">
+    <h2>Видалити заявки?</h2>
+    <p class="pw-note bad">Видалення остаточне: зникнуть і анкета, і все повʼязане
+       з нею. Повернути можна лише з копії бази.</p>
+    <div class="del-list" id="delList"></div>
+    <div class="pw-btns">
+      <button class="btn ghost"  type="button" id="delCancel">Скасувати</button>
+      <button class="btn danger" type="button" id="delYes">Видалити</button>
+    </div>
   </div>
 </div>
 
@@ -278,6 +295,15 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .maint-msg.ok{color:#027A48}
 .maint-msg.err{color:var(--err)}
 .bk-txt{font-size:15px;color:var(--ink-2);margin-bottom:14px}
+.btn.danger{background:#fff;color:var(--err);border:1px solid #FDA29B}
+.btn.danger:hover{background:var(--err);color:#fff;border-color:var(--err)}
+#delYes{background:var(--err);color:#fff;border-color:var(--err);margin-left:auto}
+#delYes:hover{background:#912018}
+.del-list{border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+  margin-bottom:18px;max-height:240px;overflow-y:auto}
+.del-list div{padding:4px 0;font-size:15px}
+.del-list div + div{border-top:1px solid var(--line)}
+.del-list .g{color:var(--ink-3);font-size:13px;margin-left:6px}
 #bkBox .pw-btns .btn.ghost + .btn.ghost{margin-left:0}
 
 @media print{
@@ -471,6 +497,54 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
       document.body.removeChild(t);
     }
   });
+
+  /* ------------------------------------------------------------
+     Видалення обраних. Показуємо поіменний список: погоджуватися
+     наосліп із «видалити 4 записи» — найкоротший шлях знести не те.
+     ------------------------------------------------------------ */
+  var delBtn = $('#delBtn'), delBox = $('#delBox');
+  if(delBtn){
+    delBtn.addEventListener('click', function(){
+      var n = chosen();
+      if(!n.length){ alert('Не вибрано жодного учня.'); return; }
+
+      $('#delList').innerHTML = n.map(function(c){
+        var g = c.getAttribute('data-grade');
+        return '<div>' + esc(c.getAttribute('data-name')) +
+               (g ? '<span class="g">' + esc(g) + ' клас</span>' : '') + '</div>';
+      }).join('');
+      $('#delYes').textContent = n.length === 1 ? 'Видалити' : 'Видалити ' + n.length;
+      delBox.hidden = false;
+    });
+
+    $('#delCancel').addEventListener('click', function(){ delBox.hidden = true; });
+
+    $('#delYes').addEventListener('click', function(){
+      var n = chosen(), gone = n.map(function(c){ return String(c.value); });
+      if(!gone.length){ delBox.hidden = true; return; }
+      $('#delYes').disabled = true;
+      $('#delYes').textContent = 'Видаляємо…';
+
+      fetch('/admin/delete', {
+        method: 'POST', credentials: 'same-origin',
+        body: new URLSearchParams({ ids: gone.join(',') })
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(!d || !d.ok){ alert((d && d.error) || 'Не вдалося видалити.'); return; }
+          // видалених прибираємо й зі списку на друк, інакше друк
+          // спіткнувся б об неіснуючі номери
+          list = list.filter(function(x){ return gone.indexOf(String(x.id)) === -1; });
+          save(list);
+          location.reload();
+        })
+        .catch(function(){ alert('Немає звʼязку із сервером.'); })
+        .finally(function(){
+          $('#delYes').disabled = false;
+          delBox.hidden = true;
+        });
+    });
+  }
 
   /* ------------------------------------------------------------
      Копія бази. Кнопка не робить нічого одразу — спершу питає, чи

@@ -978,6 +978,66 @@ def admin_note(cid):
     log('коментар', cid)
     return redirect('/admin/{}'.format(cid))
 
+# ============================================================
+#  ВИДАЛЕННЯ ЗАЯВОК
+#
+#  Потрібне не для порядку, а для сміття: посилання на анкету
+#  ходить по руках учнів, і рано чи пізно хтось напише туди
+#  дурницю замість прізвища.
+#
+#  Видаляємо назовсім, разом із сирою копією: лишати в базі те,
+#  що людина видалила саме через його зміст, безглуздо. Шлях
+#  повернення — копія бази, тому кнопка «Зробити копію бази»
+#  стоїть поруч.
+# ============================================================
+@app.post('/admin/delete')
+def admin_delete():
+    r = require_login()
+    if r: return r
+    if session.get('role') != 'admin':
+        return jsonify(ok=False, error='Видаляти заявки може лише адміністратор'), 403
+
+    ids = [int(x) for x in (request.form.get('ids') or '').split(',')
+           if x.strip().isdigit()][:200]
+    if not ids:
+        return jsonify(ok=False, error='Не вибрано жодного учня'), 400
+
+    conn = db()
+    ph = ','.join('?' * len(ids))
+    rows = conn.execute(
+        'SELECT id, child_name FROM children WHERE id IN ({})'.format(ph), ids).fetchall()
+    if not rows:
+        return jsonify(ok=False, error='Таких заявок уже немає'), 404
+
+    try:
+        # сирі копії зовнішнім ключем не звʼязані — прибираємо самі
+        conn.execute('DELETE FROM raw_submissions WHERE child_id IN ({})'.format(ph), ids)
+        # решту (алергії, НМТ, хто забирає) забере ON DELETE CASCADE:
+        # PRAGMA foreign_keys увімкнено для зʼєднання в db()
+        conn.execute('DELETE FROM children WHERE id IN ({})'.format(ph), ids)
+        _cleanup_orphans(conn)          # запобіжник, якщо каскад раптом не спрацював
+
+        # Якщо не лишилось нічого — скидаємо нумерацію, щоб наступна заявка
+        # була № 1. Поки в базі є хоч один рядок, номери не переспользовуються:
+        # інакше лист «заявка № 5» через місяць указував би на іншу дитину.
+        empty = conn.execute('SELECT COUNT(*) c FROM children').fetchone()['c'] == 0
+        if empty:
+            conn.execute("DELETE FROM sqlite_sequence WHERE name='children'")
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        app.logger.error('Заявки не видалено: %s', e)
+        return jsonify(ok=False, error='Не вдалося видалити: {}'.format(e)), 500
+
+    # імʼя пишемо в журнал разом із видаленням: самого рядка вже немає,
+    # і без цього в журналі лишився б тільки номер
+    for row in rows:
+        log('видалено заявку: {}'.format(row['child_name']), row['id'])
+
+    return jsonify(ok=True, deleted=len(rows), empty=empty,
+                   names=[row['child_name'] for row in rows])
+
+
 @app.get('/admin/export.csv')
 def admin_export():
     r = require_login()
