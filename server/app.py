@@ -8,7 +8,7 @@
   POST /api/login     вхід в адмінку за паролем
   GET  /admin         список заявок (потрібен вхід)
   GET  /admin/<id>    одна заявка (потрібен вхід)
-  GET  /admin/export  вивантаження CSV (потрібен вхід, лише role=admin)
+  POST /admin/backup  копія бази: на сервер і, за вибором, на пошту (лише role=admin)
 
 Запуск для розробки:   python3 app.py
 Створити користувача:  python3 app.py adduser <логін> <пароль> [admin|teacher]
@@ -24,7 +24,7 @@ from email.header import Header
 from email.utils import formataddr
 
 from flask import (Flask, request, session, redirect, url_for,
-                   render_template, jsonify, abort, Response, g)
+                   render_template, jsonify, abort, g)
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # ============================================================
@@ -502,8 +502,7 @@ overflow:hidden;border:1px solid #E4E7EC">
   <div style="padding:24px 26px;color:#101828;font-size:16px;line-height:1.55">
     <p style="margin:0 0 16px">Доброго дня{greet}!</p>
 
-    <p style="margin:0 0 16px">Ми отримали заявку на <b>{child}</b>.
-    Номер заявки — <b>№&nbsp;{id}</b>.{school}</p>
+    <p style="margin:0 0 16px">Ми отримали заявку на <b>{child}</b>.{school}</p>
 
     <p style="margin:0 0 8px"><b>Що далі</b></p>
     <p style="margin:0 0 16px">Ми зателефонуємо протягом двох робочих днів, щоб
@@ -533,14 +532,16 @@ overflow:hidden;border:1px solid #E4E7EC">
 </body></html>""".format(
         greet=(', ' + esc(greeting)) if greeting else '',
         child=esc(data.get('child_name', '')),
-        id=child_id,
         school=(' Заклад: ' + esc(line_school) + '.') if line_school else '',
         p1=PHONE_1, h1='tel:' + PHONE_1.replace(' ', ''),
         p2=PHONE_2, h2='tel:' + PHONE_2.replace(' ', ''),
         url=SITE_URL)
 
     msg = MIMEText(html, 'html', 'utf-8')
-    msg['Subject'] = Header('Заявку до групи подовженого дня прийнято, № {}'.format(child_id), 'utf-8')
+    subject = ('Заявку на підготовку до НМТ прийнято'
+               if program_for(data.get('grade')) == 'НМТ'
+               else 'Заявку до групи подовженого дня прийнято')
+    msg['Subject'] = Header(subject, 'utf-8')
     msg['From']    = formataddr((str(Header('ГО «Берегиня»', 'utf-8')), MAIL_FROM))
     msg['To']      = data['parent_email']
 
@@ -1037,29 +1038,6 @@ def admin_delete():
     return jsonify(ok=True, deleted=len(rows), empty=empty,
                    names=[row['child_name'] for row in rows])
 
-
-@app.get('/admin/export.csv')
-def admin_export():
-    r = require_login()
-    if r: return r
-    if session.get('role') != 'admin':
-        abort(403)
-
-    rows = db().execute(
-        'SELECT c.*, s.has_allergy, s.allergy_details, s.meal_limits, s.health_notes, s.do_not_release '
-        'FROM children c LEFT JOIN sensitive s ON s.child_id=c.id ORDER BY c.id').fetchall()
-
-    buf = io.StringIO()
-    buf.write('﻿')                       # BOM, щоб Excel побачив кирилицю
-    if rows:
-        w = csv.DictWriter(buf, fieldnames=rows[0].keys(), delimiter=';')
-        w.writeheader()
-        for row in rows:
-            w.writerow(dict(row))
-    log('вивантаження CSV')
-    return Response(buf.getvalue(), mimetype='text/csv; charset=utf-8',
-                    headers={'Content-Disposition':
-                             'attachment; filename="gpd-{}.csv"'.format(datetime.now().strftime('%Y-%m-%d'))})
 
 # ============================================================
 #  ВИВАНТАЖЕННЯ ВСІЄЇ БАЗИ НА ПОШТУ

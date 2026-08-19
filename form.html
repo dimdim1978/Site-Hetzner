@@ -207,7 +207,6 @@ button.go:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .done.on{display:block}
 .done .tick{width:56px;height:56px;margin:0 auto 22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:28px;line-height:56px}
 .done h2{font-size:23px;margin-bottom:16px}
-.done .num{display:inline-block;margin-bottom:20px;padding:8px 16px;background:var(--bg-soft);border:1px solid var(--line-soft);border-radius:8px;font-size:16px;font-variant-numeric:tabular-nums}
 .done p{color:var(--ink-2);font-size:16px;margin-bottom:14px;line-height:1.5}
 .done .again{margin-top:28px;width:100%;min-height:48px;font-family:inherit;font-size:16px;color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:8px;cursor:pointer}
 
@@ -673,7 +672,6 @@ footer a{color:var(--ink-2)}
   <div class="done" id="done">
     <div class="tick">✓</div>
     <h2>Заявку прийнято</h2>
-    <div class="num">Номер заявки: <b id="app_no">—</b></div>
     <p id="done_mail" class="hidden">Копію надіслали на вашу пошту.</p>
     <p>Ми зателефонуємо протягом двох робочих днів, щоб узгодити дні, години та перший день у групі.</p>
     <p>Питання: <a href="tel:+380973823379">+380 97 382 33 79</a><br><a href="tel:+380954840103">+380 95 484 01 03</a></p>
@@ -1089,9 +1087,10 @@ on('#f', 'submit', function(ev){
   btn.disabled = true; btn.textContent = 'Надсилаємо…';
   const data = collect();
 
-  const finish = function(no){
+  /* Номер заявки батькам не показуємо: він службовий, стежити за ним
+     нікуди, і сам вигляд «номер» обіцяє те, чого немає. */
+  const finish = function(){
     try{ localStorage.removeItem(DRAFT); }catch(e){}
-    txt('#app_no', no);
     hide('#done_mail', !data.parent_email);
     hide('#f', true);
     cls('#done', 'on', true);
@@ -1099,7 +1098,7 @@ on('#f', 'submit', function(ev){
   };
 
   if(!CFG.ENDPOINT){                                        // демо-режим
-    setTimeout(function(){ finish('демо'); }, 700);
+    setTimeout(finish, 700);
     return;
   }
 
@@ -1109,7 +1108,7 @@ on('#f', 'submit', function(ev){
   })
   .then(r=>r.json())
   .then(function(res){
-    if(res && res.ok) finish(res.id); else throw new Error('bad response');
+    if(res && res.ok) finish(); else throw new Error('bad response');
   })
   .catch(function(){
     btn.disabled=false; btn.textContent='Надіслати заявку';
