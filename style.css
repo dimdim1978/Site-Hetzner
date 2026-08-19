@@ -70,6 +70,8 @@ a.logo:hover{color:var(--green)}
 .nav-links a{text-decoration:none;color:var(--ink-2);font-size:15px;font-weight:500}
 .nav-links a:hover{color:var(--green)}
 
+.head-btns{display:flex;gap:8px;align-items:center}
+
 /* кнопка в шапці — видима на будь-якому екрані */
 .btn-header{
   display:inline-flex;align-items:center;
@@ -79,6 +81,10 @@ a.logo:hover{color:var(--green)}
   min-height:42px;
 }
 .btn-header:hover{background:var(--green-dark)}
+
+/* друга кнопка в шапці — тихіша, щоб не сперечалася з головною дією */
+.btn-header.ghost{background:#fff;color:var(--ink-2);border:1px solid var(--line)}
+.btn-header.ghost:hover{background:var(--bg-soft);color:var(--green);border-color:var(--green)}
 
 /* ============================================================
    ГОЛОВНА — герой
@@ -164,6 +170,14 @@ a.logo:hover{color:var(--green)}
   height:96px;display:flex;align-items:center;justify-content:center;
   font-size:40px;line-height:1;
 }
+/* «Мудрик» — наймолодший напрям, тому тепліший за решту:
+   картка ціла в піщаному тоні, а не лише смуга згори */
+.service-card.warm{background:#FFFDF9;border-color:#EBDCC4}
+.service-card.warm:hover{border-color:#DCC7A6}
+.service-card.warm .btn-card.ghost{color:var(--sand);border-color:#E3CFB2}
+.service-card.warm .btn-card.ghost:hover{background:var(--sand-soft);border-color:var(--sand)}
+.service-card.warm .card-content h3{color:#8A5618}
+
 .img-mudryk{background:var(--sand-soft);border-bottom:3px solid var(--sand)}
 .img-gpd   {background:var(--green-soft);border-bottom:3px solid var(--green)}
 .img-prep  {background:var(--sky-soft);border-bottom:3px solid var(--sky)}
@@ -267,6 +281,10 @@ a:focus-visible,button:focus-visible{
 @media (max-width:640px){
   body{font-size:16px}
   .container{padding:0 16px}
+
+  /* дві кнопки в шапці мають влізти поруч із логотипом */
+  .btn-header{padding:9px 13px;font-size:14px;min-height:38px}
+  .head-btns{gap:6px}
 
   /* нав-посилання ховаємо, але кнопка й телефон лишаються доступні */
   .nav-links{display:none}

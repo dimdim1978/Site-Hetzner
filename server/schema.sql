@@ -138,11 +138,16 @@ CREATE TABLE IF NOT EXISTS admins (
 );
 
 CREATE TABLE IF NOT EXISTS login_attempts (
-  ip TEXT NOT NULL,
-  ts TEXT NOT NULL,
-  ok INTEGER NOT NULL
-);
+  ip    TEXT NOT NULL,
+  ts    TEXT NOT NULL,
+  ok    INTEGER NOT NULL,
+  login TEXT                       -- для учнів рахуємо спроби за логіном, а не за IP:
+);                                 -- цілий клас сидить під однією адресою школи
 CREATE INDEX IF NOT EXISTS idx_attempts_ip ON login_attempts(ip, ts);
+-- Індекс по login навмисно НЕ тут, а в _migrate() після ALTER TABLE.
+-- На вже наявній базі колонки login ще немає, і цей рядок повалив би
+-- увесь запуск застосунку — сайт ліг би на живому сервері.
+-- Те саме стосується індексів по children(program) і children(login).
 
 -- ------------------------------------------------------------
 --  ЖУРНАЛ ДОСТУПУ — хто коли дивився дані дитини.

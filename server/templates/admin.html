@@ -117,9 +117,44 @@
 <div class="bar" id="bar">
   <div class="bar-in">
     <span class="cnt">Обрано: <b id="cnt">0</b></span>
+    <button class="btn ghost"   type="button" id="passBtn">Видати пароль</button>
     <button class="btn primary" type="button" id="addBtn">Додати до списку</button>
   </div>
 </div>
+
+<!-- ================= ПАРОЛЬ УЧНЯ ================= -->
+<div class="modal" id="pwBox" hidden>
+  <div class="modal-in">
+    <h2 id="pwName">—</h2>
+    <p class="pw-note" id="pwNote">Пароль показується один раз. Перепишіть або роздрукуйте зараз.</p>
+
+    <div class="pw-grid">
+      <div><span>Логін</span><b id="pwLogin">—</b></div>
+      <div><span>Пароль</span><b id="pwPass">—</b></div>
+      <div class="pw-site"><span>Сайт</span><b>children.pp.ua</b></div>
+    </div>
+
+    <div class="pw-btns">
+      <button class="btn ghost"   type="button" id="pwCopy">Скопіювати</button>
+      <button class="btn ghost"   type="button" id="pwPrint">Друк талона</button>
+      <button class="btn primary" type="button" id="pwClose">Готово</button>
+    </div>
+  </div>
+</div>
+
+{% if role == 'admin' %}
+<!-- ================= ОБСЛУГОВУВАННЯ ================= -->
+<div class="card maint">
+  <h2>Копія бази</h2>
+  <p>Надішлемо на <b>вашу службову пошту</b> таблицю з усіма заявками
+     (відкривається в Excel — редагуйте як завгодно) і резервну копію бази.
+     Лист міститиме персональні дані всіх дітей, зокрема про здоров'я.</p>
+  <div class="maint-row">
+    <button class="btn ghost" type="button" id="bkBtn">Надіслати копію бази на пошту</button>
+    <span id="bkMsg" class="maint-msg"></span>
+  </div>
+</div>
+{% endif %}
 
 <style>
 .tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
@@ -186,6 +221,47 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .bar .cnt b{color:var(--ink);font-size:17px}
 .bar .btn{margin-left:auto}
 @media (max-width:640px){ .bar .btn{width:100%;margin-left:0} }
+.bar .btn{margin-left:0}
+.bar #passBtn{margin-left:auto}
+
+/* вікно з паролем */
+.modal{position:fixed;inset:0;background:rgba(16,24,40,.5);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+/* display:flex сильніший за атрибут hidden — без цього рядка невидиме
+   вікно накриває всю сторінку й перехоплює кожен клік в адмінці */
+.modal[hidden]{display:none}
+.modal-in{background:#fff;border-radius:14px;padding:26px;max-width:440px;width:100%;
+  box-shadow:0 18px 48px rgba(16,24,40,.24)}
+.modal-in h2{font-size:19px;margin-bottom:6px}
+.pw-note{color:var(--warn);background:var(--warn-soft);border-radius:8px;
+  padding:9px 12px;font-size:14px;margin-bottom:18px}
+.pw-note.bad{color:var(--err);background:var(--err-soft)}
+.pw-grid{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px}
+.pw-grid div{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:12px 14px;border-bottom:1px solid var(--line)}
+.pw-grid div:last-child{border-bottom:0;background:var(--bg-soft)}
+.pw-grid span{color:var(--ink-3);font-size:14px}
+.pw-grid b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:19px;letter-spacing:.04em;user-select:all}
+.pw-site b{font-size:15px;font-family:inherit;letter-spacing:0}
+.pw-btns{display:flex;gap:8px;flex-wrap:wrap}
+.pw-btns .btn.primary{margin-left:auto}
+
+.maint{border-color:#EBDCC4;background:#FFFDF9}
+.maint h2{font-size:17px;margin-bottom:6px}
+.maint p{color:var(--ink-2);font-size:14px;margin-bottom:14px;max-width:620px}
+.maint-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.maint-msg{font-size:14px;color:var(--ink-3)}
+.maint-msg.ok{color:#027A48}
+.maint-msg.err{color:var(--err)}
+
+@media print{
+  body *{visibility:hidden}
+  .modal, .modal *{visibility:visible}
+  .modal{position:absolute;inset:0;background:#fff;display:block;padding:0}
+  .modal-in{box-shadow:none;max-width:none;padding:0}
+  .pw-btns,.pw-note{display:none}
+}
 </style>
 
 <script>
@@ -315,6 +391,88 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   var qs = new URLSearchParams(location.search);
   if (qs.get('grade') || qs.get('program')) {
     picks.forEach(function(c){ c.checked = true; });
+  }
+
+  /* ------------------------------------------------------------
+     Пароль учня. Рівно один вибраний — інакше незрозуміло, кому
+     саме він дістанеться, а старий пароль при цьому вже згорить.
+     ------------------------------------------------------------ */
+  var pwBox = $('#pwBox'), passBtn = $('#passBtn');
+
+  function showPw(d){
+    $('#pwName').textContent  = d.name + (d.grade ? ', ' + d.grade + ' клас' : '');
+    $('#pwLogin').textContent = d.login;
+    $('#pwPass').textContent  = d.password;
+    $('#pwNote').textContent  = !d.active
+      ? 'Заявка за ' + d.year + ' н. р. — з цим паролем учень не увійде, ' +
+        'доступ діє лише в поточному навчальному році.'
+      : (d.renewed
+          ? 'Виданий раніше пароль щойно перестав діяти. Новий показується один раз.'
+          : 'Пароль показується один раз. Перепишіть або роздрукуйте зараз.');
+    $('#pwNote').classList.toggle('bad', !d.active);
+    pwBox.hidden = false;
+  }
+
+  passBtn.addEventListener('click', function(){
+    var n = chosen();
+    if(n.length !== 1){
+      alert(n.length === 0 ? 'Не вибрано жодного учня.' : 'Вибраний не один учень.');
+      return;
+    }
+    passBtn.disabled = true;
+    var body = new URLSearchParams({ ids: n[0].value });
+    fetch('/admin/pupil-password', { method:'POST', body: body, credentials:'same-origin' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.ok){ showPw(d); }
+        else { alert((d && d.error) || 'Не вдалося видати пароль.'); }
+      })
+      .catch(function(){ alert('Немає зв’язку із сервером.'); })
+      .finally(function(){ passBtn.disabled = false; });
+  });
+
+  $('#pwClose').addEventListener('click', function(){ pwBox.hidden = true; });
+  $('#pwPrint').addEventListener('click', function(){ window.print(); });
+  $('#pwCopy').addEventListener('click', function(){
+    var txt = 'children.pp.ua\nЛогін: ' + $('#pwLogin').textContent +
+              '\nПароль: ' + $('#pwPass').textContent;
+    var done = function(){ $('#pwCopy').textContent = 'Скопійовано'; };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, function(){});
+    } else {
+      var t = document.createElement('textarea');
+      t.value = txt; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); done(); } catch(e){}
+      document.body.removeChild(t);
+    }
+  });
+
+  /* ---- копія бази на пошту ---- */
+  var bkBtn = $('#bkBtn'), bkMsg = $('#bkMsg');
+  if(bkBtn){
+    bkBtn.addEventListener('click', function(){
+      if(!confirm('Надіслати на службову пошту всі дані всіх дітей?')) return;
+      bkBtn.disabled = true;
+      bkMsg.className = 'maint-msg';
+      bkMsg.textContent = 'Готуємо файли й надсилаємо…';
+      fetch('/admin/backup-mail', { method:'POST', credentials:'same-origin' })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d && d.ok){
+            bkMsg.className = 'maint-msg ok';
+            bkMsg.textContent = 'Надіслано на ' + d.to + ' · заявок: ' + d.n +
+                                (d.note ? ' · ' + d.note : '');
+          } else {
+            bkMsg.className = 'maint-msg err';
+            bkMsg.textContent = (d && d.error) || 'Не вдалося надіслати.';
+          }
+        })
+        .catch(function(){
+          bkMsg.className = 'maint-msg err';
+          bkMsg.textContent = 'Немає зв’язку із сервером.';
+        })
+        .finally(function(){ bkBtn.disabled = false; });
+    });
   }
 
   drawBasket(); markRows(); refresh();

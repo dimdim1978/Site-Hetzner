@@ -24,6 +24,11 @@ CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
 
 echo "→ Оновлюємо статику"
 cp "$SITE"/*.html "$SITE"/*.css "$WWW"/
+# картинки (зокрема og.png — прев'ю посилання) можуть з'явитись не одразу,
+# тому копіюємо тільки те, що справді є, і не валимо скрипт, якщо їх немає
+for f in "$SITE"/*.png "$SITE"/*.svg "$SITE"/*.ico; do
+  [ -e "$f" ] && cp "$f" "$WWW"/
+done
 
 if grep -q '^server/' <<< "$CHANGED"; then
   echo "→ Змінився бекенд — оновлюємо файли"

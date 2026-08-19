@@ -15,9 +15,11 @@
 На сервері працює під gunicorn — див. deploy/beregynia.service
 """
 
-import os, re, csv, json, sqlite3, smtplib, secrets, io
+import os, re, csv, json, sqlite3, smtplib, secrets, io, zipfile, tempfile, unicodedata
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 from email.header import Header
 from email.utils import formataddr
 
@@ -141,8 +143,9 @@ def _migrate(conn):
     except sqlite3.OperationalError:
         pass          # sqlite_sequence ще немає — база щойно створена
 
-    for table, cols in (('children', CHILD_COLS + ['program', 'school_year']),
-                        ('sensitive', SENS_COLS), ('nmt', NMT_COLS)):
+    for table, cols in (('children', CHILD_COLS + ['program', 'school_year'] + PUPIL_COLS),
+                        ('sensitive', SENS_COLS), ('nmt', NMT_COLS),
+                        ('login_attempts', ['login'])):
         have = {r[1] for r in conn.execute('PRAGMA table_info({})'.format(table))}
         if not have:                       # таблиці ще немає — її щойно створив скрипт
             continue
@@ -162,6 +165,11 @@ def _migrate(conn):
         # індекси на щойно доданих колонках — тільки тут, коли колонки вже є
         conn.execute('CREATE INDEX IF NOT EXISTS idx_children_program ON children(program)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_children_year ON children(school_year)')
+        # логін учня має бути унікальним, але порожніх — більшість,
+        # тому індекс частковий: NULL і '' під обмеження не підпадають
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_children_login "
+                     "ON children(login) WHERE login IS NOT NULL AND login <> ''")
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_attempts_login ON login_attempts(login, ts)')
         # заявки, подані до появи цієї колонки, — цьогорічні
         n2 = conn.execute("UPDATE children SET school_year=? WHERE school_year IS NULL OR school_year=''",
                           (school_year(),)).rowcount
@@ -286,6 +294,11 @@ CHILD_COLS = ['child_name','child_dob','grade','school','school_addr','pickup_sc
               'c_true','c_data','c_health','c_medical','c_photo']
 
 SENS_COLS  = ['has_allergy','allergy_details','meal_limits','health_notes','do_not_release']
+
+# Доступ учня до навчальних матеріалів. Свідомо НЕ в CHILD_COLS: ті колонки
+# заповнюються з анкети, а ці — тільки адміністратором. Якби вони потрапили
+# до CHILD_COLS, форма могла б надіслати власний pass_hash.
+PUPIL_COLS = ['login', 'pass_hash', 'pass_set_at', 'pass_by', 'last_seen']
 
 # усе, що стосується лише довузівської підготовки — в окрему таблицю
 NMT_COLS   = ['career_help','career_interest','subjects','needs','needs_other','level',
@@ -541,8 +554,14 @@ def esc(s):
 #  ВХІД
 # ============================================================
 def attempts_recently(ip):
+    """Невдалі спроби ПЕРСОНАЛУ з цієї адреси за останні 15 хвилин.
+
+    Умова login IS NULL тут не косметична: учнівські спроби пишуться в ту саму
+    таблицю, але з логіном. Без цієї умови клас, який помиляється паролем із
+    шкільної мережі, замкнув би адміністратору вхід у власну адмінку."""
     since = (datetime.now(timezone.utc).astimezone() - timedelta(minutes=15)).strftime('%Y-%m-%d %H:%M:%S')
-    row = db().execute('SELECT COUNT(*) c FROM login_attempts WHERE ip=? AND ts>? AND ok=0',
+    row = db().execute("SELECT COUNT(*) c FROM login_attempts "
+                       "WHERE ip=? AND ts>? AND ok=0 AND (login IS NULL OR login='')",
                        (ip, since)).fetchone()
     return row['c']
 
@@ -565,6 +584,7 @@ def login():
 
     session.clear()
     session.permanent = True
+    session['kind']  = 'staff'          # див. gate(): учень цієї ознаки не отримує ніколи
     session['login'] = row['login']
     session['role']  = row['role']
     session['name']  = row['full_name'] or row['login']
@@ -582,9 +602,186 @@ def logout():
     return redirect('/enter.html')
 
 def require_login():
-    if not session.get('login'):
+    if session.get('kind') != 'staff' or not session.get('login'):
         return redirect('/enter.html')
     return None
+
+
+# ============================================================
+#  ЄДИНА ЗАСТАВА НА ВХОДІ
+#
+#  Перевіряти роль у кожному маршруті окремо працює рівно доти,
+#  доки хтось не забуде це зробити в одному новому маршруті —
+#  і цього одного разу досить. Тому доступ вирішується тут, за
+#  префіксом шляху, а перевірки в самих маршрутах лишаються як
+#  другий рубіж.
+#
+#  /admin/*   — тільки персонал (kind='staff')
+#  /kabinet/* — тільки учень   (kind='pupil')
+#  Сесія при кожному вході очищається, тож учень фізично не може
+#  мати ознаку staff, навіть якщо зайде відразу після педагога.
+# ============================================================
+@app.before_request
+def gate():
+    p = request.path
+    if p.startswith('/admin'):
+        if session.get('kind') != 'staff':
+            return redirect('/enter.html')
+    elif p.startswith('/kabinet'):
+        if session.get('kind') != 'pupil':
+            return redirect('/uchen.html')
+
+
+# ============================================================
+#  ДОСТУП УЧНІВ ДО НАВЧАЛЬНИХ МАТЕРІАЛІВ
+#
+#  Логін і пароль дитини — теж персональні дані, тому:
+#   * пароль зберігається лише хешем, як і в персоналу;
+#   * пароль показується один раз, у момент видачі;
+#   * доступ прив'язаний до навчального року й гасне сам;
+#   * спроби входу рахуються за логіном, а не за IP — інакше одна
+#     дитина, що сім разів помилилася, замкнула б увесь клас,
+#     який заходить із однієї шкільної адреси.
+# ============================================================
+UA2LAT = {
+    'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'ie','ж':'zh',
+    'з':'z','и':'y','і':'i','ї':'i','й':'i','к':'k','л':'l','м':'m','н':'n',
+    'о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
+    'ч':'ch','ш':'sh','щ':'shch','ь':'','ю':'iu','я':'ia','\'':'','’':'',
+}
+
+def translit(text):
+    out = []
+    for ch in (text or '').lower():
+        if ch in UA2LAT:
+            out.append(UA2LAT[ch])
+        elif ch.isascii() and ch.isalnum():
+            out.append(ch)
+    return ''.join(out)
+
+
+def make_login(child_name, cid):
+    """Логін = прізвище латиницею + номер заявки.
+
+    Номер потрібен не для краси: Ковальських у групі буває двоє.
+    Читається з паперового талона без помилок і не змінюється ніколи."""
+    surname = translit((child_name or '').split()[0] if child_name else '')[:14]
+    return '{}{}'.format(surname or 'uchen', cid)
+
+
+# без 0/o, 1/l/i — саме на них діти й помиляються, переписуючи з талона
+PASS_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'
+
+def gen_password():
+    part = lambda: ''.join(secrets.choice(PASS_ALPHABET) for _ in range(4))
+    return part() + '-' + part()
+
+
+def norm_pass(v):
+    """Дефіс у паролі — лише щоб його було легше переписати з аркуша.
+    Хто його не набрав — не має отримати «невірний пароль»."""
+    return re.sub(r'[^a-z0-9]', '', (v or '').strip().lower())
+
+
+def pupil_attempts(login_):
+    since = (datetime.now(timezone.utc).astimezone() - timedelta(minutes=15)).strftime('%Y-%m-%d %H:%M:%S')
+    row = db().execute(
+        'SELECT COUNT(*) c FROM login_attempts WHERE login=? AND ts>? AND ok=0',
+        (login_, since)).fetchone()
+    return row['c']
+
+
+@app.post('/api/pupil-login')
+def pupil_login():
+    login_ = re.sub(r'[^a-z0-9]', '', clean(request.form.get('login'), 40).lower())
+    passwd = norm_pass(request.form.get('password'))
+
+    if not login_ or not passwd:
+        return jsonify(ok=False, error='Введіть логін і пароль'), 400
+
+    # ліміт за логіном: клас із однієї шкільної IP не має блокувати сам себе
+    if pupil_attempts(login_) >= 10:
+        return jsonify(ok=False, error='Забагато спроб. Спробуйте за 15 хвилин '
+                                       'або підійдіть до викладача.'), 429
+
+    row = db().execute(
+        'SELECT id, child_name, grade, program, school_year, pass_hash '
+        'FROM children WHERE login=?', (login_,)).fetchone()
+    ok = bool(row) and bool(row['pass_hash']) and check_password_hash(row['pass_hash'], passwd)
+
+    db().execute('INSERT INTO login_attempts (ip, ts, ok, login) VALUES (?,?,?,?)',
+                 (client_ip(), now(), 1 if ok else 0, login_))
+    db().commit()
+
+    if not ok:
+        return jsonify(ok=False, error='Невірний логін або пароль'), 401
+
+    # доступ живе один навчальний рік і гасне сам — інакше через три роки
+    # в базі були б живі логіни людей, які давно випустилися
+    if (row['school_year'] or '') != school_year():
+        return jsonify(ok=False, error='Доступ на цей навчальний рік не активний. '
+                                       'Зверніться до викладача.'), 403
+
+    session.clear()
+    session.permanent = True
+    session['kind']  = 'pupil'
+    session['pupil'] = row['id']
+    session['name']  = row['child_name']
+    db().execute('UPDATE children SET last_seen=? WHERE id=?', (now(), row['id']))
+    db().commit()
+    log('вхід учня', row['id'], who='учень ' + login_)
+    return jsonify(ok=True, redirect='/kabinet')
+
+
+@app.get('/api/pupil-logout')
+@app.post('/api/pupil-logout')
+def pupil_logout():
+    session.clear()
+    return redirect('/uchen.html')
+
+
+@app.get('/kabinet')
+def kabinet():
+    row = db().execute(
+        'SELECT id, child_name, grade, program, school_year FROM children WHERE id=?',
+        (session.get('pupil'),)).fetchone()
+    if not row:                       # дитину видалили, поки сесія жила
+        session.clear()
+        return redirect('/uchen.html')
+    return render_template('kabinet.html', c=row, year=school_year())
+
+
+@app.post('/admin/pupil-password')
+def admin_pupil_password():
+    """Видає учневі логін і новий пароль. Пароль повертається один раз."""
+    r = require_login()
+    if r: return r
+
+    ids = [x for x in (request.form.get('ids') or '').split(',') if x.strip().isdigit()]
+    if len(ids) != 1:
+        return jsonify(ok=False, error='Вибраний не один учень'), 400
+
+    cid = int(ids[0])
+    row = db().execute('SELECT id, child_name, grade, login, school_year FROM children WHERE id=?',
+                       (cid,)).fetchone()
+    if not row:
+        return jsonify(ok=False, error='Такого учня немає'), 404
+
+    login_ = row['login'] or make_login(row['child_name'], row['id'])
+    passwd = gen_password()
+    db().execute('UPDATE children SET login=?, pass_hash=?, pass_set_at=?, pass_by=? WHERE id=?',
+                 (login_, generate_password_hash(norm_pass(passwd)), now(),
+                  session.get('login', '—'), cid))
+    db().commit()
+    log('видано пароль учню', cid)
+    # Заявка минулих років: пароль видати можна, але ввійти з ним не вийде —
+    # доступ прив'язаний до навчального року. Краще сказати про це одразу,
+    # ніж потім розбиратися, чому дитина «не заходить».
+    active = (row['school_year'] or '') == school_year()
+    return jsonify(ok=True, id=cid, name=row['child_name'],
+                   grade=row['grade'], login=login_, password=passwd,
+                   renewed=bool(row['login']), active=active,
+                   year=row['school_year'] or '—')
 
 # ============================================================
 #  АДМІНКА
@@ -797,6 +994,179 @@ def admin_export():
     return Response(buf.getvalue(), mimetype='text/csv; charset=utf-8',
                     headers={'Content-Disposition':
                              'attachment; filename="gpd-{}.csv"'.format(datetime.now().strftime('%Y-%m-%d'))})
+
+# ============================================================
+#  ВИВАНТАЖЕННЯ ВСІЄЇ БАЗИ НА ПОШТУ
+#
+#  Два вкладення, бо вони для різного:
+#    * .xlsx (або .zip з CSV) — щоб відкрити й редагувати як завгодно;
+#    * .db — точна резервна копія, з якої можна підняти сайт із нуля.
+#
+#  Лист містить УСІ персональні дані всіх дітей, включно з даними про
+#  здоров'я. Тому: тільки роль admin, тільки на адресу з .env (ніколи
+#  на адресу з форми) і обов'язковий запис у журнал доступу.
+# ============================================================
+TABLES_FOR_EXPORT = ('children', 'sensitive', 'nmt', 'pickup_persons')
+
+SHEET_TITLE = {'children': 'Діти', 'sensitive': 'Особливості',
+               'nmt': 'Довузівська', 'pickup_persons': 'Хто забирає'}
+
+# Порядок сортування задаємо явно: у sensitive і nmt первинний ключ —
+# child_id, колонки id там немає, і спільне «ORDER BY id» мовчки
+# викидало б обидві таблиці з вивантаження.
+ORDER_BY = {'children': 'id', 'sensitive': 'child_id', 'nmt': 'child_id',
+            'pickup_persons': 'child_id, ord'}
+
+# Хеш пароля учня в таблиці не потрібен нікому, а лист із ним ходить поштою
+# й лежить у скриньці роками. Логін лишаємо: по ньому видно, кому вже видано
+# доступ. Сам хеш є в резервній копії .db — цього досить.
+EXPORT_SKIP = {'pass_hash'}
+
+
+def _table_rows(conn, table):
+    cur = conn.execute('SELECT * FROM {} ORDER BY {}'.format(table, ORDER_BY[table]))
+    cols = [d[0] for d in cur.description]
+    keep = [i for i, c in enumerate(cols) if c not in EXPORT_SKIP]
+    head = [LABEL.get(cols[i], cols[i]) for i in keep]
+    return head, [[('' if row[i] is None else row[i]) for i in keep] for row in cur.fetchall()]
+
+
+def _build_workbook(conn):
+    """Повертає (ім'я файла, байти, mime). Без openpyxl — ZIP із CSV,
+    щоб кнопка працювала навіть на сервері, де бібліотеку не встановили."""
+    stamp = datetime.now().strftime('%Y-%m-%d')
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+        wb = Workbook()
+        wb.remove(wb.active)
+        for t in TABLES_FOR_EXPORT:
+            try:
+                head, rows = _table_rows(conn, t)
+            except sqlite3.OperationalError:
+                continue
+            ws = wb.create_sheet(SHEET_TITLE.get(t, t))
+            ws.append(head)
+            for c in ws[1]:
+                c.font = Font(bold=True)
+            for r in rows:
+                ws.append(r)
+            ws.freeze_panes = 'A2'
+            for i, name in enumerate(head, start=1):
+                width = max(len(str(name)) + 2,
+                            *(len(str(r[i - 1])) + 2 for r in rows[:200])) if rows else len(name) + 2
+                ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = min(width, 46)
+        buf = io.BytesIO()
+        wb.save(buf)
+        return ('beregynia-{}.xlsx'.format(stamp), buf.getvalue(),
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    except ImportError:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
+            for t in TABLES_FOR_EXPORT:
+                try:
+                    head, rows = _table_rows(conn, t)
+                except sqlite3.OperationalError:
+                    continue
+                sio = io.StringIO()
+                sio.write('\ufeff')                 # BOM, інакше Excel покаже кракозябри
+                w = csv.writer(sio, delimiter=';')
+                w.writerow(head)
+                w.writerows(rows)
+                z.writestr('{}.csv'.format(SHEET_TITLE.get(t, t)), sio.getvalue())
+        return ('beregynia-{}.zip'.format(stamp), buf.getvalue(), 'application/zip')
+
+
+def _db_snapshot():
+    """Копія бази, знята коректно навіть під час запису (режим WAL)."""
+    fd, path = tempfile.mkstemp(suffix='.db')
+    os.close(fd)
+    dst = sqlite3.connect(path)
+    try:
+        db().backup(dst)
+        dst.close()
+        with open(path, 'rb') as fh:
+            return fh.read()
+    finally:
+        for extra in (path, path + '-wal', path + '-shm'):
+            try: os.remove(extra)
+            except OSError: pass
+
+
+@app.post('/admin/backup-mail')
+def admin_backup_mail():
+    r = require_login()
+    if r: return r
+    if session.get('role') != 'admin':
+        return jsonify(ok=False, error='Вивантаження бази доступне лише адміністратору'), 403
+    if not (SMTP_USER and SMTP_PASS and ADMIN_MAIL):
+        return jsonify(ok=False, error='Пошта не налаштована — див. .env'), 500
+
+    conn = db()
+    n = conn.execute('SELECT COUNT(*) c FROM children').fetchone()['c']
+    fname, fbytes, fmime = _build_workbook(conn)
+
+    snapshot, snap_note = None, ''
+    try:
+        snapshot = _db_snapshot()
+        if len(snapshot) > 20 * 1024 * 1024:      # поштові сервери ріжуть великі вкладення
+            snap_note = 'Резервну копію бази не вкладено — вона більша за 20 МБ.'
+            snapshot = None
+    except Exception as e:
+        app.logger.error('Знімок бази не зроблено: %s', e)
+        snap_note = 'Резервну копію бази не вкладено через помилку читання.'
+
+    stamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+    html = """<!doctype html><html><body style="margin:0;background:#F5F6F7;padding:24px;
+font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
+<div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #E4E7EC;border-radius:12px;overflow:hidden">
+  <div style="background:#2F6F4E;color:#fff;padding:20px 24px">
+    <div style="font-size:20px;font-weight:700">Копія бази · {stamp}</div>
+  </div>
+  <div style="padding:22px 24px;color:#101828;font-size:15px;line-height:1.6">
+    <p style="margin:0 0 14px">У базі <b>{n}</b> заявок. Вкладено:</p>
+    <p style="margin:0 0 6px"><b>{fname}</b> — усі дані таблицею, відкривається
+       в Excel чи Google Таблицях, редагуйте як завгодно.</p>
+    <p style="margin:0 0 16px">{snap}</p>
+    <p style="margin:0;color:#B42318;font-size:14px">
+      Вкладення містять персональні дані всіх дітей, зокрема про здоров'я.
+      Не пересилайте цей лист далі й не зберігайте його у спільних теках.</p>
+  </div>
+</div></body></html>""".format(
+        stamp=stamp, n=n, fname=esc(fname),
+        snap=(esc(snap_note) if snap_note else
+              '<b>beregynia-{}.db</b> — точна резервна копія бази.'.format(
+                  datetime.now().strftime('%Y-%m-%d'))))
+
+    msg = MIMEMultipart()
+    msg['Subject'] = Header('Копія бази «Берегиня» · {}'.format(stamp), 'utf-8')
+    msg['From']    = formataddr((str(Header('ГО «Берегиня»', 'utf-8')), MAIL_FROM))
+    msg['To']      = ADMIN_MAIL
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
+
+    def attach(name, payload, subtype):
+        part = MIMEApplication(payload, _subtype=subtype)
+        part.add_header('Content-Disposition', 'attachment', filename=name)
+        msg.attach(part)
+
+    attach(fname, fbytes, fmime.split('/')[-1])
+    if snapshot:
+        attach('beregynia-{}.db'.format(datetime.now().strftime('%Y-%m-%d')),
+               snapshot, 'octet-stream')
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=60) as srv:
+            srv.starttls()
+            srv.login(SMTP_USER, SMTP_PASS)
+            srv.sendmail(MAIL_FROM, [a.strip() for a in ADMIN_MAIL.split(',')], msg.as_string())
+    except Exception as e:
+        app.logger.error('Копію бази не надіслано: %s', e)
+        return jsonify(ok=False, error='Лист не надіслано: {}'.format(e)), 500
+
+    log('копію бази надіслано на пошту ({} заявок)'.format(n))
+    return jsonify(ok=True, n=n, file=fname,
+                   to=ADMIN_MAIL.split(',')[0].strip(), note=snap_note)
+
 
 @app.get('/api/whoami')
 def whoami():

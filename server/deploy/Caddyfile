@@ -14,6 +14,11 @@ children.pp.ua {
     handle /admin* {
         reverse_proxy 127.0.0.1:8000
     }
+    # кабінет учня — теж у Flask (статикою його віддавати не можна:
+    # сторінку має бачити лише той, хто увійшов)
+    handle /kabinet* {
+        reverse_proxy 127.0.0.1:8000
+    }
 
     # ---- решта — статика з робочої копії репозиторію ----
     handle {
@@ -43,7 +48,7 @@ children.pp.ua {
     }
 
     # адмінку й вхід — не індексувати
-    @private path /admin* /enter.html
+    @private path /admin* /kabinet* /enter.html /uchen.html
     header @private X-Robots-Tag "noindex, nofollow"
 
     log {

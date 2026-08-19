@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232F6F4E'/><text x='32' y='46' font-family='Georgia,serif' font-size='40' font-weight='700' fill='%23ffffff' text-anchor='middle'>%D0%91</text></svg>">
 <meta name="robots" content="noindex, nofollow">
-<title>Вхід · ГПД «Берегиня»</title>
+<title>Вхід для учнів · «Берегиня»</title>
 <style>
 :root{
   --green:#2F6F4E;--green-dark:#255A3E;
@@ -24,20 +24,26 @@ body{
   text-transform:uppercase;margin-bottom:8px;text-decoration:none}
 .head .org:hover{color:var(--green)}
 .head h1{font-size:23px;letter-spacing:-.01em}
+.head p{font-size:14px;color:var(--ink-3);margin-top:8px}
 
 form{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:24px 22px}
 label{display:block;font-size:14px;color:var(--ink-2);margin-bottom:6px;font-weight:500}
 input{
-  width:100%;font-family:inherit;font-size:16px;color:var(--ink);
-  border:1px solid var(--line);border-radius:8px;padding:12px 13px;min-height:48px;
+  width:100%;font-family:inherit;font-size:17px;color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:12px 13px;min-height:50px;
   background:#fff;-webkit-appearance:none;appearance:none;
 }
+/* логін і пароль переписують із паперового талона — моноширинний
+   шрифт не дає сплутати «l» з «1», навіть якщо їх там і немає */
+#login,#password{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.04em}
 input:focus{outline:2px solid var(--green);outline-offset:2px;border-color:var(--green)}
 .field{margin-bottom:16px}
+.hint{font-size:13px;color:var(--ink-3);margin-top:6px}
 
 button{
-  width:100%;min-height:50px;margin-top:6px;
-  font-family:inherit;font-size:16px;font-weight:600;color:#fff;
+  width:100%;min-height:52px;margin-top:6px;
+  font-family:inherit;font-size:17px;font-weight:600;color:#fff;
   background:var(--green);border:0;border-radius:8px;cursor:pointer;
 }
 button:hover{background:var(--green-dark)}
@@ -50,7 +56,7 @@ button:disabled{background:var(--ink-3);cursor:default}
 }
 .err.on{display:block}
 
-.foot{text-align:center;margin-top:20px;font-size:13px;color:var(--ink-3);line-height:1.6}
+.foot{text-align:center;margin-top:20px;font-size:13px;color:var(--ink-3);line-height:1.7}
 .foot a{color:var(--ink-3)}
 </style>
 </head>
@@ -59,49 +65,57 @@ button:disabled{background:var(--ink-3);cursor:default}
 <div class="box">
   <div class="head">
     <a class="org" href="index.html">ГО «Берегиня»</a>
-    <h1>Вхід до адмінки</h1>
+    <h1>Вхід для учнів</h1>
+    <p>Логін і пароль видає викладач</p>
   </div>
 
   <form id="f" autocomplete="on">
     <div class="field">
       <label for="login">Логін</label>
       <input type="text" id="login" name="login" autocomplete="username"
-             autocapitalize="none" autocorrect="off" required>
+             autocapitalize="none" autocorrect="off" spellcheck="false" required>
     </div>
 
     <div class="field">
       <label for="password">Пароль</label>
-      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <input type="password" id="password" name="password"
+             autocomplete="current-password" autocapitalize="none"
+             autocorrect="off" spellcheck="false" required>
+      <div class="hint">Дефіс можна не вводити</div>
     </div>
 
     <button type="submit" id="go">Увійти</button>
     <div class="err" id="err"></div>
   </form>
 
-  <div class="foot"><a href="index.html">← на сайт</a></div>
+  <div class="foot">
+    Забули пароль? Підійдіть до викладача — він видасть новий.<br>
+    <a href="index.html">← на сайт</a>
+  </div>
 </div>
 
 <script>
 (function(){
-  const f = document.getElementById('f');
-  const btn = document.getElementById('go');
-  const err = document.getElementById('err');
+  var f   = document.getElementById('f');
+  var btn = document.getElementById('go');
+  var err = document.getElementById('err');
 
   f.addEventListener('submit', function(ev){
     ev.preventDefault();
     err.classList.remove('on');
     btn.disabled = true; btn.textContent = 'Заходимо…';
 
-    fetch('/api/login', {
+    fetch('/api/pupil-login', {
       method: 'POST',
+      credentials: 'same-origin',
       body: new URLSearchParams({
         login:    document.getElementById('login').value.trim(),
         password: document.getElementById('password').value
       })
     })
-    .then(r => r.json().then(j => ({status:r.status, j:j})))
+    .then(function(r){ return r.json().then(function(j){ return {status:r.status, j:j}; }); })
     .then(function(res){
-      if(res.j && res.j.ok){ location.href = res.j.redirect || '/admin'; return; }
+      if(res.j && res.j.ok){ location.href = res.j.redirect || '/kabinet'; return; }
       throw new Error((res.j && res.j.error) || 'Не вдалося увійти');
     })
     .catch(function(e){
