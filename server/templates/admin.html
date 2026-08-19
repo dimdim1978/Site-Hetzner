@@ -117,11 +117,11 @@
 <!-- ================= ОБСЛУГОВУВАННЯ ================= -->
 <div class="card maint">
   <h2>Копія бази</h2>
-  <p>Надішлемо на <b>вашу службову пошту</b> таблицю з усіма заявками
-     (відкривається в Excel — редагуйте як завгодно) і резервну копію бази.
-     Лист міститиме персональні дані всіх дітей, зокрема про здоров'я.</p>
+  <p>Копія завжди зберігається на сервері — до {{ keep }} останніх копій,
+     старіші прибираються самі. За бажанням її можна одразу надіслати собі
+     на пошту разом із таблицею всіх заявок для Excel.</p>
   <div class="maint-row">
-    <button class="btn ghost" type="button" id="bkBtn">Надіслати копію бази на пошту</button>
+    <button class="btn ghost" type="button" id="bkBtn">Зробити копію бази</button>
     <span id="bkMsg" class="maint-msg"></span>
   </div>
 </div>
@@ -133,6 +133,22 @@
     <span class="cnt">Обрано: <b id="cnt">0</b></span>
     <button class="btn ghost"   type="button" id="passBtn">Видати пароль</button>
     <button class="btn primary" type="button" id="addBtn">Додати до списку</button>
+  </div>
+</div>
+
+<!-- ================= КОПІЯ БАЗИ ================= -->
+<div class="modal" id="bkBox" hidden>
+  <div class="modal-in">
+    <h2>Копія бази</h2>
+    <p class="bk-txt">Копію буде збережено на сервері в будь-якому разі.
+       Надіслати її ще й на вашу пошту?</p>
+    <p class="pw-note bad">Лист міститиме персональні дані всіх дітей,
+       зокрема про здоров'я. Не пересилайте його далі.</p>
+    <div class="pw-btns">
+      <button class="btn ghost"   type="button" id="bkCancel">Скасувати</button>
+      <button class="btn ghost"   type="button" id="bkNo">Ні, тільки на сервері</button>
+      <button class="btn primary" type="button" id="bkYes">Так, на пошту</button>
+    </div>
   </div>
 </div>
 
@@ -261,6 +277,8 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .maint-msg{font-size:14px;color:var(--ink-3)}
 .maint-msg.ok{color:#027A48}
 .maint-msg.err{color:var(--err)}
+.bk-txt{font-size:15px;color:var(--ink-2);margin-bottom:14px}
+#bkBox .pw-btns .btn.ghost + .btn.ghost{margin-left:0}
 
 @media print{
   body *{visibility:hidden}
@@ -454,32 +472,51 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
     }
   });
 
-  /* ---- копія бази на пошту ---- */
-  var bkBtn = $('#bkBtn'), bkMsg = $('#bkMsg');
+  /* ------------------------------------------------------------
+     Копія бази. Кнопка не робить нічого одразу — спершу питає, чи
+     слати на пошту. «Ні» теж робить копію: вона просто лишається
+     на сервері, і це найчастіший випадок.
+     ------------------------------------------------------------ */
+  var bkBtn = $('#bkBtn'), bkMsg = $('#bkMsg'), bkBox = $('#bkBox');
   if(bkBtn){
-    bkBtn.addEventListener('click', function(){
-      if(!confirm('Надіслати на службову пошту всі дані всіх дітей?')) return;
+    var closeBk = function(){ bkBox.hidden = true; };
+    bkBtn.addEventListener('click', function(){ bkBox.hidden = false; });
+    $('#bkCancel').addEventListener('click', closeBk);
+    $('#bkNo').addEventListener('click',  function(){ closeBk(); runBackup(false); });
+    $('#bkYes').addEventListener('click', function(){ closeBk(); runBackup(true);  });
+
+    function runBackup(mail){
       bkBtn.disabled = true;
       bkMsg.className = 'maint-msg';
-      bkMsg.textContent = 'Готуємо файли й надсилаємо…';
-      fetch('/admin/backup-mail', { method:'POST', credentials:'same-origin' })
+      bkMsg.textContent = mail ? 'Готуємо файли й надсилаємо…' : 'Знімаємо копію…';
+
+      fetch('/admin/backup', {
+        method: 'POST', credentials: 'same-origin',
+        body: new URLSearchParams({ mail: mail ? '1' : '0' })
+      })
         .then(function(r){ return r.json(); })
         .then(function(d){
-          if(d && d.ok){
-            bkMsg.className = 'maint-msg ok';
-            bkMsg.textContent = 'Надіслано на ' + d.to + ' · заявок: ' + d.n +
-                                (d.note ? ' · ' + d.note : '');
-          } else {
+          if(!d || !d.ok){
             bkMsg.className = 'maint-msg err';
-            bkMsg.textContent = (d && d.error) || 'Не вдалося надіслати.';
+            bkMsg.textContent = (d && d.error) || 'Не вдалося зробити копію.';
+            return;
           }
+          var txt = 'Копію збережено: ' + d.name + ' (' + d.size + ')' +
+                    ' · копій на сервері: ' + d.kept + ' · разом ' + d.total;
+          if(d.mailed){
+            txt += ' · надіслано на ' + d.to;
+            if(d.note) txt += ' · ' + d.note;
+          }
+          // копія є в будь-якому разі — тому це попередження, а не помилка
+          bkMsg.className = 'maint-msg ' + (d.mail_error ? 'err' : 'ok');
+          bkMsg.textContent = d.mail_error ? (txt + ' · ПОШТА: ' + d.mail_error) : txt;
         })
         .catch(function(){
           bkMsg.className = 'maint-msg err';
           bkMsg.textContent = 'Немає зв’язку із сервером.';
         })
         .finally(function(){ bkBtn.disabled = false; });
-    });
+    }
   }
 
   drawBasket(); markRows(); refresh();

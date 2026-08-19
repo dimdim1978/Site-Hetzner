@@ -15,7 +15,7 @@
 На сервері працює під gunicorn — див. deploy/beregynia.service
 """
 
-import os, re, csv, json, sqlite3, smtplib, secrets, io, zipfile, tempfile, unicodedata
+import os, re, csv, json, sqlite3, smtplib, secrets, io, zipfile
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -54,6 +54,11 @@ SMTP_USER   = os.environ.get('SMTP_USER', '')
 SMTP_PASS   = os.environ.get('SMTP_PASS', '')
 MAIL_FROM   = os.environ.get('MAIL_FROM', SMTP_USER)
 SITE_URL    = os.environ.get('SITE_URL', 'https://children.pp.ua')
+# Копії бази лежать поруч із самою базою: цей каталог і так дозволений
+# службі на запис (ReadWritePaths у beregynia.service), нічого налаштовувати
+# додатково не треба.
+BACKUP_DIR  = os.environ.get('BACKUP_DIR', os.path.join(os.path.dirname(DB_PATH), 'backups'))
+BACKUP_KEEP = int(os.environ.get('BACKUP_KEEP', '10'))
 PHONE_1     = os.environ.get('PHONE_1', '+380 97 382 33 79')
 PHONE_2     = os.environ.get('PHONE_2', '+380 95 484 01 03')
 DEV         = os.environ.get('DEV', '') == '1'
@@ -844,7 +849,8 @@ def admin_list():
                            program=prog, programs=PROGRAMS, prog_counts=progs,
                            year=year, years=years, this_year=school_year(),
                            grades=grades, counts=counts, total=sum(counts.values()),
-                           monday=_monday(), role=session.get('role'), who=session.get('name'))
+                           monday=_monday(), keep=BACKUP_KEEP,
+                           role=session.get('role'), who=session.get('name'))
 
 
 def _monday(d=None):
@@ -1077,43 +1083,94 @@ def _build_workbook(conn):
         return ('beregynia-{}.zip'.format(stamp), buf.getvalue(), 'application/zip')
 
 
-def _db_snapshot():
-    """Копія бази, знята коректно навіть під час запису (режим WAL)."""
-    fd, path = tempfile.mkstemp(suffix='.db')
-    os.close(fd)
+def _human(n):
+    return '{:.1f} МБ'.format(n / 1048576.0) if n >= 1048576 else '{:.0f} КБ'.format(n / 1024.0)
+
+
+def _write_backup():
+    """Знімає копію бази у BACKUP_DIR і прибирає найстаріші.
+
+    sqlite3.backup() — не те саме, що cp: він знімає узгоджений стан навіть
+    тоді, коли хтось саме зараз пише в базу. Просте копіювання файла в режимі
+    WAL дало б биту копію, і виявилося б це вже під час відновлення.
+
+    Імена файлів мають вигляд beregynia-2026-09-14-2130.db, тому звичайне
+    сортування за назвою — це сортування за часом, і найстаріший завжди
+    перший. Тримаємо останні BACKUP_KEEP штук: сервер не безрозмірний."""
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    # секунди в імені не для краси: без них дві копії поспіль (натиснули
+    # «тільки на сервері», потім передумали й натиснули «на пошту») мовчки
+    # перезаписали б одна одну
+    path = os.path.join(BACKUP_DIR, 'beregynia-{}.db'.format(
+        datetime.now().strftime('%Y-%m-%d-%H%M%S')))
+
     dst = sqlite3.connect(path)
     try:
         db().backup(dst)
-        dst.close()
-        with open(path, 'rb') as fh:
-            return fh.read()
     finally:
-        for extra in (path, path + '-wal', path + '-shm'):
-            try: os.remove(extra)
-            except OSError: pass
+        dst.close()
+    for extra in (path + '-wal', path + '-shm'):
+        try: os.remove(extra)
+        except OSError: pass
+
+    files = sorted(f for f in os.listdir(BACKUP_DIR)
+                   if f.startswith('beregynia-') and f.endswith('.db'))
+    dropped = 0
+    while len(files) > BACKUP_KEEP:
+        try:
+            os.remove(os.path.join(BACKUP_DIR, files.pop(0)))
+            dropped += 1
+        except OSError:
+            break
+    total = sum(os.path.getsize(os.path.join(BACKUP_DIR, f)) for f in files)
+    return {'path': path, 'name': os.path.basename(path),
+            'size': os.path.getsize(path), 'kept': len(files),
+            'total': total, 'dropped': dropped}
 
 
-@app.post('/admin/backup-mail')
-def admin_backup_mail():
+@app.post('/admin/backup')
+def admin_backup():
+    """Копія бази. Спершу — завжди на сервер, і лише потім, за бажанням,
+    на пошту. Порядок саме такий навмисно: якщо пошта не працює або лист
+    ріжеться через розмір, копія на диску вже є."""
     r = require_login()
     if r: return r
     if session.get('role') != 'admin':
-        return jsonify(ok=False, error='Вивантаження бази доступне лише адміністратору'), 403
-    if not (SMTP_USER and SMTP_PASS and ADMIN_MAIL):
-        return jsonify(ok=False, error='Пошта не налаштована — див. .env'), 500
+        return jsonify(ok=False, error='Копія бази доступна лише адміністратору'), 403
+
+    want_mail = request.form.get('mail') == '1'
+
+    try:
+        bk = _write_backup()
+    except Exception as e:
+        app.logger.error('Копію бази не збережено: %s', e)
+        return jsonify(ok=False, error='Не вдалося зберегти копію: {}'.format(e)), 500
 
     conn = db()
     n = conn.execute('SELECT COUNT(*) c FROM children').fetchone()['c']
+    log('копія бази на сервері: {} ({} заявок)'.format(bk['name'], n))
+
+    base = dict(ok=True, mailed=False, n=n, name=bk['name'],
+                size=_human(bk['size']), kept=bk['kept'],
+                total=_human(bk['total']), dir=BACKUP_DIR)
+    if not want_mail:
+        return jsonify(**base)
+
+    if not (SMTP_USER and SMTP_PASS and ADMIN_MAIL):
+        return jsonify(mail_error='Пошта не налаштована — див. .env', **base)
+
     fname, fbytes, fmime = _build_workbook(conn)
 
     snapshot, snap_note = None, ''
     try:
-        snapshot = _db_snapshot()
+        with open(bk['path'], 'rb') as fh:
+            snapshot = fh.read()
         if len(snapshot) > 20 * 1024 * 1024:      # поштові сервери ріжуть великі вкладення
-            snap_note = 'Резервну копію бази не вкладено — вона більша за 20 МБ.'
+            snap_note = ('Резервну копію бази не вкладено — вона більша за 20 МБ. '
+                         'Копія збережена на сервері: {}'.format(bk['name']))
             snapshot = None
     except Exception as e:
-        app.logger.error('Знімок бази не зроблено: %s', e)
+        app.logger.error('Копію не прочитано для листа: %s', e)
         snap_note = 'Резервну копію бази не вкладено через помилку читання.'
 
     stamp = datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -1135,8 +1192,7 @@ font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
 </div></body></html>""".format(
         stamp=stamp, n=n, fname=esc(fname),
         snap=(esc(snap_note) if snap_note else
-              '<b>beregynia-{}.db</b> — точна резервна копія бази.'.format(
-                  datetime.now().strftime('%Y-%m-%d'))))
+              '<b>{}</b> — точна резервна копія бази.'.format(esc(bk['name']))))
 
     msg = MIMEMultipart()
     msg['Subject'] = Header('Копія бази «Берегиня» · {}'.format(stamp), 'utf-8')
@@ -1151,8 +1207,7 @@ font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
 
     attach(fname, fbytes, fmime.split('/')[-1])
     if snapshot:
-        attach('beregynia-{}.db'.format(datetime.now().strftime('%Y-%m-%d')),
-               snapshot, 'octet-stream')
+        attach(bk['name'], snapshot, 'octet-stream')
 
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=60) as srv:
@@ -1160,12 +1215,14 @@ font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
             srv.login(SMTP_USER, SMTP_PASS)
             srv.sendmail(MAIL_FROM, [a.strip() for a in ADMIN_MAIL.split(',')], msg.as_string())
     except Exception as e:
+        # Копія на сервері вже є — це не провал операції, а лише невдала пошта.
         app.logger.error('Копію бази не надіслано: %s', e)
-        return jsonify(ok=False, error='Лист не надіслано: {}'.format(e)), 500
+        return jsonify(mail_error='Лист не надіслано: {}'.format(e), **base)
 
     log('копію бази надіслано на пошту ({} заявок)'.format(n))
-    return jsonify(ok=True, n=n, file=fname,
-                   to=ADMIN_MAIL.split(',')[0].strip(), note=snap_note)
+    base.update(mailed=True, file=fname,
+                to=ADMIN_MAIL.split(',')[0].strip(), note=snap_note)
+    return jsonify(**base)
 
 
 @app.get('/api/whoami')
