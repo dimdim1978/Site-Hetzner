@@ -78,6 +78,10 @@ body{
 .top a.back:hover{color:var(--accent)}
 
 header.head{padding:20px 0 28px;border-bottom:1px solid var(--line-soft)}
+/* Поки клас не обрано, у шапці не лишається жодного видимого блоку —
+   і вона висить порожньою смугою з лінійкою під нею. Згортаємо її,
+   доки всі діти сховані; щойно зʼявиться підказка напряму — розкриється. */
+header.head:not(:has(> :not(.hidden))){padding:0;border-bottom:0}
 header.head .org{font-size:14px;color:var(--ink-3);letter-spacing:.02em;margin-bottom:8px}
 header.head h1{font-size:26px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
 header.head .meta{
@@ -725,6 +729,23 @@ footer a{color:var(--ink-2)}
 
 const $  = (s,r)=>(r||document).querySelector(s);
 const $$ = (s,r)=>Array.from((r||document).querySelectorAll(s));
+
+/* ------------------------------------------------------------------
+   Розмітку правлять руками, і рано чи пізно звідти зникає блок, який
+   згадується тут, у скрипті. Тоді $('#щось') повертає null, звернення
+   до нього кидає помилку — і разом із нею вмирає ВЕСЬ код нижче:
+   анкета просто перестає розкриватися після вибору класу, без жодного
+   натяку на причину.
+
+   Тому весь доступ до окремих елементів іде через ці помічники:
+   немає елемента — тихо нічого не робимо. Прибрати з розмітки
+   будь-який блок тепер безпечно.
+   ------------------------------------------------------------------ */
+function hide(sel, on){ const el = $(sel); if (el) el.classList.toggle('hidden', on); return el; }
+function cls(sel, name, on){ const el = $(sel); if (el) el.classList.toggle(name, on); return el; }
+function txt(sel, v){ const el = $(sel); if (el) el.textContent = v; return el; }
+function val(sel, v){ const el = $(sel); if (!el) return ''; if (v !== undefined) el.value = v; return el.value; }
+function on(sel, ev, fn){ const el = $(sel); if (el) el.addEventListener(ev, fn); return el; }
 const started = Date.now();
 
 /* ---------- підстановка з CFG ----------
@@ -787,11 +808,11 @@ $$('.field.dob').forEach(buildDob);
 /* заклад освіти — один список на обидва напрями */
 CFG.SCHOOLS.forEach(function(s,i){ $('#school').appendChild(new Option(s.n, String(i))); });
 $('#school').appendChild(new Option('Інший заклад','__other__'));
-$('#school').addEventListener('change', function(){
+on('#school', 'change', function(){
   var other = this.value === '__other__';
-  $('#school_other_wrap').classList.toggle('hidden', !other);
+  hide('#school_other_wrap', !other);
   var s = CFG.SCHOOLS[Number(this.value)];
-  $('#school_addr').textContent = (!other && s) ? s.a : '';
+  txt('#school_addr', (!other && s) ? s.a : '');
 });
 
 /* =====================================================
@@ -803,7 +824,7 @@ $('#school').addEventListener('change', function(){
    напряму ніколи не блокують надсилання.
    ===================================================== */
 function currentBranch(){
-  var g = parseInt($('#grade').value, 10);
+  var g = parseInt(val('#grade'), 10);
   if (!g) return null;
   return g >= 9 ? 'nmt' : 'gpd';
 }
@@ -821,30 +842,30 @@ function clearBranch(which){
 }
 
 var shown = null;
-$('#grade').addEventListener('change', function(){
+on('#grade', 'change', function(){
   var br = currentBranch();
   if (br === shown) return;
 
   if (shown) clearBranch(shown);          // перемкнули клас — чужі відповіді не тягнемо
   shown = br;
 
-  $('#h_title').textContent = br === 'nmt' ? 'Запис на підготовку до НМТ'
-                            : br === 'gpd' ? 'Запис до групи подовженого дня'
-                            : 'Запис на заняття';
-  $('#m_none').classList.toggle('hidden', !!br);
-  $('#m_gpd').classList.toggle('hidden', br !== 'gpd');
-  $('#m_nmt').classList.toggle('hidden', br !== 'nmt');
+  txt('#h_title', br === 'nmt' ? 'Запис на підготовку до НМТ'
+                : br === 'gpd' ? 'Запис до групи подовженого дня'
+                : 'Запис на заняття');
+  hide('#m_none', !!br);
+  hide('#m_gpd', br !== 'gpd');
+  hide('#m_nmt', br !== 'nmt');
 
   if (br !== 'nmt') {                       // ховаємо — заразом і чистимо
-    $('#student_phone').value = '';
-    $('#student_email').value = '';
+    val('#student_phone', '');
+    val('#student_email', '');
   }
-  $('#student_contacts').classList.toggle('hidden', br !== 'nmt');
-  $('#branch-gpd').classList.toggle('hidden', br !== 'gpd');
-  $('#branch-nmt').classList.toggle('hidden', br !== 'nmt');
-  $('#consents').classList.toggle('hidden', !br);
-  $('#await').classList.toggle('hidden', !!br);
-  $('.submit-zone').classList.toggle('hidden', !br);
+  hide('#student_contacts', br !== 'nmt');
+  hide('#branch-gpd', br !== 'gpd');
+  hide('#branch-nmt', br !== 'nmt');
+  hide('#consents', !br);
+  hide('#await', !!br);
+  hide('.submit-zone', !br);
 
   if (br === 'gpd' && !$$('.person').length) addPerson(true);
   refreshGate();
@@ -876,12 +897,12 @@ function emailOk(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
 /* ---------- умовні поля ---------- */
 $$('input[name=self_leave]').forEach(function(r){
   r.addEventListener('change', function(){
-    $('#self_time_wrap').classList.toggle('hidden', this.value !== 'після');
+    hide('#self_time_wrap', this.value !== 'після');
   });
 });
 $$('input[name=has_allergy]').forEach(function(r){
   r.addEventListener('change', function(){
-    $('#allergy_wrap').classList.toggle('hidden', this.value !== 'так');
+    hide('#allergy_wrap', this.value !== 'так');
   });
 });
 
@@ -916,15 +937,15 @@ function addPerson(required){
 
   bindPhones(d); bindBlur(d);
   $('#people').appendChild(d);
-  $('#add_person').classList.toggle('hidden', $$('.person').length >= 4);
+  hide('#add_person', $$('.person').length >= 4);
 }
 function renumber(){
   $$('.person').forEach(function(p,i){
     $('.p-head span', p).textContent = 'Особа '+(i+1);
   });
-  $('#add_person').classList.remove('hidden');
+  hide('#add_person', false);
 }
-$('#add_person').addEventListener('click', function(){ addPerson(false); });
+on('#add_person', 'click', function(){ addPerson(false); });
 
 /* ---------- прив’язка обробників ---------- */
 function bindPhones(root){
@@ -967,10 +988,10 @@ function gateOk(){
 function refreshGate(){
   var ok = gateOk();
   $('#go').disabled = !ok;
-  $('#gate').classList.toggle('on', !ok);
+  cls('#gate', 'on', !ok);
 }
 $$('.subj').forEach(function(c){
-  c.addEventListener('change', function(){ $('#subj_fs').classList.remove('bad'); });
+  c.addEventListener('change', function(){ cls('#subj_fs', 'bad', false); });
 });
 
 /* Три предмети НМТ складають усі — вони позначені від початку
@@ -1058,9 +1079,9 @@ function collect(){
   });
 
   // школа: у select лежить індекс — розгортаємо в назву й адресу
-  const si = $('#school').value;
+  const si = val('#school');
   if(si === '__other__'){
-    d.school = $('#school_other').value.trim();
+    d.school = val('#school_other').trim();
     d.school_addr = '';
   } else if(si !== ''){
     d.school = CFG.SCHOOLS[Number(si)].n;
@@ -1099,12 +1120,12 @@ function saveDraft(){
     localStorage.setItem(DRAFT, JSON.stringify(d));
   }catch(e){/* приватний режим — просто без чернетки */}
 }
-$('#f').addEventListener('input', function(){
+on('#f', 'input', function(){
   clearTimeout(window.__dt); window.__dt = setTimeout(saveDraft, 1200);
 });
 
 /* ---------- надсилання ---------- */
-$('#f').addEventListener('submit', function(ev){
+on('#f', 'submit', function(ev){
   ev.preventDefault();
   const box = $('#form_err');
   box.classList.remove('on');
@@ -1126,10 +1147,10 @@ $('#f').addEventListener('submit', function(ev){
 
   const finish = function(no){
     try{ localStorage.removeItem(DRAFT); }catch(e){}
-    $('#app_no').textContent = no;
-    $('#done_mail').classList.toggle('hidden', !data.parent_email);
-    $('#f').classList.add('hidden');
-    $('#done').classList.add('on');
+    txt('#app_no', no);
+    hide('#done_mail', !data.parent_email);
+    hide('#f', true);
+    cls('#done', 'on', true);
     window.scrollTo({top:0, behavior:'smooth'});
   };
 
@@ -1156,32 +1177,32 @@ $('#f').addEventListener('submit', function(ev){
 });
 
 /* ---------- «записати ще одну дитину» ---------- */
-$('#again').addEventListener('click', function(){
+on('#again', 'click', function(){
   ['child_name','grade','school','school_other',
    'meal_limits','allergy_details','health_notes','comment','do_not_release'].forEach(function(id){
     const e=$('#'+id); if(e) e.value='';
   });
-  $('#school_addr').textContent='';
+  txt('#school_addr', '');
   $$('.exp').forEach(function(c){ c.checked=false; });
   $$('input[name=has_allergy],input[name=self_leave],input[name=pickup_school]')
     .forEach(function(r){ r.checked=false; });
-  $('#allergy_wrap').classList.add('hidden');
-  $('#school_other_wrap').classList.add('hidden');
-  $('#student_contacts').classList.add('hidden');
+  hide('#allergy_wrap', true);
+  hide('#school_other_wrap', true);
+  hide('#student_contacts', true);
   $$('.field.dob').forEach(function(b){
     $$('select', b).forEach(function(sel){ sel.value = ''; });
     $('input[type=hidden]', b).value = '';
   });
   if (shown) clearBranch(shown);
   shown = null;
-  $('#branch-gpd').classList.add('hidden');
-  $('#branch-nmt').classList.add('hidden');
-  $('#consents').classList.add('hidden');
-  $('.submit-zone').classList.add('hidden');
-  $('#await').classList.remove('hidden');
-  $('#done').classList.remove('on');
-  $('#f').classList.remove('hidden');
-  $('#go').textContent='Надіслати заявку';
+  hide('#branch-gpd', true);
+  hide('#branch-nmt', true);
+  hide('#consents', true);
+  hide('.submit-zone', true);
+  hide('#await', false);
+  cls('#done', 'on', false);
+  hide('#f', false);
+  txt('#go', 'Надіслати заявку');
   refreshGate();          // згоди лишились позначені — кнопка одразу жива
   window.scrollTo({top:0,behavior:'smooth'});
   $('#child_name').focus();
