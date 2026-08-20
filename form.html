@@ -301,19 +301,11 @@ footer a{color:var(--ink-2)}
         <div class="err">Напишіть назву закладу</div>
       </div>
 
-      <div id="student_contacts" class="hidden">
-        <div class="field" data-phone>
-          <label class="lab" for="student_phone">Телефон учня <span class="opt">— необов’язково</span></label>
-          <input type="tel" id="student_phone" name="student_phone" inputmode="tel" placeholder="+380 __ ___ __ __">
-          <div class="err">Введіть номер у форматі +380 XX XXX XX XX</div>
-        </div>
-
-        <div class="field" data-email>
-          <label class="lab" for="student_email">Пошта учня <span class="opt">— необов’язково</span></label>
-          <input type="email" id="student_email" name="student_email" inputmode="email" spellcheck="false" autocorrect="off" autocapitalize="off">
-          <div class="err">Перевірте адресу пошти</div>
-        </div>
-      </div>
+      <!-- Телефон і пошта самого учня в анкеті НЕ питаються: батьки й так
+           лишають свій номер, а зайві поля на телефоні лише відлякують.
+           Колонки в базі лишились — номер учня вносить адміністратор
+           у картці, коли він справді знадобиться (перенесли урок,
+           треба зателефонувати старшокласнику напряму). -->
     </section>
 
     <!-- ================= БАТЬКИ — спільний блок ================= -->
@@ -880,11 +872,6 @@ function onovytyGilku(){
   if (shown && br) clearBranch(shown);
   shown = br;
 
-  if (br !== 'nmt') {                       // ховаємо — заразом і чистимо
-    val('#student_phone', '');
-    val('#student_email', '');
-  }
-  hide('#student_contacts', br !== 'nmt');
   hide('#branch-gpd', br !== 'gpd');
   hide('#branch-nmt', br !== 'nmt');
   hide('#consents', !br);
@@ -1216,7 +1203,6 @@ on('#again', 'click', function(){
     .forEach(function(r){ r.checked=false; });
   hide('#allergy_wrap', true);
   hide('#school_other_wrap', true);
-  hide('#student_contacts', true);
   $$('.field.dob').forEach(function(b){
     $$('select', b).forEach(function(sel){ sel.value = ''; });
     var h = $('input[type=hidden]', b); if (h) h.value = '';

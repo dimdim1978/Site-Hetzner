@@ -34,6 +34,15 @@
     {{ row('Заклад освіти', c.school) }}
     {{ row('Адреса закладу', c.school_addr) }}
     {{ row('Забирати зі школи', c.pickup_school) }}
+    {# Власні контакти учня: в анкеті не питаються, їх вносить адміністратор #}
+    {% if c.student_phone %}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px;width:230px">Телефон учня</td>
+        <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.student_phone|replace(' ','') }}">{{ c.student_phone }}</a></td></tr>
+    {% endif %}
+    {% if c.student_email %}
+    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Пошта учня</td>
+        <td style="padding:9px 0;font-size:15px"><a href="mailto:{{ c.student_email }}">{{ c.student_email }}</a></td></tr>
+    {% endif %}
   </table>
 </div>
 
@@ -48,14 +57,6 @@
     {% if c.parent_email %}
     <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Пошта</td>
         <td style="padding:9px 0;font-size:15px"><a href="mailto:{{ c.parent_email }}">{{ c.parent_email }}</a></td></tr>
-    {% endif %}
-    {% if c.student_phone %}
-    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Телефон учня</td>
-        <td style="padding:9px 0;font-size:15px"><a href="tel:{{ c.student_phone|replace(' ','') }}">{{ c.student_phone }}</a></td></tr>
-    {% endif %}
-    {% if c.student_email %}
-    <tr><td style="padding:9px 0;color:var(--ink-3);font-size:14px">Пошта учня</td>
-        <td style="padding:9px 0;font-size:15px"><a href="mailto:{{ c.student_email }}">{{ c.student_email }}</a></td></tr>
     {% endif %}
     {{ row('Другий контакт', c.contact2_name) }}
     {% if c.contact2_phone %}

@@ -95,6 +95,18 @@
 
     {{ pole('Заклад освіти', 'school', c.school) }}
     {{ pole('Адреса закладу', 'school_addr', c.school_addr) }}
+
+    {# В анкеті цих полів немає навмисно — щоб не навантажувати батьків.
+       Номер учня вносять тут, коли він справді потрібен: перенесли урок,
+       треба зателефонувати старшокласнику, а не шукати маму на роботі. #}
+    <div style="margin:18px 0 14px;padding-top:16px;border-top:1px solid var(--line)">
+      <div style="font-size:14px;color:var(--ink-3);margin-bottom:2px">Власні контакти учня</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-bottom:12px">
+        В анкеті не питаються — вносьте, якщо потрібно телефонувати учневі напряму.
+      </div>
+      {{ pole('Телефон учня', 'student_phone', c.student_phone, 'tel', '+380 __ ___ __ __') }}
+      {{ pole('Пошта учня', 'student_email', c.student_email, 'email') }}
+    </div>
   </div>
 
   <div class="card">
@@ -112,14 +124,6 @@
     {{ pole('Телефон', 'parent_phone', c.parent_phone, 'tel', '+380 __ ___ __ __') }}
     {{ pole('Пошта', 'parent_email', c.parent_email, 'email') }}
   </div>
-
-  {% if c.program == 'НМТ' %}
-  <div class="card">
-    <h2 style="font-size:17px;margin-bottom:14px">Контакти учня</h2>
-    {{ pole('Телефон учня', 'student_phone', c.student_phone, 'tel', '+380 __ ___ __ __') }}
-    {{ pole('Пошта учня', 'student_email', c.student_email, 'email') }}
-  </div>
-  {% endif %}
 
   <div class="card">
     <h2 style="font-size:17px;margin-bottom:14px">Другий контакт і адреса</h2>
