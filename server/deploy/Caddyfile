@@ -2,62 +2,137 @@
 #  /etc/caddy/Caddyfile
 #  Caddy сам отримує й оновлює сертифікат Let's Encrypt.
 #  Перед першим запуском домен уже має вказувати на цей сервер.
+#
+#  Після будь-якої правки — спершу перевірка, потім застосування:
+#      caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile
+#      systemctl reload caddy
+#  Якщо reload не пройде, Caddy лишиться на попередньому конфізі
+#  і далі показуватиме active. «Працює» ще не означає «читає диск».
 # ============================================================
 
-children.pp.ua {
-    encode zstd gzip
+# ------------------------------------------------------------
+#  Основний сайт. Дві адреси в одному блоці — навмисно:
+#  раніше вони були двома однаковими копіями на 50 рядків,
+#  і будь-яка правка в одній тихо не потрапляла в другу.
+#  Тепер розійтися їм ніяк.
+# ------------------------------------------------------------
+children.pp.ua, iprostir.pp.ua {
+	encode zstd gzip
 
-    # ---- API та адмінка → у Flask ----
-    handle /api/* {
-        reverse_proxy 127.0.0.1:8000
-    }
-    handle /admin* {
-        reverse_proxy 127.0.0.1:8000
-    }
-    # кабінет учня — теж у Flask (статикою його віддавати не можна:
-    # сторінку має бачити лише той, хто увійшов)
-    handle /kabinet* {
-        reverse_proxy 127.0.0.1:8000
-    }
+	# ---- API та адмінка → у Flask ----
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+	handle /admin* {
+		reverse_proxy 127.0.0.1:8000
+	}
+	# кабінет учня — теж у Flask (статикою його віддавати не можна:
+	# сторінку має бачити лише той, хто увійшов)
+	handle /kabinet* {
+		reverse_proxy 127.0.0.1:8000
+	}
 
-    # ---- решта — статика з робочої копії репозиторію ----
-    handle {
-        root * /var/www/beregynia
-        try_files {path} {path}/ {path}.html
-        file_server
-    }
+	# ---- решта — статика з робочої копії репозиторію ----
+	handle {
+		root * /var/www/beregynia
+		try_files {path} {path}/ {path}.html
+		file_server
+	}
 
-    # HTML не кешуємо «намертво»: no-cache означає не «не зберігати»,
-    # а «щоразу перепитати, чи не змінилось». Браузер отримує 304 і майже
-    # нічого не качає, зате після деплою одразу бачить нову версію —
-    # без Ctrl+F5 і без «у мене стара сторінка».
-    @html path *.html /
-    header @html Cache-Control "no-cache"
+	# HTML не кешуємо «намертво»: no-cache означає не «не зберігати»,
+	# а «щоразу перепитати, чи не змінилось». Браузер отримує 304 і майже
+	# нічого не качає, зате після деплою одразу бачить нову версію —
+	# без Ctrl+F5 і без «у мене стара сторінка».
+	@html path *.html /
+	header @html Cache-Control "no-cache"
 
-    # css і решта статики можуть лежати в кеші довше
-    @assets path *.css *.js *.svg *.png *.ico *.woff2
-    header @assets Cache-Control "public, max-age=3600"
+	# css і решта статики можуть лежати в кеші довше
+	@assets path *.css *.js *.svg *.png *.ico *.woff2
+	header @assets Cache-Control "public, max-age=3600"
 
-    # ---- заголовки безпеки ----
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options    "nosniff"
-        X-Frame-Options           "SAMEORIGIN"
-        Referrer-Policy           "same-origin"
-        -Server
-    }
+	# ---- заголовки безпеки ----
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "same-origin"
+		-Server
+	}
 
-    # адмінку й вхід — не індексувати
-    @private path /admin* /kabinet* /enter.html /uchen.html
-    header @private X-Robots-Tag "noindex, nofollow"
+	# адмінку й вхід — не індексувати
+	@private path /admin* /kabinet* /enter.html /uchen.html
+	header @private X-Robots-Tag "noindex, nofollow"
 
-    log {
-        output file /var/log/caddy/beregynia.log
-        format console
-    }
+	log {
+		output file /var/log/caddy/beregynia.log
+		format console
+	}
 }
 
 # без www теж працює
 www.children.pp.ua {
-    redir https://children.pp.ua{uri} permanent
+	redir https://children.pp.ua{uri} permanent
+}
+
+www.iprostir.pp.ua {
+	redir https://iprostir.pp.ua{uri} permanent
+}
+
+# ------------------------------------------------------------
+#  Мудрик. Зарезервовано під окремий сайт закладу; поки заглушка.
+#  Доки сайту немає — закрито від пошуковиків, щоб порожня
+#  сторінка не потрапила в індекс під потрібною назвою.
+# ------------------------------------------------------------
+mudryk.iprostir.pp.ua {
+	encode zstd gzip
+
+	handle {
+		root * /var/www/beregynia/mudryk
+		try_files {path} {path}/ {path}.html
+		file_server
+	}
+
+	@html path *.html /
+	header @html Cache-Control "no-cache"
+
+	@assets path *.css *.js *.svg *.png *.ico *.woff2
+	header @assets Cache-Control "public, max-age=3600"
+
+	# ---- заголовки безпеки ----
+	# Тут була незакрита лапка після «noindex, nofollow» і зайве слово
+	# header усередині блоку header. Caddy на це не лаявся: лапка просто
+	# ковтала наступний рядок у той самий текстовий токен. Наслідок —
+	# X-Robots-Tag і Strict-Transport-Security не віддавалися взагалі,
+	# і піддомен був відкритий для індексації. Перевірено curl-ом.
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+}
+
+# ------------------------------------------------------------
+#  Пісочниця. Сюди лягають сторінки, які треба спробувати на дітях
+#  наживо, перш ніж вирішувати, чи брати їх у кабінет учня.
+#  Ніякого кешу (щоб правки було видно одразу) і ніякого індексування.
+# ------------------------------------------------------------
+lab.mudryk.iprostir.pp.ua {
+	encode zstd gzip
+
+	handle {
+		root * /var/www/lab
+		try_files {path} {path}/ {path}.html
+		file_server
+	}
+
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		Cache-Control "no-cache"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		-Server
+	}
 }
