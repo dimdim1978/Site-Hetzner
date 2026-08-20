@@ -1083,6 +1083,136 @@ def admin_note(cid):
     log('коментар', cid)
     return redirect('/admin/{}'.format(cid))
 
+
+# ============================================================
+#  ВИПРАВЛЕННЯ ЗАЯВКИ
+#
+#  Тільки описки. Межа проходить не по зручності, а по тому,
+#  ЧИЯ це інформація:
+#
+#  * можна правити те, що людина НАБРАЛА — ПІБ, телефони, пошту,
+#    школу, клас, адресу. Тут помиляється клавіатура, і прізвище
+#    в списку має збігатися з паспортом;
+#  * НЕ можна правити те, що людина ЗАЯВИЛА — згоди, алергії,
+#    дані про здоров'я. Це її заява, а не наш запис про неї.
+#    Якщо воно змінилося насправді — це нова заява, тобто нова
+#    анкета, а не мовчазна правка чужих слів працівником.
+#
+#  Статус має власні кнопки, логін і пароль — власну. Номер
+#  заявки не змінюється ніколи: з нього зроблено логін, який
+#  уже на руках у родини.
+# ============================================================
+EDIT_COLS = ['child_last', 'child_first', 'child_mid',
+             'grade', 'school', 'school_addr',
+             'parent_last', 'parent_first', 'parent_mid', 'parent_role',
+             'parent_phone', 'parent_email',
+             'student_phone', 'student_email',
+             'contact2_last', 'contact2_first', 'contact2_phone', 'address']
+
+MISIATSI = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',
+            'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня']
+
+# Скільки класів приймаємо. УВАГА: те саме число є в CFG.GRADE_MAX
+# на початку form.html. Це єдине місце в проєкті, де воно подвоєне —
+# анкета його не може взяти звідси (вона самодостатня і не ходить на
+# сервер), а адмінка не читає form.html. Переходитимете на 12 класів —
+# міняйте обидва, або задайте GRADE_MAX у .env і виправте лише анкету.
+GRADE_MAX = int(os.environ.get('GRADE_MAX', '11'))
+
+
+def _zibraty_datu(f, prefix):
+    """Три списки → «РРРР-ММ-ДД». Неповна дата — порожня.
+
+    Саме три списки, а не <input type="date">: той показує формат за
+    локаллю браузера, і 03.04 читалося б то як квітень, то як березень
+    залежно від того, з чого відкрили адмінку."""
+    d, m, y = (clean(f.get(prefix + '_d'), 2), clean(f.get(prefix + '_m'), 2),
+               clean(f.get(prefix + '_y'), 4))
+    if not (d and m and y):
+        return ''
+    return '{}-{:0>2}-{:0>2}'.format(y, m, d)
+
+
+@app.get('/admin/<int:cid>/edit')
+def admin_edit_form(cid):
+    r = require_login()
+    if r: return r
+    if session.get('role') != 'admin':
+        return redirect('/admin/{}'.format(cid))
+
+    child = db().execute('SELECT * FROM children WHERE id=?', (cid,)).fetchone()
+    if not child:
+        abort(404)
+    pickup = db().execute('SELECT * FROM pickup_persons WHERE child_id=? ORDER BY ord',
+                          (cid,)).fetchall()
+    return render_template('child_edit.html', c=child, pickup=pickup,
+                           misiatsi=MISIATSI, grade_max=GRADE_MAX,
+                           rik=datetime.now().year,
+                           role=session.get('role'), who=session.get('name'))
+
+
+@app.post('/admin/<int:cid>/edit')
+def admin_edit(cid):
+    r = require_login()
+    if r: return r
+    if session.get('role') != 'admin':
+        return jsonify(ok=False, error='Виправляти заявки може лише адміністратор'), 403
+
+    conn = db()
+    bulo = conn.execute('SELECT * FROM children WHERE id=?', (cid,)).fetchone()
+    if not bulo:
+        abort(404)
+
+    f = request.form
+    nove = {k: clean(f.get(k), 200) for k in EDIT_COLS}
+    nove['child_dob']  = _zibraty_datu(f, 'child_dob')
+    nove['parent_dob'] = _zibraty_datu(f, 'parent_dob')
+
+    # те саме, що й у анкеті: без прізвища й імені запис безглуздий
+    for k in ('child_last', 'child_first', 'parent_last', 'parent_first'):
+        if not nove[k]:
+            return redirect('/admin/{}/edit?err={}'.format(cid, k))
+
+    # Повні імена перезбираємо, а не приймаємо: інакше складові й повне
+    # ім'я розійшлися б, і в списку було б одне, а в листі інше.
+    nove['child_name']    = povne_imia(nove['child_last'], nove['child_first'], nove['child_mid'])
+    nove['parent_name']   = povne_imia(nove['parent_last'], nove['parent_first'], nove['parent_mid'])
+    nove['contact2_name'] = povne_imia(nove['contact2_last'], nove['contact2_first'])
+
+    # Напрям НЕ беремо з форми — виводимо з класу. Інакше третьокласника
+    # можна було б зробити НМТ, і він побачив би чужі матеріали в кабінеті.
+    nove['program'] = program_for(nove['grade'])
+
+    # Повні імена й напрям у журнал не пишемо окремо: вони не правляться
+    # руками, а перераховуються зі складових і з класу — і ті вже в переліку.
+    tykhi = ('child_name', 'parent_name', 'contact2_name', 'program')
+    zmineno = [LABEL.get(k, k) for k, v in nove.items()
+               if k not in tykhi and (bulo[k] if k in bulo.keys() else '') != v]
+
+    conn.execute('UPDATE children SET {} WHERE id=?'.format(
+        ','.join(k + '=?' for k in nove)), list(nove.values()) + [cid])
+
+    # хто забирає: правимо наявні рядки, не додаючи й не прибираючи —
+    # це виправлення описки, а не переоформлення переліку осіб
+    for p in conn.execute('SELECT id FROM pickup_persons WHERE child_id=?', (cid,)).fetchall():
+        pid = p['id']
+        last  = clean(f.get('p_last_{}'.format(pid)), 80)
+        first = clean(f.get('p_first_{}'.format(pid)), 80)
+        mid   = clean(f.get('p_mid_{}'.format(pid)), 80)
+        if not last and not first:
+            continue                      # порожнє — не чіпаємо рядок
+        conn.execute('UPDATE pickup_persons SET name=?, last=?, first=?, mid=?, '
+                     'phone=?, relation=? WHERE id=? AND child_id=?',
+                     (povne_imia(last, first, mid), last, first, mid,
+                      clean(f.get('p_phone_{}'.format(pid)), 30),
+                      clean(f.get('p_rel_{}'.format(pid)), 60), pid, cid))
+    conn.commit()
+
+    # У журнал — ЩО саме змінили. Для персональних даних дитини
+    # «щось виправили» не відповідь: має бути видно, хто і що.
+    log('виправлено: ' + (', '.join(zmineno) if zmineno else 'без змін'), cid)
+    return redirect('/admin/{}'.format(cid))
+
 # ============================================================
 #  ВИДАЛЕННЯ ЗАЯВОК
 #

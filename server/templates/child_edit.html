@@ -1,0 +1,159 @@
+{% extends "_base.html" %}
+{% block title %}Виправити — {{ c.child_name }}{% endblock %}
+
+{#  Три списки замість <input type="date">: той показує формат за локаллю
+    браузера, і 03.04 читалося б то як квітень, то як березень залежно
+    від того, з чого відкрили адмінку. Списки будує Jinja — жодного JS. #}
+{% macro data(prefix, znach) %}
+  {% set d = znach[8:10] if znach and znach|length >= 10 else '' %}
+  {% set m = znach[5:7]  if znach and znach|length >= 7  else '' %}
+  {% set y = znach[0:4]  if znach and znach|length >= 4  else '' %}
+  <div style="display:flex;gap:8px">
+    <select name="{{ prefix }}_d" style="flex:0 0 88px">
+      <option value="">день</option>
+      {% for i in range(1, 32) %}
+        {% set v = '%02d'|format(i) %}
+        <option value="{{ v }}"{% if v == d %} selected{% endif %}>{{ i }}</option>
+      {% endfor %}
+    </select>
+    <select name="{{ prefix }}_m" style="flex:1 1 auto">
+      <option value="">місяць</option>
+      {% for nazva in misiatsi %}
+        {% set v = '%02d'|format(loop.index) %}
+        <option value="{{ v }}"{% if v == m %} selected{% endif %}>{{ nazva }}</option>
+      {% endfor %}
+    </select>
+    <select name="{{ prefix }}_y" style="flex:0 0 100px">
+      <option value="">рік</option>
+      {% for i in range(rik, rik - 85, -1) %}
+        <option value="{{ i }}"{% if i|string == y %} selected{% endif %}>{{ i }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endmacro %}
+
+{% macro pole(nazva, imia, znach, typ='text', pidkaz='') %}
+  <label style="display:block;margin-bottom:14px">
+    <span style="display:block;font-size:14px;color:var(--ink-3);margin-bottom:5px">{{ nazva }}</span>
+    <input type="{{ typ }}" name="{{ imia }}" value="{{ znach or '' }}"
+           {% if typ == 'tel' %}inputmode="tel"{% endif %}
+           {% if typ == 'email' %}inputmode="email" autocapitalize="off"{% else %}autocapitalize="words"{% endif %}
+           spellcheck="false" autocorrect="off"
+           {% if pidkaz %}placeholder="{{ pidkaz }}"{% endif %}
+           style="width:100%;padding:9px 11px;border:1px solid var(--line);
+                  border-radius:8px;font-size:15px;font-family:inherit">
+  </label>
+{% endmacro %}
+
+{% block body %}
+
+<div style="margin-top:22px"><a href="/admin/{{ c.id }}" style="font-size:14px;text-decoration:none">← до заявки</a></div>
+
+<h1 style="margin-top:10px">Виправити заявку № {{ c.id }}</h1>
+<div class="sub">{{ c.child_name }}</div>
+
+{% if request.args.get('err') %}
+  <div style="margin:14px 0;padding:12px 14px;background:var(--err-soft);
+              border:1px solid #FDA29B;border-radius:8px;font-size:15px;color:var(--err)">
+    Прізвище та ім’я дитини й заявника не можна лишати порожніми.
+  </div>
+{% endif %}
+
+<div class="card" style="background:var(--bg-soft);font-size:14px;color:var(--ink-2)">
+  Тут виправляють <b>описки</b>: імена, телефони, школу, клас.
+  Згоди, алергії та дані про здоров’я не редагуються — це те, що
+  заявили батьки. Якщо змінилося воно, потрібна нова анкета.
+  Номер заявки й логін учня лишаються ті самі.
+</div>
+
+<form method="post" action="/admin/{{ c.id }}/edit">
+
+  <div class="card">
+    <h2 style="font-size:17px;margin-bottom:14px">Дитина</h2>
+    {{ pole('Прізвище', 'child_last', c.child_last) }}
+    {{ pole('Ім’я', 'child_first', c.child_first) }}
+    {{ pole('По батькові', 'child_mid', c.child_mid) }}
+
+    <div style="margin-bottom:14px">
+      <span style="display:block;font-size:14px;color:var(--ink-3);margin-bottom:5px">Дата народження</span>
+      {{ data('child_dob', c.child_dob) }}
+    </div>
+
+    <label style="display:block;margin-bottom:14px">
+      <span style="display:block;font-size:14px;color:var(--ink-3);margin-bottom:5px">Клас</span>
+      <select name="grade" style="width:100%;padding:9px 11px;border:1px solid var(--line);
+                                  border-radius:8px;font-size:15px;font-family:inherit">
+        <option value="">—</option>
+        {% for i in range(1, grade_max + 1) %}
+          <option value="{{ i }}"{% if i|string == c.grade %} selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+      </select>
+      <span style="display:block;font-size:13px;color:var(--ink-3);margin-top:5px">
+        Напрям перерахується сам: 1–8 — ГПД, 9–{{ grade_max }} — НМТ. Зараз {{ c.program }}.
+      </span>
+    </label>
+
+    {{ pole('Заклад освіти', 'school', c.school) }}
+    {{ pole('Адреса закладу', 'school_addr', c.school_addr) }}
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:17px;margin-bottom:14px">Заявник</h2>
+    {{ pole('Прізвище', 'parent_last', c.parent_last) }}
+    {{ pole('Ім’я', 'parent_first', c.parent_first) }}
+    {{ pole('По батькові', 'parent_mid', c.parent_mid) }}
+    {{ pole('Ким доводиться дитині', 'parent_role', c.parent_role) }}
+
+    <div style="margin-bottom:14px">
+      <span style="display:block;font-size:14px;color:var(--ink-3);margin-bottom:5px">Дата народження</span>
+      {{ data('parent_dob', c.parent_dob) }}
+    </div>
+
+    {{ pole('Телефон', 'parent_phone', c.parent_phone, 'tel', '+380 __ ___ __ __') }}
+    {{ pole('Пошта', 'parent_email', c.parent_email, 'email') }}
+  </div>
+
+  {% if c.program == 'НМТ' %}
+  <div class="card">
+    <h2 style="font-size:17px;margin-bottom:14px">Контакти учня</h2>
+    {{ pole('Телефон учня', 'student_phone', c.student_phone, 'tel', '+380 __ ___ __ __') }}
+    {{ pole('Пошта учня', 'student_email', c.student_email, 'email') }}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2 style="font-size:17px;margin-bottom:14px">Другий контакт і адреса</h2>
+    {{ pole('Прізвище', 'contact2_last', c.contact2_last) }}
+    {{ pole('Ім’я', 'contact2_first', c.contact2_first) }}
+    {{ pole('Телефон', 'contact2_phone', c.contact2_phone, 'tel', '+380 __ ___ __ __') }}
+    {{ pole('Адреса проживання', 'address', c.address) }}
+  </div>
+
+  {% if pickup %}
+  <div class="card">
+    <h2 style="font-size:17px;margin-bottom:4px">Хто забирає дитину</h2>
+    <p style="font-size:14px;color:var(--ink-3);margin-bottom:14px">
+      Тут виправляють написання. Додати чи прибрати особу поки не можна —
+      для цього потрібна нова анкета від батьків.
+    </p>
+    {% for p in pickup %}
+      <div style="padding-top:12px{% if not loop.first %};border-top:1px solid var(--line);margin-top:12px{% endif %}">
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:8px">Особа {{ loop.index }}</div>
+        {{ pole('Прізвище', 'p_last_' ~ p.id, p.last) }}
+        {{ pole('Ім’я', 'p_first_' ~ p.id, p.first) }}
+        {{ pole('По батькові', 'p_mid_' ~ p.id, p.mid) }}
+        {{ pole('Телефон', 'p_phone_' ~ p.id, p.phone, 'tel', '+380 __ ___ __ __') }}
+        {{ pole('Ким доводиться', 'p_rel_' ~ p.id, p.relation) }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="display:flex;gap:12px;align-items:center;margin:20px 0 40px">
+    <button type="submit" class="btn primary">Зберегти</button>
+    <a href="/admin/{{ c.id }}" style="font-size:15px;text-decoration:none;color:var(--ink-3)">Скасувати</a>
+  </div>
+
+</form>
+
+{% endblock %}

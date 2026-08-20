@@ -18,6 +18,14 @@
   {% if c.program %}· <span class="pill pr-{{ c.program }}">{{ c.program }}</span>{% endif %}
   {% if c.school_year %}· {{ c.school_year }} н. р.{% endif %}</div>
 
+{# Виправлення описок — лише адміністратору. Вчитель бачить картку,
+   але не змінює те, що подала родина. #}
+{% if role == 'admin' %}
+  <div style="margin:14px 0 0">
+    <a href="/admin/{{ c.id }}/edit" class="btn ghost">Виправити дані</a>
+  </div>
+{% endif %}
+
 <div class="card">
   <h2 style="font-size:17px;margin-bottom:12px">{% if c.program == 'НМТ' %}Учень{% else %}Дитина{% endif %}</h2>
   <table style="width:100%;border-collapse:collapse">
