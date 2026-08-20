@@ -266,7 +266,7 @@ footer a{color:var(--ink-2)}
 
       <!-- по батькові не обов'язкове: його має не кожен -->
       <div class="field">
-        <label class="lab" for="child_mid">По батькові <span class="opt">— якщо є</span></label>
+        <label class="lab" for="child_mid">По батькові</label>
         <input type="text" id="child_mid" name="child_mid" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
       </div>
 
@@ -334,7 +334,7 @@ footer a{color:var(--ink-2)}
       </div>
 
       <div class="field">
-        <label class="lab" for="parent_mid">По батькові <span class="opt">— якщо є</span></label>
+        <label class="lab" for="parent_mid">По батькові</label>
         <input type="text" id="parent_mid" name="parent_mid" spellcheck="false" autocorrect="off" autocapitalize="words">
       </div>
 
@@ -380,7 +380,7 @@ footer a{color:var(--ink-2)}
     </section>
 
     <!-- ================= ПІДКАЗКА ДО ВИБОРУ КЛАСУ ================= -->
-    <div class="await" id="await">Оберіть клас — і з’являться решта питань</div>
+    <div class="await" id="await">Заповніть дані учня — і з’являться решта питань</div>
 
     <!-- ================= ГІЛКА: ГРУПА ПОДОВЖЕНОГО ДНЯ (1–8) ============ -->
     <div class="branch hidden" id="branch-gpd">
@@ -841,12 +841,43 @@ function clearBranch(which){
   $$('.hidden-target', box).forEach(function(x){ x.classList.add('hidden'); });
 }
 
+/* Чи заповнений блок «Учень» настільки, щоб показувати решту анкети.
+   Порожня перевірка на кожне поле окремо, а не цикл по data-req:
+   так одразу видно, що саме вимагається, і не треба лізти в розмітку.
+
+   Поля, якого немає в розмітці, ми НЕ вимагаємо — Дмитро видаляє блоки,
+   і інакше видалення дати народження назавжди замкнуло б анкету
+   на «заповніть дані учня», без жодного натяку чому. */
+function zapovnene(sel){
+  var el = $(sel);
+  return !el || !!String(el.value || '').trim();
+}
+
+function danniUchniaGotovi(){
+  // по батькові свідомо не тут: воно необов'язкове
+  if (!zapovnene('#child_last'))  return false;
+  if (!zapovnene('#child_first')) return false;
+  if (!zapovnene('#child_dob'))   return false;   // складена дата, не три списки окремо
+  if (!zapovnene('#grade'))       return false;
+  if (!zapovnene('#school'))      return false;
+  // «інший заклад»: поки блок відкритий, назву теж треба
+  var w = $('#school_other_wrap');
+  if (w && !w.classList.contains('hidden') && !zapovnene('#school_other')) return false;
+  return true;
+}
+
 var shown = null;
-on('#grade', 'change', function(){
-  var br = currentBranch();
+function onovytyGilku(){
+  // Гілку показуємо лише коли блок «Учень» заповнений. Клас визначає,
+  // ЯКА це гілка, а повнота даних — чи показувати її взагалі.
+  var br = danniUchniaGotovi() ? currentBranch() : null;
   if (br === shown) return;
 
-  if (shown) clearBranch(shown);          // перемкнули клас — чужі відповіді не тягнемо
+  // Чистимо тільки при переході між двома гілками — там чужі відповіді
+  // справді не можна тягнути. А от коли гілка ховається через незаповнене
+  // поле, стирати вже введене не можна: людина стерла прізвище, щоб
+  // виправити літеру, і втратила б усі відповіді нижче.
+  if (shown && br) clearBranch(shown);
   shown = br;
 
   if (br !== 'nmt') {                       // ховаємо — заразом і чистимо
@@ -862,7 +893,14 @@ on('#grade', 'change', function(){
 
   if (br === 'gpd' && !$$('.person').length) addPerson(true);
   refreshGate();
-});
+}
+
+/* Слухаємо на документі, а не на кожному полі окремо: обробники самих
+   полів (зокрема той, що складає дату з трьох списків) спрацьовують
+   раніше за нас, тож ми бачимо вже оновлені значення. Заразом це
+   переживає видалення будь-якого поля з розмітки. */
+document.addEventListener('input',  onovytyGilku);
+document.addEventListener('change', onovytyGilku);
 
 /* ---------- помічники ---------- */
 function mark(el, bad){
@@ -920,7 +958,7 @@ function addPerson(required){
       '<label class="lab" for="pf'+pid+'">Ім’я</label>'+
       '<input type="text" id="pf'+pid+'" class="p-first" spellcheck="false" autocorrect="off" autocapitalize="words"></div>'+
     '<div class="field">'+
-      '<label class="lab" for="pm'+pid+'">По батькові <span class="opt">— якщо є</span></label>'+
+      '<label class="lab" for="pm'+pid+'">По батькові</label>'+
       '<input type="text" id="pm'+pid+'" class="p-mid" spellcheck="false" autocorrect="off" autocapitalize="words"></div>'+
     '<div class="field" data-phone>'+
       '<label class="lab" for="pp'+pid+'">Телефон</label>'+
