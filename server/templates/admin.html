@@ -186,7 +186,7 @@
     <div class="pw-grid">
       <div><span>Логін</span><b id="pwLogin">—</b></div>
       <div><span>Пароль</span><b id="pwPass">—</b></div>
-      <div class="pw-site"><span>Сайт</span><b>children.pp.ua</b></div>
+      <div class="pw-site"><span>Сайт</span><b>iprostir.pp.ua</b></div>
     </div>
 
     <div class="pw-btns">
@@ -542,7 +542,7 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   $('#pwClose').addEventListener('click', function(){ pwBox.hidden = true; });
   $('#pwPrint').addEventListener('click', function(){ window.print(); });
   $('#pwCopy').addEventListener('click', function(){
-    var txt = 'children.pp.ua\nЛогін: ' + $('#pwLogin').textContent +
+    var txt = 'iprostir.pp.ua\nЛогін: ' + $('#pwLogin').textContent +
               '\nПароль: ' + $('#pwPass').textContent;
     var done = function(){ $('#pwCopy').textContent = 'Скопійовано'; };
     if(navigator.clipboard && navigator.clipboard.writeText){

@@ -53,7 +53,7 @@ SMTP_PORT   = int(os.environ.get('SMTP_PORT', '587'))
 SMTP_USER   = os.environ.get('SMTP_USER', '')
 SMTP_PASS   = os.environ.get('SMTP_PASS', '')
 MAIL_FROM   = os.environ.get('MAIL_FROM', SMTP_USER)
-SITE_URL    = os.environ.get('SITE_URL', 'https://children.pp.ua')
+SITE_URL    = os.environ.get('SITE_URL', 'https://iprostir.pp.ua')
 # Копії бази лежать поруч із самою базою: цей каталог і так дозволений
 # службі на запис (ReadWritePaths у beregynia.service), нічого налаштовувати
 # додатково не треба.
@@ -154,6 +154,7 @@ def _migrate(conn):
 
     for table, cols in (('children', CHILD_COLS + ['program', 'school_year'] + PUPIL_COLS),
                         ('sensitive', SENS_COLS), ('nmt', NMT_COLS),
+                        ('pickup_persons', ['last', 'first', 'mid']),
                         ('login_attempts', ['login'])):
         have = {r[1] for r in conn.execute('PRAGMA table_info({})'.format(table))}
         if not have:                       # таблиці ще немає — її щойно створив скрипт
@@ -174,6 +175,10 @@ def _migrate(conn):
         # індекси на щойно доданих колонках — тільки тут, коли колонки вже є
         conn.execute('CREATE INDEX IF NOT EXISTS idx_children_program ON children(program)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_children_year ON children(school_year)')
+        # прізвище — те, за чим сортують усі списки; індекс саме тут,
+        # бо на живій базі колонки ще немає (правило: індекси на нових
+        # колонках лише в _migrate, ніколи в schema.sql)
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_children_last ON children(child_last)')
         # логін учня має бути унікальним, але порожніх — більшість,
         # тому індекс частковий: NULL і '' під обмеження не підпадають
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_children_login "
@@ -230,20 +235,25 @@ def log(action, child_id=None, who=None):
 # ============================================================
 FIELDS = [
     # (ключ у формі, підпис у листі й адмінці, чутливе?)
-    ('child_name',     'Прізвище та ім’я дитини',     False),
+    ('child_last',     'Прізвище дитини',              False),
+    ('child_first',    'Ім’я дитини',                  False),
+    ('child_mid',      'По батькові дитини',           False),
     ('child_dob',      'Дата народження',              False),
     ('grade',          'Клас',                         False),
     ('school',         'Заклад освіти',                False),
     ('school_addr',    'Адреса закладу',               False),
     ('pickup_school',  'Забирати зі школи',            False),
-    ('parent_name',    'ПІБ заявника',                 False),
+    ('parent_last',    'Прізвище заявника',            False),
+    ('parent_first',   'Ім’я заявника',                False),
+    ('parent_mid',     'По батькові заявника',         False),
     ('parent_role',    'Ким доводиться дитині',        False),
     ('parent_dob',     'Дата народження заявника',     False),
     ('parent_phone',   'Телефон',                      False),
     ('parent_email',   'Пошта',                        False),
     ('student_phone',  'Телефон учня',                 False),
     ('student_email',  'Пошта учня',                   False),
-    ('contact2_name',  'Другий контакт',               False),
+    ('contact2_last',  'Прізвище другого контакту',    False),
+    ('contact2_first', 'Ім’я другого контакту',        False),
     ('contact2_phone', 'Телефон другого контакту',     False),
     ('address',        'Адреса проживання',            False),
     ('pickup',         'Хто забирає дитину',           False),
@@ -315,17 +325,26 @@ def program_for(grade):
 # Однаковий для обох напрямів: дані учня, один із батьків і все.
 # Решту питаємо, але не тримаємо людину — перевантажена анкета
 # просто не заповнюється до кінця.
+#
+# По батькові в обов'язкових НЕМАЄ навмисно: воно є не в кожного —
+# і в дітей, народжених за кордоном, і просто за паспортом. Вимагати
+# його означало б не пустити таку родину подати заявку взагалі.
 REQUIRED_BY_PROGRAM = {
-    'ГПД': ['child_name', 'child_dob', 'grade', 'school',
-            'parent_name', 'parent_role', 'parent_phone'],
-    'НМТ': ['child_name', 'child_dob', 'grade', 'school',
-            'parent_name', 'parent_role', 'parent_phone'],
+    'ГПД': ['child_last', 'child_first', 'child_dob', 'grade', 'school',
+            'parent_last', 'parent_first', 'parent_role', 'parent_phone'],
+    'НМТ': ['child_last', 'child_first', 'child_dob', 'grade', 'school',
+            'parent_last', 'parent_first', 'parent_role', 'parent_phone'],
 }
 
-CHILD_COLS = ['child_name','child_dob','grade','school','school_addr','pickup_school',
-              'parent_name','parent_role','parent_dob','parent_phone','parent_email',
+# child_name / parent_name / contact2_name у списку є, але з форми вони
+# НЕ приходять — сервер збирає їх із складових у povne_imia(). Так само,
+# як program виводиться з класу, а не приймається з анкети.
+CHILD_COLS = ['child_name','child_last','child_first','child_mid',
+              'child_dob','grade','school','school_addr','pickup_school',
+              'parent_name','parent_last','parent_first','parent_mid',
+              'parent_role','parent_dob','parent_phone','parent_email',
               'student_phone','student_email',
-              'contact2_name','contact2_phone','address',
+              'contact2_name','contact2_last','contact2_first','contact2_phone','address',
               'self_leave','self_time','expectations','comment',
               'c_true','c_data','c_health','c_medical','c_photo']
 
@@ -342,7 +361,16 @@ NMT_COLS   = ['career_help','career_interest','subjects','needs','needs_other','
 
 # застарілий загальний перелік лишається як запобіжник,
 # фактично використовується REQUIRED_BY_PROGRAM
-REQUIRED   = ['child_name', 'parent_name', 'parent_phone']
+REQUIRED   = ['child_last', 'child_first', 'parent_last', 'parent_first', 'parent_phone']
+
+
+def povne_imia(last, first, mid=''):
+    """Збирає «Прізвище Ім'я По батькові», пропускаючи порожні частини.
+
+    Єдине місце, де складається повне ім'я. Якщо збиратимеш його ще десь —
+    рано чи пізно два місця розійдуться, і в листі буде одне, а в списку інше.
+    Порядок саме такий: спершу прізвище, бо за ним шукають і сортують."""
+    return ' '.join(x for x in (clean(last, 80), clean(first, 80), clean(mid, 80)) if x)
 
 def clean(v, limit=2000):
     """Обрізаємо довжину й прибираємо керівні символи. Порожнє → ''."""
@@ -370,6 +398,13 @@ def zayavka():
 
     # --- мінімальна перевірка ---
     data = {k: clean(f.get(k)) for k, _, _ in FIELDS}
+
+    # Повні імена збирає сервер, з форми вони не приходять. Якби приходили,
+    # можна було б надіслати прізвище окремо, а повне ім'я — чуже.
+    data['child_name']    = povne_imia(data['child_last'], data['child_first'], data['child_mid'])
+    data['parent_name']   = povne_imia(data['parent_last'], data['parent_first'], data['parent_mid'])
+    data['contact2_name'] = povne_imia(data['contact2_last'], data['contact2_first'])
+
     program = program_for(data.get('grade'))
     for k in REQUIRED_BY_PROGRAM.get(program, REQUIRED):
         if not data[k]:
@@ -419,12 +454,18 @@ def zayavka():
                 ','.join(NMT_COLS), ','.join('?' * len(NMT_COLS))),
                 [child_id] + [data[c] for c in NMT_COLS])
 
-        # хто забирає: рядок «Ім’я · телефон · ким доводиться | ...»
+        # Хто забирає: рядок «прізвище · ім'я · по батькові · телефон · ким доводиться | ...»
+        # П'ять частин замість трьох — ці люди показують паспорт біля школи,
+        # тож звіряти є з чим тільки коли прізвище лежить окремо.
+        # Старий формат із трьох частин теж переживемо: чого бракує — те порожнє.
         for i, part in enumerate(p for p in data['pickup'].split('|') if p.strip()):
             bits = [b.strip() for b in part.split('·')]
-            bits += [''] * (3 - len(bits))
-            cur.execute('INSERT INTO pickup_persons (child_id, ord, name, phone, relation) '
-                        'VALUES (?,?,?,?,?)', (child_id, i + 1, bits[0], bits[1], bits[2]))
+            bits += [''] * (5 - len(bits))
+            cur.execute('INSERT INTO pickup_persons '
+                        '(child_id, ord, name, last, first, mid, phone, relation) '
+                        'VALUES (?,?,?,?,?,?,?,?)',
+                        (child_id, i + 1, povne_imia(bits[0], bits[1], bits[2]),
+                         bits[0], bits[1], bits[2], bits[3], bits[4]))
 
         cur.execute('UPDATE raw_submissions SET child_id=? WHERE id=?', (child_id, raw_id))
         conn.commit()
@@ -513,8 +554,11 @@ def send_parent_mail(child_id, data):
     if not (SMTP_USER and SMTP_PASS):
         return
 
+    # Звертаємось на ім'я. Раніше воно вгадувалося як друге слово ПІБ —
+    # тепер поле окреме, гадати не треба. Відкат на друге слово лишений
+    # для давніх заявок, де складових ще немає.
     who = data.get('parent_name', '').split()
-    greeting = who[1] if len(who) > 1 else (who[0] if who else '')
+    greeting = data.get('parent_first') or (who[1] if len(who) > 1 else (who[0] if who else ''))
 
     school = data.get('school', '')
     grade  = data.get('grade', '')
@@ -697,13 +741,18 @@ def translit(text):
     return ''.join(out)
 
 
-def make_login(child_name, cid):
+def make_login(last, cid, full=''):
     """Логін = прізвище латиницею + номер заявки.
 
     Номер потрібен не для краси: Ковальських у групі буває двоє.
-    Читається з паперового талона без помилок і не змінюється ніколи."""
-    surname = translit((child_name or '').split()[0] if child_name else '')[:14]
-    return '{}{}'.format(surname or 'uchen', cid)
+    Читається з паперового талона без помилок і не змінюється ніколи.
+
+    Раніше прізвище вгадувалося як перше слово повного імені — і варто
+    було батькам написати «Іван Петренко», як логін ставав ivan12.
+    Тепер береться окрема колонка. Відкат на перше слово лишений
+    для заявок, поданих до розділення полів."""
+    surname = (last or '').strip() or ((full or '').split() or [''])[0]
+    return '{}{}'.format(translit(surname)[:14] or 'uchen', cid)
 
 
 # без 0/o, 1/l/i — саме на них діти й помиляються, переписуючи з талона
@@ -801,12 +850,12 @@ def admin_pupil_password():
         return jsonify(ok=False, error='Вибраний не один учень'), 400
 
     cid = int(ids[0])
-    row = db().execute('SELECT id, child_name, grade, login, school_year FROM children WHERE id=?',
-                       (cid,)).fetchone()
+    row = db().execute('SELECT id, child_name, child_last, grade, login, school_year '
+                       'FROM children WHERE id=?', (cid,)).fetchone()
     if not row:
         return jsonify(ok=False, error='Такого учня немає'), 404
 
-    login_ = row['login'] or make_login(row['child_name'], row['id'])
+    login_ = row['login'] or make_login(row['child_last'], row['id'], row['child_name'])
     passwd = gen_password()
     db().execute('UPDATE children SET login=?, pass_hash=?, pass_set_at=?, pass_by=? WHERE id=?',
                  (login_, generate_password_hash(norm_pass(passwd)), now(),
@@ -854,8 +903,12 @@ def admin_list():
     if grade:
         sql += ' AND c.grade=?'
         args.append(grade)
-    # за прізвищем, а не за номером: список для друку має бути за абеткою
-    sql += ' ORDER BY c.child_name COLLATE NOCASE'
+    # За прізвищем, а не за номером: список для друку має бути за абеткою.
+    # Тепер прізвище — окрема колонка, тож абетка справді за прізвищем,
+    # а не за тим словом, яке батько написав першим. COALESCE — для
+    # заявок, поданих до розділення полів: там складових немає.
+    sql += (' ORDER BY COALESCE(NULLIF(c.child_last,\'\'), c.child_name) COLLATE NOCASE,'
+            ' c.child_first COLLATE NOCASE')
 
     rows = db().execute(sql, args).fetchall()
     counts = {r['status']: r['n'] for r in
@@ -919,7 +972,8 @@ def admin_spysok():
         'c.parent_name, c.parent_phone, c.contact2_name, c.contact2_phone, n.subjects '
         'FROM children c LEFT JOIN nmt n ON n.child_id = c.id '
         'WHERE c.id IN ({}) '
-        'ORDER BY CAST(c.grade AS INTEGER), c.child_name COLLATE NOCASE'.format(ph), ids)]
+        'ORDER BY CAST(c.grade AS INTEGER), '
+        "COALESCE(NULLIF(c.child_last,''), c.child_name) COLLATE NOCASE".format(ph), ids)]
 
     pickups = {}
     for p in db().execute(

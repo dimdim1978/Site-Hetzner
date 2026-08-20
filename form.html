@@ -232,8 +232,8 @@ footer a{color:var(--ink-2)}
   <meta property="og:site_name" content="ГО «Берегиня» · Покров">
   <meta property="og:title" content="Запис на заняття · «Берегиня», Покров">
   <meta property="og:description" content="Реєстрація до групи подовженого дня (1–8 клас) та на курси підготовки до НМТ (9–11 клас). ГО «Берегиня», Покров.">
-  <meta property="og:url" content="https://children.pp.ua/form.html">
-  <meta property="og:image" content="https://children.pp.ua/og.png">
+  <meta property="og:url" content="https://iprostir.pp.ua/form.html">
+  <meta property="og:image" content="https://iprostir.pp.ua/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
@@ -253,9 +253,21 @@ footer a{color:var(--ink-2)}
     <section class="block" style="padding-top:28px">
       <h2>Учень</h2>
       <div class="field" data-req>
-        <label class="lab" for="child_name">Прізвище, ім’я та по батькові учня</label>
-        <input type="text" id="child_name" name="child_name" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
-        <div class="err">Вкажіть прізвище та ім’я</div>
+        <label class="lab" for="child_last">Прізвище учня</label>
+        <input type="text" id="child_last" name="child_last" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
+        <div class="err">Вкажіть прізвище</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="child_first">Ім’я учня</label>
+        <input type="text" id="child_first" name="child_first" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
+        <div class="err">Вкажіть ім’я</div>
+      </div>
+
+      <!-- по батькові не обов'язкове: його має не кожен -->
+      <div class="field">
+        <label class="lab" for="child_mid">По батькові <span class="opt">— якщо є</span></label>
+        <input type="text" id="child_mid" name="child_mid" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="words">
       </div>
 
       <div class="field dob" data-req data-dob="child">
@@ -310,9 +322,20 @@ footer a{color:var(--ink-2)}
       <p class="lead">Дані того, з ким ми зв’яжемось.</p>
 
       <div class="field" data-req>
-        <label class="lab" for="parent_name">Прізвище, ім’я та по батькові</label>
-        <input type="text" id="parent_name" name="parent_name" autocomplete="name" spellcheck="false" autocorrect="off" autocapitalize="words">
-        <div class="err">Вкажіть ПІБ</div>
+        <label class="lab" for="parent_last">Прізвище</label>
+        <input type="text" id="parent_last" name="parent_last" autocomplete="family-name" spellcheck="false" autocorrect="off" autocapitalize="words">
+        <div class="err">Вкажіть прізвище</div>
+      </div>
+
+      <div class="field" data-req>
+        <label class="lab" for="parent_first">Ім’я</label>
+        <input type="text" id="parent_first" name="parent_first" autocomplete="given-name" spellcheck="false" autocorrect="off" autocapitalize="words">
+        <div class="err">Вкажіть ім’я</div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="parent_mid">По батькові <span class="opt">— якщо є</span></label>
+        <input type="text" id="parent_mid" name="parent_mid" spellcheck="false" autocorrect="off" autocapitalize="words">
       </div>
 
       <div class="field" data-req>
@@ -380,10 +403,16 @@ footer a{color:var(--ink-2)}
       <h2>Другий контакт <span class="opt" style="font-weight:400;font-size:15px;color:var(--ink-3)">— необов’язково</span></h2>
       <p class="lead">Кому телефонувати, якщо з вами не вдасться зв’язатися. Зазвичай це другий із батьків.</p>
 
+      <!-- тут по батькові не питаємо: це просто «кому дзвонити» -->
       <div class="field">
-        <label class="lab" for="contact2_name">Прізвище, ім’я та по батькові</label>
-        <input type="text" id="contact2_name" name="contact2_name" spellcheck="false" autocorrect="off" autocapitalize="words">
+        <label class="lab" for="contact2_last">Прізвище</label>
+        <input type="text" id="contact2_last" name="contact2_last" spellcheck="false" autocorrect="off" autocapitalize="words">
         <div class="err">Вкажіть другу контактну особу</div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="contact2_first">Ім’я</label>
+        <input type="text" id="contact2_first" name="contact2_first" spellcheck="false" autocorrect="off" autocapitalize="words">
       </div>
 
       <div class="field" data-phone>
@@ -884,9 +913,15 @@ function addPerson(required){
     '<div class="p-head"><span>Особа '+n+'</span>'+
     (required?'':'<button type="button" class="p-del">прибрати</button>')+'</div>'+
     '<div class="field">'+
-      '<label class="lab" for="pn'+pid+'">Прізвище та ім’я</label>'+
-      '<input type="text" id="pn'+pid+'" class="p-name" spellcheck="false" autocorrect="off" autocapitalize="words">'+
+      '<label class="lab" for="pn'+pid+'">Прізвище</label>'+
+      '<input type="text" id="pn'+pid+'" class="p-last" spellcheck="false" autocorrect="off" autocapitalize="words">'+
       '<div class="err">Вкажіть, хто забиратиме дитину</div></div>'+
+    '<div class="field">'+
+      '<label class="lab" for="pf'+pid+'">Ім’я</label>'+
+      '<input type="text" id="pf'+pid+'" class="p-first" spellcheck="false" autocorrect="off" autocapitalize="words"></div>'+
+    '<div class="field">'+
+      '<label class="lab" for="pm'+pid+'">По батькові <span class="opt">— якщо є</span></label>'+
+      '<input type="text" id="pm'+pid+'" class="p-mid" spellcheck="false" autocorrect="off" autocapitalize="words"></div>'+
     '<div class="field" data-phone>'+
       '<label class="lab" for="pp'+pid+'">Телефон</label>'+
       '<input type="tel" id="pp'+pid+'" class="p-phone" inputmode="tel" placeholder="+380 __ ___ __ __">'+
@@ -1048,9 +1083,15 @@ function collect(){
     d.time_pref   = $$('.tim:checked').map(c=>c.value).join(', ');
     d.pickup = '';                       // у цій гілці такого питання немає
   }
+  /* П'ять частин: прізвище · ім'я · по батькові · телефон · ким доводиться.
+     Читання через pv() — воно мовчки віддає '', якщо поля в розмітці немає.
+     Прямий $('.p-last',p).value впав би на null і вбив увесь скрипт,
+     а разом із ним і всю анкету. */
+  const pv = function(sel, root){ const e = root.querySelector(sel); return e ? e.value.trim() : ''; };
   d.pickup = $$('.person').map(function(p){
-    const n=$('.p-name',p).value.trim(), t=$('.p-phone',p).value.trim(), r=$('.p-rel',p).value.trim();
-    return n ? (n+' · '+t+' · '+r) : '';
+    const l=pv('.p-last',p), f=pv('.p-first',p), m=pv('.p-mid',p),
+          t=pv('.p-phone',p), r=pv('.p-rel',p);
+    return l ? [l,f,m,t,r].join(' · ') : '';
   }).filter(Boolean).join(' | ');
   d.fill_seconds = Math.round((Date.now()-started)/1000);
   return d;
@@ -1127,7 +1168,7 @@ on('#f', 'submit', function(ev){
 
 /* ---------- «записати ще одну дитину» ---------- */
 on('#again', 'click', function(){
-  ['child_name','grade','school','school_other',
+  ['child_last','child_first','child_mid','grade','school','school_other',
    'meal_limits','allergy_details','health_notes','comment','do_not_release'].forEach(function(id){
     const e=$('#'+id); if(e) e.value='';
   });
@@ -1154,7 +1195,7 @@ on('#again', 'click', function(){
   txt('#go', 'Надіслати заявку');
   refreshGate();          // згоди лишились позначені — кнопка одразу жива
   window.scrollTo({top:0,behavior:'smooth'});
-  $('#child_name').focus();
+  const first = $('#child_last'); if (first) first.focus();
 });
 
 /* ---------- старт ---------- */

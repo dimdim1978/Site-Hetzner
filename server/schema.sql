@@ -17,7 +17,14 @@ CREATE TABLE IF NOT EXISTS children (
   school_year    TEXT,                           -- «2026/27»: на який навчальний рік заявка
 
   -- дитина
+  -- child_name — повне ім'я, яке ЗБИРАЄ СЕРВЕР із трьох полів нижче.
+  -- Лишили окремою колонкою навмисно: на неї спираються листи, кабінет,
+  -- друковані списки й журнал. Правити її напряму не можна — тільки
+  -- через povne_imia() разом зі складовими, інакше вони розійдуться.
   child_name     TEXT NOT NULL,
+  child_last     TEXT,          -- прізвище: за ним сортуються списки й будується логін
+  child_first    TEXT,          -- ім'я
+  child_mid      TEXT,          -- по батькові; НЕ обов'язкове — його має не кожен
   child_dob      TEXT,
   grade          TEXT,
   school         TEXT,
@@ -25,14 +32,21 @@ CREATE TABLE IF NOT EXISTS children (
   pickup_school  TEXT,          -- «так» / «ні» — чи забирати зі школи
 
   -- батьки та контакти
-  parent_name    TEXT,
+  parent_name    TEXT,          -- теж збирає сервер, див. коментар до child_name
+  parent_last    TEXT,
+  parent_first   TEXT,
+  parent_mid     TEXT,
   parent_role    TEXT,
   parent_dob     TEXT,          -- дата народження того з батьків, хто подав заявку
   parent_phone   TEXT,
   parent_email   TEXT,
   student_phone  TEXT,          -- телефон самого учня (напрям НМТ)
   student_email  TEXT,          -- пошта самого учня (напрям НМТ)
+  -- другий контакт — це «кому дзвонити, якщо не додзвонились».
+  -- По батькові тут свідомо не питаємо: документів на нього не оформлюють.
   contact2_name  TEXT,
+  contact2_last  TEXT,
+  contact2_first TEXT,
   contact2_phone TEXT,
   address        TEXT,
 
@@ -71,7 +85,12 @@ CREATE TABLE IF NOT EXISTS pickup_persons (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,
   child_id  INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
   ord       INTEGER NOT NULL,
+  -- name збирає сервер; складові — нижче. Ці люди показують паспорт,
+  -- коли забирають дитину, тому по батькові тут доречне.
   name      TEXT,
+  last      TEXT,
+  first     TEXT,
+  mid       TEXT,
   phone     TEXT,
   relation  TEXT
 );
