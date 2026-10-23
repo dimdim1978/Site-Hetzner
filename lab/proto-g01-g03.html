@@ -211,6 +211,20 @@
   .flow .st b{display:block}
   .flow .st .e{font-size:36px;line-height:1.2}
   .flow .ar{font-size:26px;color:var(--soft)}
+  /* Цикл заняття: три кроки, третій — і для мами */
+  .cycle .st{border-top-width:6px}
+  .cycle .c0{border-top-color:var(--sand)}
+  .cycle .c1{border-top-color:var(--green)}
+  .cycle .c2{border-top-color:var(--sky);background:#EEF4F8}
+  .cycle .min{display:block;font-weight:600;color:var(--ink);margin-top:2px}
+  .mama{margin-top:12px}
+  .school{border:2px dashed var(--line);border-radius:10px;padding:8px 12px;background:#FAFAF7}
+  .game ul{margin:6px 0 2px}
+  .alone{border-left:6px solid var(--sky);background:#EEF4F8;padding:10px 14px;border-radius:8px}
+  .alone .try{display:block;width:100%;margin:12px 0 4px;font-size:19px}
+  .trial-tag{position:fixed;z-index:20;top:calc(14px + var(--sa-t));left:50%;transform:translateX(-50%);
+    max-width:calc(100% - var(--cb) * 2.3 - 48px);background:var(--sand);color:#fff;border-radius:999px;
+    padding:4px 12px;font-size:14px;text-align:center;line-height:1.25}
   .script li{background:#F2F4F7;border-radius:10px;padding:8px 12px;list-style-position:outside}
   .game{border-left:6px solid var(--green);background:#EEF5F0;padding:10px 14px;border-radius:8px}
   .warn{list-style:none;padding-left:0}
@@ -335,6 +349,7 @@
 
 <button class="corner" id="repeat" title="Повторити" hidden>👂</button>
 <button class="corner" id="exit" title="Утримати 3 секунди — вихід для дорослого" hidden><span class="fill"></span><span style="position:relative">✕</span></button>
+<div class="trial-tag" id="trialTag" hidden>Пробний прохід · не записується</div>
 <button class="corner" id="gear" title="Панель для дорослого">⚙</button>
 
 <!-- 8. Батьківський бар'єр -->
@@ -395,14 +410,21 @@ const PHRASES = {
 };
 const KIDS = {liza:'🐰 Ліза', marko:'🚀 Марко', olia:'🌻 Оля'};
 
-/* Матеріал для вчителя. Однаковий шаблон для кожної навички
-   (what, visual, howTo, game, pitfalls) — наступні модулі заповнюють той самий.
+/* Матеріал для вчителя. Джерело змісту — docs/pedagogy_G01-G12.csv.
+   Однаковий шаблон для кожної навички — наступні модулі заповнюють той самий:
+   what + school («Що вчимо»), visual + show («Я показую»), together («Робимо разом»),
+   alone («Дитина сама»), pitfalls («Труднощі»: помилка → що робити).
    Приклади малюються з даних visual, а не картинками. */
 const TEACHER_GUIDE = {
   module: {id:'zvuky-g01-g03', title:'Звуки: Г01–Г03'},
   session: {
     title:'Як іде сесія і ваша роль',
     lead:'Прочитайте один раз перед першим заняттям — 5–7 хвилин. Далі буде лише коротке нагадування.',
+    cycle:[{e:'🗣️', t:'Я показую', who:'вчитель', d:'2–3 хв'},
+           {e:'🤝', t:'Робимо разом', who:'гра без екрана', d:'2–3 хв'},
+           {e:'📱', t:'Дитина сама', who:'планшет', d:'7–10 хв'}],
+    cycleLead:'Кожне заняття — три кроки. Спершу ви показуєте й граєте без екрана (розділи Г01–Г03 нижче), і лише потім дитина сідає за планшет.',
+    cycleMama:'Мама проходить лише третій крок.',
     flow:[{e:'⭐', t:'Урок пальчика', d:'3 зірочки: вчимося торкатися чи клацати'},
           {e:'🧩', t:'9 коротких завдань', d:'Г01, Г02, Г03 упереміш'},
           {e:'🌟', t:'Зорепад', d:'кінець, хвалимо'}],
@@ -416,6 +438,8 @@ const TEACHER_GUIDE = {
               'засмутилася чи плаче'],
     after:'Після заняття відкрийте ⚙ унизу екрана: там видно, що засвоєно, що ще вчиться, а де дитина застрягла.'
   },
+  // Однакове для всіх навичок: як зрозуміти, що вийшло (так само рахує панель ⚙)
+  mastery:'Вийшло, коли в ⚙ навичка має статус «засвоєно»: 3 правильні відповіді з першої спроби у 2 різні дні. «Застряг» (3 заняття поспіль без жодної правильної) — поверніться до кроку «Робимо разом».',
   reminder:['Ви поруч лише перші 2 хвилини, далі — спостерігаєте збоку.',
             'Відповідь не підказуєте: сова підкаже сама після двох помилок.',
             'Підійдіть, якщо підказка спрацювала двічі поспіль, дитина відвернулася, клацає навмання чи засмутилася.',
@@ -423,40 +447,58 @@ const TEACHER_GUIDE = {
   skills:{
     G01:{
       title:'Г01. Слова в реченні',
-      what:'Мова складається з окремих слів. Дитина вчиться чути межі між словами — без цього потім не вийде ні читати, ні писати окремо.',
+      what:'Мова складається з окремих слів. Дитина вчиться чути межі між словами — без цього потім не вийде ні читати, ні писати слова окремо.',
+      school:'визначає кількість слів у реченні з 1–4 слів.',
       visual:{type:'bricks', sentence:'Мама варить суп.',
-              note:'Кожне слово — окрема цеглинка. Натисніть 🔊: речення прозвучить повільно, а цеглинки підсвітяться по черзі.'},
-      howTo:['«Я скажу речення, а ти на кожне слово поклади кубик».',
-             'Говоріть повільно, з чіткими паузами між словами: «Мама … варить … суп».',
-             '«Скільки кубиків?»',
-             'Перевірте разом: торкайтеся кожного кубика й повторюйте слово.'],
-      game:{name:'«Скільки слів?»', text:'Кажете коротке речення — на кожне слово загинаєте пальчик. Потім дитина каже своє речення, а пальчики загинаєте ви.'},
-      pitfalls:[{p:'Короткі слова («в», «і», «на») діти пропускають.', fix:'Спершу давайте речення без них: «Кіт спить», «Мама варить суп».'},
-                {p:'Дитина плутається, рахує невпевнено.', fix:'Говоріть ще повільніше, з чіткими паузами; можна торкатися столу на кожне слово.'}]
+              note:'Кожне слово — окрема смужка. Натисніть 🔊: речення прозвучить повільно, а смужки підсвітяться по черзі.'},
+      show:['Кажіть речення повільно, з паузами між словами: «Мама … варить … суп».',
+            'На кожне слово кладіть смужку паперу або кубик.',
+            '«Мама варить суп» — три смужки. Проведіть пальцем по смужках і ще раз назвіть кожне слово.'],
+      together:{name:'«Скільки слів?»',
+                steps:['Ви кажете речення — дитина кладе смужку (кубик) на кожне слово.',
+                       'Потім разом загинаємо пальчики: один пальчик — одне слово.',
+                       '«Скільки слів?» Смужок і пальчиків має бути порівну.']},
+      alone:'Сова каже речення, на екрані три картки з кружечками (●●, ●●●, ●●●●). Дитина обирає картку, де кружечків стільки, скільки слів.',
+      pitfalls:[{p:'Пропускає короткі слова («в», «на», «і»).', fix:'Спершу речення без них: «Кіт спить», «Мама варить суп». Потім додавайте короткі слова й наголошуйте їх голосом.'},
+                {p:'Плутає слово й склад («ма-ма» — це два?).', fix:'Говоріть ще повільніше, з чіткими паузами між словами, а не всередині слова.'}]
     },
     G02:{
       title:'Г02. Склади',
-      what:'Слово ділиться на склади, і в кожному складі є один голосний звук. Відчуття складу — основа читання по складах.',
-      visual:{type:'bridges', words:[{e:'🐄', syl:['ко','ро','ва']}, {e:'🐟', syl:['ри','ба']}, {e:'🐱', syl:['кіт']}],
+      what:'Слово ділиться на склади, і в кожному складі один голосний звук. Склад може бути й з одного голосного: «о-си». Відчуття складу — основа читання по складах.',
+      school:'має уявлення про склад, вимовляє слова по складах.',
+      // Порядок прикладів — той самий, що й у грі: дво-, одно-, трискладові
+      visual:{type:'bridges', words:[{e:'🐟', syl:['ри','ба']}, {e:'🐱', syl:['кіт']}, {e:'🐄', syl:['ко','ро','ва']}],
               note:'Під кожним складом — «місток». Натисніть 🔊 біля слова: воно прозвучить склад за складом, місток підсвітиться.'},
-      howTo:['Плескаємо в долоні на кожен склад: «ко-ро-ва» — три плески.',
-             'Або «долонька під підборіддям»: скажіть слово, тримаючи долоньку під підборіддям. Скільки разів підборіддя опустилося — стільки складів.',
-             '«Скільки разів плеснули?»'],
-      game:{name:'«Крокуємо слово»', text:'Йдемо кімнатою і на кожен склад робимо крок: «ма-ши-на» — три кроки. Хто дійде до дверей за меншу кількість слів?'},
-      pitfalls:[{p:'Дитина рахує звуки, а не склади («р-и-б-а» — чотири).', fix:'Говоріть слово співуче, протяжно, і плескайте разом із дитиною, а не за неї.'},
-                {p:'Односкладові слова («кіт», «сир») збивають: «а де ж ділити?»', fix:'Скажіть: «Одна долонька теж рахується». Кіт — один плеск.'}]
+      show:['Вимовляйте слово по складах і плескайте на кожен склад: «ри-ба» — два плески.',
+            'Або долоня під підборіддям: скажіть слово, тримаючи долоню під підборіддям. Скільки разів підборіддя опустилося на долоню — стільки складів.',
+            '«Скільки разів плеснули?»'],
+      together:{name:'«Крокуємо слово»',
+                steps:['Ідемо кімнатою: один крок на склад. «Ма-ши-на» — три кроки.',
+                       'Відстукуємо склади олівцем по столу.',
+                       'Порядок слів: спершу двоскладові (ма-ма, ри-ба), потім односкладові (кіт, сир), потім трискладові (ко-ро-ва, ма-ши-на).']},
+      alone:'Картинка й слово голосом. Дитина обирає картку з 1, 2 чи 3 оплесками 👏.',
+      pitfalls:[{p:'Рахує звуки замість складів («р-и-б-а» — чотири).', fix:'Плескайте разом із дитиною вголос: одна долоня — один склад.'},
+                {p:'Односкладове слово «не рахує» («кіт» — а де ж ділити?).', fix:'«Одна долонька теж рахується». Кіт — один плеск.'},
+                {p:'Скандує нерівно, рве склади.', fix:'Вимовляйте протяжно, але цілими складами: «ри-и — ба-а».'}]
     },
     G03:{
       title:'Г03. Перший звук',
-      what:'Дитина вчиться чути, з якого ЗВУКУ починається слово (не букву!). Звук позначаємо в квадратних дужках: [м].',
+      what:'Дитина вчиться чути, з якого ЗВУКА починається слово. Не букви! Звук позначаємо в квадратних дужках: [м].',
+      school:'відтворює ланцюжок звуків у почутому слові. Почути перший звук — перший крок до цього.',
       visual:{type:'firstSound', sound:'м', words:[{e:'🐭', w:'миша'}, {e:'🐒', w:'мавпа'}, {e:'🥕', w:'морква'}],
               contrast:[{e:'🐱', w:'кіт', sound:'к'}],
               note:'Перший звук виділено кольором і «розтягнуто». Торкніться картки, щоб почути, або 🔊 — усі по черзі. Кіт — для контрасту: він не на [м].'},
-      howTo:['Протягніть перший звук голосом: «Мммиша».',
-             'Не називайте букву: «Що ти чуєш спочатку?» — «[м]».',
-             'Додайте слово не на [м]: «А кіт? Ммм-кіт? Ні — [к]-кіт».'],
-      game:{name:'«Впіймай звук»', text:'Називаєте слова одне за одним — дитина плескає, коли почує слово на [м]: «сир, миша, дім, мавпа, сонце, морква…»'},
-      pitfalls:[{p:'Дитина називає букву «ем» замість звука [м].', fix:'Кажіть лише звук, протяжно: «ммм». Букви на цьому етапі не потрібні.'},
+      show:['Протягніть перший звук голосом: «Мммак. Що ти чуєш спочатку? [м]».',
+            'Букву не називайте — тільки звук.',
+            'Починайте зі слів на голосний, що сам є складом (о-са, О-ля), і на тягучі звуки [м] [с] [ш] [л] — їх легко протягнути.',
+            'Додайте контраст: «А кіт? Ммм-кіт? Ні — [к]-кіт».'],
+      together:{name:'«Впіймай звук»',
+                steps:['Називаєте слова одне за одним — дитина плескає, коли почує слово на [м]: «сир, миша, дім, мавпа, сонце, морква…»',
+                       'Знайдіть разом у кімнаті речі на цей звук: м’яч, миска, мило…']},
+      alone:'«Яка картинка починається на [м]?» — три картинки, одна правильна.',
+      pitfalls:[{p:'Називає букву («ем») замість звука.', fix:'Говоріть тільки «звук [м]» і протягуйте: «ммм».'},
+                {p:'Називає склад («ма») замість звука.', fix:'Тягніть лише приголосний, без голосного після нього: «ммм».'},
+                {p:'Не чує [к] [п] [т] на початку слова.', fix:'Спершу голосні й тягучі звуки ([м] [с] [ш] [л]); вибухові [к] [п] [т] — пізніше.'},
                 {p:'Плутає [м] і [н].', fix:'Подивіться разом на губи в дзеркальце: на [м] губи стулені, на [н] — розтулені.'}]
     }
   }
@@ -597,7 +639,7 @@ const idle = {
 document.addEventListener('pointerdown', () => idle.fresh(), true);
 
 /* ================= Перебіг заняття ================= */
-const G = {kid: null, sid: null, stage: null, instr: null, tasks: [], i: 0, errors: 0, lock: false, stars: 0};
+const G = {kid: null, sid: null, stage: null, instr: null, tasks: [], i: 0, errors: 0, lock: false, stars: 0, trial: null};
 
 function show(stage) {
   G.stage = stage;
@@ -614,13 +656,14 @@ function show(stage) {
   $('v-task').hidden = stage !== 'task';
   $('v-end').hidden = stage !== 'end';
   $('progress').hidden = stage !== 'task';
+  $('trialTag').hidden = !(G.trial && stage === 'task');
   const old = document.querySelectorAll('.fall,.check');
   for (let i = 0; i < old.length; i++) old[i].remove();
 }
 function instruct(parts) { G.instr = parts; idle.fresh(); say(parts); }
 function repeat() { if (G.instr) say(G.instr); }
 
-function toWho() { hush(); idle.stop(); G.instr = null; G.lock = false; show('who'); }
+function toWho() { hush(); idle.stop(); G.instr = null; G.lock = false; G.trial = null; show('who'); }
 function toGreet() { show('greet'); instruct(PHRASES.greet); }
 // Урок пальчика/мишки
 function toStars() { G.stars = 0; G.lock = false; show('mouse'); placeStar(true); instruct(coarse() ? PHRASES.starTouch : PHRASES.starMouse); }
@@ -648,6 +691,14 @@ function buildTasks() {
   let s;
   do { s = shuffle(t); } while (s.some((x, i) => i > 1 && x.sk === s[i - 1].sk && x.sk === s[i - 2].sk));
   return s;
+}
+
+/* «Спробуйте самі»: дорослий проходить 3 завдання однієї навички в дитячому вигляді.
+   Нічого не пишеться — ні сесія, ні відповіді, тож панель ⚙ не змінюється. */
+function startTrial(sk) {
+  G.trial = sk; G.sid = null;
+  G.tasks = shuffle(buildTasks().filter(t => t.sk === sk)); G.i = 0;
+  show('task'); renderTask();
 }
 
 function startTasks() {
@@ -688,7 +739,7 @@ function answer(card, ok) {
   if (G.lock) return;
   if (ok) {
     G.lock = true;
-    record(G.kid, G.sid, G.tasks[G.i].sk, G.errors === 0);
+    if (!G.trial) record(G.kid, G.sid, G.tasks[G.i].sk, G.errors === 0);
     chime();
     const c = document.createElement('div'); c.className = 'check'; c.textContent = '✓';
     document.body.appendChild(c);
@@ -697,7 +748,7 @@ function answer(card, ok) {
       c.remove();
       if (G.stage !== 'task') return; // дорослий міг вийти за цю секунду
       G.i++;
-      if (G.i < G.tasks.length) renderTask(); else toEnd();
+      if (G.i < G.tasks.length) renderTask(); else if (G.trial) toGuide(G.trial, true); else toEnd();
     }, NEXT_MS);
   } else {
     G.errors++;
@@ -801,10 +852,14 @@ function guideSection(id) {
   if (id === 'session') {
     const S = T.session;
     return '<h2>' + esc(S.title) + '</h2><p class="lead">' + esc(S.lead) + '</p>' +
-      '<h3>Як іде сесія</h3><div class="demo"><div class="flow">' +
+      '<h3>Цикл заняття</h3><p>' + esc(S.cycleLead) + '</p><div class="demo"><div class="flow cycle">' +
+      S.cycle.map((x, i) => (i ? '<span class="ar">→</span>' : '') + '<div class="st c' + i + '"><span class="e">' + x.e + '</span><b>' + esc(x.t) + '</b>' +
+        esc(x.who) + '<span class="min">' + esc(x.d) + '</span></div>').join('') +
+      '</div><p class="mama">👩 ' + esc(S.cycleMama) + '</p></div>' +
+      '<h3>Крок «Дитина сама»: що буде на планшеті</h3><div class="demo"><div class="flow">' +
       S.flow.map((x, i) => (i ? '<span class="ar">→</span>' : '') + '<div class="st"><span class="e">' + x.e + '</span><b>' + esc(x.t) + '</b>' + esc(x.d) + '</div>').join('') +
       '</div><p><b>' + esc(S.duration) + '</b></p></div>' +
-      '<h3>Ваша роль</h3><ul>' + S.role.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+      '<h3>Ваша роль, поки дитина сама</h3><ul>' + S.role.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
       '<h3>Коли підійти</h3><ul class="warn">' + S.approach.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
       '<h3>Після заняття</h3><p>' + esc(S.after) + '</p>';
   }
@@ -820,15 +875,20 @@ function guideSection(id) {
   }
   const K = T.skills[id];
   return '<h2>' + esc(K.title) + '</h2>' +
-    '<h3>1. Що вчимо</h3><p>' + esc(K.what) + '</p>' +
-    '<h3>2. Як це виглядає</h3>' + VISUALS[K.visual.type](K.visual) + '<p class="muted">' + esc(K.visual.note) + '</p>' +
-    '<h3>3. Як подати дитині</h3><ol class="script">' + K.howTo.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' +
-    '<h3>4. Гра без екрана</h3><div class="game"><b>' + esc(K.game.name) + '</b> — ' + esc(K.game.text) + '</div>' +
-    '<h3>5. Типові труднощі</h3><ul class="warn">' + K.pitfalls.map(x => '<li><b>' + esc(x.p) + '</b>' + esc(x.fix) + '</li>').join('') + '</ul>';
+    '<h3>1. Що вчимо</h3><p>' + esc(K.what) + '</p><p class="school"><b>Що вимагає школа:</b> ' + esc(K.school) + '</p>' +
+    '<h3>2. Я показую</h3>' + VISUALS[K.visual.type](K.visual) + '<p class="muted">' + esc(K.visual.note) + '</p>' +
+    '<p><b>Що сказати й зробити:</b></p><ol class="script">' + K.show.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' +
+    '<h3>3. Робимо разом</h3><div class="game"><b>Гра без екрана: ' + esc(K.together.name) + '</b><ul>' +
+      K.together.steps.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' +
+    '<h3>4. Дитина сама</h3><div class="alone"><p><b>На планшеті:</b> ' + esc(K.alone) + '</p><p>' + esc(T.mastery) + '</p>' +
+      '<button class="btn main try" data-act="try" data-sk="' + id + '">▶ Спробуйте самі — 3 завдання</button>' +
+      '<p class="muted">Пройдіть те, що проходитиме дитина. Відповіді нікуди не записуються; після трьох завдань повернетеся сюди.</p></div>' +
+    '<h3>5. Труднощі</h3><ul class="warn">' + K.pitfalls.map(x => '<li><b>' + esc(x.p) + '</b>→ ' + esc(x.fix) + '</li>').join('') + '</ul>';
 }
 
-function toGuide(id) {
+function toGuide(id, atTry) {
   hush(); idle.stop(); seqTok++;
+  G.trial = null;
   show('guide');
   G.guideTab = id;
   const idx = GUIDE_TABS.findIndex(t => t[0] === id);
@@ -839,6 +899,9 @@ function toGuide(id) {
     '<div class="page-foot">' + (prev ? '<button class="btn" data-tab="' + prev[0] + '">← ' + esc(prev[1]) + '</button>' : '<span></span>') +
     (next ? '<button class="btn main" data-tab="' + next[0] + '">' + esc(next[1]) + ' →</button>' : '') + '</div>';
   $('s-guide').scrollTop = 0;
+  // Після «Спробуйте самі» — туди ж, звідки пішли, а не на початок розділу
+  const tb = atTry && $('guideBody').querySelector('[data-act="try"]');
+  if (tb) $('s-guide').scrollTop = Math.max(0, tb.getBoundingClientRect().top - $('s-guide').clientHeight / 2);
 }
 $('s-guide').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -846,6 +909,7 @@ $('s-guide').addEventListener('click', e => {
   if (tab) return toGuide(tab);
   const demo = b.closest('.demo');
   if (act === 'back') { seqTok++; hush(); toWho(); }
+  else if (act === 'try') startTrial(b.getAttribute('data-sk'));
   else if (act === 'ready') { seqTok++; hush(); markPrepared(); if (G.kid) toGreet(); else toWho(); }
   else if (act === 'bricks') {
     const nodes = demo.querySelectorAll('.brick');
@@ -914,7 +978,7 @@ function openGate() {
 }
 function gateTry() {
   const inp = $('gateAns');
-  if (parseInt(inp.value.trim(), 10) === 15) { inp.blur(); $('m-gate').hidden = true; toWho(); }
+  if (parseInt(inp.value.trim(), 10) === 15) { inp.blur(); $('m-gate').hidden = true; if (G.trial) toGuide(G.trial, true); else toWho(); }
   else { inp.classList.remove('bad'); void inp.offsetWidth; inp.classList.add('bad'); inp.value = ''; inp.focus(); }
 }
 $('gateOk').addEventListener('click', gateTry);
