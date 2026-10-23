@@ -2,117 +2,174 @@
 <html lang="uk">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Мудрик · Звуки Г01–Г03 (прототип)</title>
 <style>
+  /* Межа сумісності — старий Android-планшет (~Chrome 80) і Firefox 115.
+     Тому: clamp()/min() є (Chrome 79+), а gap у flex НЕМАЄ (лише з Chrome 84) —
+     відступи між елементами у flex робимо через margin; dvh — лише з запасним vh;
+     без aspect-ratio, inset, :has(), вкладеного CSS. */
   :root{
     --green:#2F6F4E; --sand:#C77D2E; --sky:#3D7EA6; --ink:#101828; --line:#E4E7EC;
-    --bg:#F6F4EE; --card:#FFFFFF; --soft:#667085;
+    --bg:#F6F4EE; --card-bg:#FFFFFF; --soft:#667085;
+    --sa-t:env(safe-area-inset-top,0px); --sa-r:env(safe-area-inset-right,0px);
+    --sa-b:env(safe-area-inset-bottom,0px); --sa-l:env(safe-area-inset-left,0px);
+    --cb:clamp(64px, 11vmin, 96px);                  /* кнопки в кутках, ≥64 під палець */
+    --gap:clamp(10px, 2.5vmin, 36px);
+    --card:clamp(96px, min(40vw, 22vh), 210px);      /* картка відповіді */
+    --owl:clamp(64px, 16vmin, 140px);
   }
   /* Правило проєкту №2: display:flex сильніший за hidden — тому примусово */
   [hidden]{display:none !important}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{
+    height:100vh; height:100dvh;
     background:var(--bg); color:var(--ink);
-    font-family:"Segoe UI",Tahoma,Arial,sans-serif;
-    overflow:hidden; user-select:none; -moz-user-select:none;
+    font-family:"Segoe UI",Roboto,Tahoma,Arial,sans-serif;
+    overflow:hidden;
+    /* Утримання пальцем: без виділення, без «лупи», без зуму подвійним тапом */
+    -webkit-user-select:none; -moz-user-select:none; user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
   }
-  button{font:inherit;color:inherit;cursor:pointer}
-  img,svg{-webkit-user-drag:none}
+  input{-webkit-user-select:text;-moz-user-select:text;user-select:text}
+  button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+  svg{-webkit-user-drag:none}
 
-  .screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;padding:110px 24px 70px}
+  .screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;
+    padding:calc(var(--cb) + 20px + var(--sa-t)) max(16px, var(--sa-r)) calc(52px + var(--sa-b)) max(16px, var(--sa-l))}
 
   /* ---- вхід дорослого ---- */
-  h1{font-size:34px;margin:0 0 36px;font-weight:600}
-  .kids{display:flex;gap:40px}
-  .kid{width:200px;height:220px;border:3px solid var(--line);border-radius:28px;background:var(--card);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:28px}
-  .kid span{font-size:90px;line-height:1}
-  .kid:hover{border-color:var(--green);transform:translateY(-3px)}
+  #s-who{justify-content:center}
+  h1{font-size:clamp(24px, 3vmin + 12px, 36px);margin:0 0 calc(var(--gap) * 1.5);font-weight:600;text-align:center}
+  .kids{display:flex;flex-wrap:wrap;justify-content:center;max-width:100%}
+  .kid{width:clamp(120px, 26vmin, 200px);height:clamp(128px, 28vmin, 220px);margin:calc(var(--gap) / 2);
+    border:3px solid var(--line);border-radius:24px;background:var(--card-bg);padding:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(20px, 2.5vmin + 10px, 28px)}
+  .kid span{font-size:clamp(52px, 12vmin, 90px);line-height:1;margin-bottom:8px}
 
-  /* ---- провідник ---- */
-  .guide{display:flex;align-items:center;gap:18px;max-width:900px;min-height:150px}
-  .owl{width:140px;height:150px;flex:none}
+  /* ---- дитячий екран: провідник угорі, нижче — робоча область ---- */
+  #s-child{justify-content:flex-start}
+  .guide{display:flex;align-items:center;max-width:900px;width:100%;justify-content:center;flex:none}
+  .owl{width:var(--owl);height:calc(var(--owl) * 1.07);flex:none;margin-right:var(--gap)}
   .owl.talk{animation:bob .5s ease-in-out infinite alternate}
   @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-6px)}}
-  .bubble{position:relative;background:var(--card);border:3px solid var(--line);border-radius:24px;
-    padding:14px 22px;font-size:22px;max-width:640px;min-height:56px}
-  .bubble:before{content:"";position:absolute;left:-14px;top:40px;border:12px solid transparent;
+  .bubble{position:relative;background:var(--card-bg);border:3px solid var(--line);border-radius:22px;
+    padding:10px 18px;font-size:clamp(18px, 1.6vmin + 12px, 24px);max-width:640px;min-width:0;flex:0 1 auto}
+  .bubble:before{content:"";position:absolute;left:-14px;top:50%;margin-top:-12px;border:12px solid transparent;
     border-right-color:var(--line);border-left:0}
   /* Без українського голосу дорослий читає фразу вголос — тому великим */
-  body.novoice .bubble{font-size:32px;font-weight:600}
-  .novoice-note{position:fixed;bottom:10px;right:14px;font-size:13px;color:var(--soft)}
+  body.novoice .bubble{font-size:clamp(21px, 2.4vmin + 13px, 32px);font-weight:600}
+  .note{display:none;font-size:12px;font-weight:400;color:var(--soft);margin-top:4px}
+  body.novoice .note{display:block}
 
-  .big-go{margin-top:44px;min-width:260px;min-height:96px;border:0;border-radius:28px;
-    background:var(--green);color:#fff;font-size:36px;font-weight:600;box-shadow:0 6px 0 #1f4b35}
-  .big-go:hover{filter:brightness(1.1)}
+  .main{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .view{display:flex;flex-direction:column;align-items:center}
+  .big-go{min-width:clamp(200px, 30vmin, 280px);min-height:clamp(80px, 12vmin, 100px);border:0;border-radius:26px;
+    background:var(--green);color:#fff;font-size:clamp(28px, 3vmin + 14px, 38px);font-weight:600;box-shadow:0 6px 0 #1f4b35}
   .big-go:active{transform:translateY(4px);box-shadow:0 2px 0 #1f4b35}
 
-  /* ---- урок миші ---- */
-  /* На уроці миші провідник угорі, щоб зірка не лягала на бульбашку */
-  #s-child.top{justify-content:flex-start}
-  #mouseArea{position:absolute;left:40px;right:40px;top:270px;bottom:60px}
-  .star{position:absolute;width:170px;height:170px;border:0;background:none;font-size:130px;line-height:170px;
-    padding:0;transition:transform .15s}
-  .star:hover{transform:scale(1.2)}
+  /* ---- урок пальчика/мишки: зірка гуляє по всій робочій області ---- */
+  #mouseArea{position:relative;width:100%;height:100%}
+  .star{position:absolute;width:clamp(96px, 22vmin, 170px);height:clamp(96px, 22vmin, 170px);border:0;background:none;padding:0;
+    font-size:clamp(76px, 17vmin, 130px);line-height:1;transition:transform .15s}
+  .star:active{transform:scale(1.15)}
 
   /* ---- завдання ---- */
-  .pic{font-size:120px;line-height:1;height:140px;margin:6px 0 14px}
-  .cards{display:flex;gap:44px;margin-top:18px}
-  .card{width:190px;height:190px;border:4px solid var(--line);border-radius:30px;background:var(--card);
-    display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px;
+  .pic{font-size:clamp(52px, 12vmin, 120px);line-height:1.1;min-height:1.1em;margin:4px 0 calc(var(--gap) / 2)}
+  .cards{display:flex;flex-wrap:wrap;justify-content:center;max-width:100%}
+  .card{width:var(--card);height:var(--card);margin:calc(var(--gap) / 2);border:4px solid var(--line);border-radius:24px;
+    background:var(--card-bg);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px;
     transition:border-color .15s, transform .15s}
-  .card:hover{border-color:var(--sky);transform:translateY(-4px)}
-  .card .dots{font-size:44px;letter-spacing:4px;color:var(--sky)}
-  .card .claps{font-size:48px;line-height:1.1}
-  .card .emo{font-size:110px;line-height:1}
+  .card:active{border-color:var(--sky)}
+  .card .dots{font-size:calc(var(--card) * .21);letter-spacing:2px;color:var(--sky);line-height:1}
+  .card .claps{font-size:calc(var(--card) * .24);line-height:1.15;text-align:center}
+  .card .emo{font-size:calc(var(--card) * .56);line-height:1}
   .card.shake{animation:shake .45s}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}
     40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
   .card.hint{animation:glow 1.4s ease-in-out infinite}
-  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(47,111,78,0)}50%{box-shadow:0 0 0 14px rgba(47,111,78,.35);border-color:var(--green)}}
-  .progress{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:10px}
-  .progress i{width:16px;height:16px;border-radius:50%;background:var(--line)}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(47,111,78,0)}50%{box-shadow:0 0 0 12px rgba(47,111,78,.35);border-color:var(--green)}}
+  .progress{position:fixed;bottom:calc(20px + var(--sa-b));left:50%;transform:translateX(-50%);display:flex}
+  .progress i{width:14px;height:14px;border-radius:50%;background:var(--line);margin:0 4px}
   .progress i.done{background:var(--green)}
   .progress i.now{background:var(--sand)}
 
-  .check{position:fixed;top:50%;left:50%;width:260px;height:260px;margin:-130px 0 0 -130px;border-radius:50%;
-    background:var(--green);color:#fff;font-size:180px;line-height:260px;text-align:center;
+  .check{position:fixed;top:50%;left:50%;width:clamp(140px, 40vmin, 260px);height:clamp(140px, 40vmin, 260px);
+    transform:translate(-50%,-50%);border-radius:50%;background:var(--green);color:#fff;
+    font-size:clamp(96px, 28vmin, 180px);display:flex;align-items:center;justify-content:center;
     animation:pop .3s ease-out;pointer-events:none;z-index:30}
-  @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes pop{from{opacity:0}to{opacity:1}}
 
   /* ---- кінець ---- */
-  .fall{position:fixed;top:-80px;font-size:54px;animation:fall linear forwards;pointer-events:none}
-  @keyframes fall{to{transform:translateY(110vh) rotate(300deg)}}
+  .fall{position:fixed;top:-80px;font-size:clamp(32px, 7vmin, 54px);animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{to{transform:translateY(120vh) rotate(300deg)}}
 
   /* ---- кнопки в кутках ---- */
-  .corner{position:fixed;z-index:20;border:3px solid var(--line);background:var(--card);border-radius:24px}
-  #repeat{top:16px;left:16px;width:110px;height:96px;font-size:50px;line-height:1}
-  #repeat:hover{border-color:var(--sky)}
-  #exit{top:16px;right:16px;width:72px;height:72px;font-size:30px;color:var(--soft);overflow:hidden}
+  .corner{position:fixed;z-index:20;border:3px solid var(--line);background:var(--card-bg);border-radius:22px;padding:0}
+  #repeat{top:calc(12px + var(--sa-t));left:calc(12px + var(--sa-l));width:calc(var(--cb) * 1.15);height:var(--cb);
+    font-size:calc(var(--cb) * .5);line-height:1}
+  #exit{top:calc(12px + var(--sa-t));right:calc(12px + var(--sa-r));width:var(--cb);height:var(--cb);
+    font-size:calc(var(--cb) * .38);color:var(--soft);overflow:hidden;touch-action:none}
   #exit .fill{position:absolute;left:0;bottom:0;width:100%;height:0;background:rgba(199,125,46,.35)}
   #exit.holding .fill{height:100%;transition:height 3s linear}
-  #gear{bottom:12px;left:12px;width:40px;height:40px;font-size:20px;border-radius:12px;color:var(--soft);border-width:2px}
+  #exit span{pointer-events:none}
+  /* ⚙ для дорослого: значок дрібний, але ціль для пальця 64 px */
+  #gear{bottom:calc(4px + var(--sa-b));left:calc(4px + var(--sa-l));width:64px;height:64px;font-size:20px;
+    color:var(--soft);border:0;background:none}
+
+  /* Наведення — лише там, де воно справді є (миша), на дотику «прилипає» */
+  @media (hover:hover){
+    .kid:hover{border-color:var(--green)}
+    .big-go:hover{filter:brightness(1.1)}
+    .star:hover{transform:scale(1.15)}
+    .card:hover{border-color:var(--sky)}
+    #repeat:hover{border-color:var(--sky)}
+  }
 
   /* ---- вікна для дорослого ---- */
   .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(16,24,40,.55);z-index:50;
-    display:flex;align-items:center;justify-content:center}
-  .box{background:#fff;border-radius:18px;padding:24px 28px;min-width:420px;max-width:760px;font-size:18px}
-  .box h2{margin:0 0 14px;font-size:24px}
-  .box input{font-size:28px;width:120px;padding:6px 10px;border:2px solid var(--line);border-radius:10px}
+    display:flex;align-items:center;justify-content:center;padding:12px}
+  .box{background:#fff;border-radius:18px;padding:20px 22px;width:100%;max-width:760px;max-height:100%;overflow:auto;font-size:18px}
+  #m-gate .box{max-width:520px}
+  .box h2{margin:0 0 12px;font-size:22px}
+  .box input{font-size:28px;width:120px;height:56px;padding:6px 10px;border:2px solid var(--line);border-radius:10px}
   .box input.bad{border-color:#B42318;animation:shake .45s}
-  .row{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
-  .btn{border:2px solid var(--line);background:#fff;border-radius:10px;padding:8px 16px;font-size:17px}
+  .row{display:flex;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .row > *{margin:4px 10px 4px 0}
+  .btn{border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 16px;font-size:17px;min-height:56px}
   .btn.main{background:var(--green);border-color:var(--green);color:#fff}
   .btn.on{border-color:var(--green);background:#E8F1EC}
-  table{border-collapse:collapse;margin-top:14px;width:100%}
-  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;font-size:16px}
+  .tbl{overflow-x:auto;margin-top:12px}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;font-size:16px}
   th{background:#F2F4F7}
   .st-ok{color:var(--green);font-weight:600}
   .st-stuck{color:#B42318;font-weight:600}
   .muted{color:var(--soft);font-size:14px}
+
+  /* ---- вузький екран (телефон портрет) ---- */
+  @media (max-width:600px){
+    .bubble:before{display:none}
+    th,td{font-size:13px;padding:5px 4px}
+    .box{padding:14px 12px}
+  }
+
+  /* ---- низький альбом (телефон боком): провідник ліворуч, завдання праворуч,
+     бо по висоті не вміщаються одне над одним ---- */
+  @media (orientation:landscape) and (max-height:520px){
+    :root{--card:clamp(80px, min(21vw, 30vh), 150px);--owl:clamp(56px, 15vh, 90px)}
+    .screen{padding:calc(10px + var(--sa-t)) calc(var(--cb) + 24px + var(--sa-r)) calc(36px + var(--sa-b)) calc(var(--cb) + 30px + var(--sa-l))}
+    #s-child{flex-direction:row;align-items:stretch}
+    .guide{flex-direction:column;width:36%;max-width:300px;margin-right:var(--gap)}
+    .owl{margin:0 0 8px}
+    .bubble:before{display:none}
+    .main{height:100%}
+    .progress{bottom:calc(8px + var(--sa-b))}
+    .progress i{width:11px;height:11px}
+    h1{margin-bottom:8px}
+  }
 </style>
 </head>
 <body>
@@ -143,23 +200,24 @@
       <path d="M62 72 L78 72 L70 86 Z" fill="#E8A33B"/>
       <path d="M52 142 l-6 6 M58 143 l0 6 M82 143 l0 6 M88 142 l6 6" stroke="#9A5B1E" stroke-width="4" stroke-linecap="round"/>
     </svg>
-    <div class="bubble" id="bubble"></div>
+    <div class="bubble"><div id="bubble"></div><div class="note">немає українського голосу в браузері</div></div>
   </div>
 
-  <div id="v-greet" hidden><button class="big-go" id="btnStart">Почати</button></div>
-  <div id="mouseArea" hidden><button class="star" id="star">⭐</button></div>
-  <div id="v-task" hidden style="display:flex;flex-direction:column;align-items:center">
-    <div class="pic" id="pic"></div>
-    <div class="cards" id="cards"></div>
+  <div class="main">
+    <div class="view" id="v-greet" hidden><button class="big-go" id="btnStart">Почати</button></div>
+    <div id="mouseArea" hidden><button class="star" id="star">⭐</button></div>
+    <div class="view" id="v-task" hidden>
+      <div class="pic" id="pic"></div>
+      <div class="cards" id="cards"></div>
+    </div>
+    <div class="view" id="v-end" hidden><button class="big-go" id="btnAgain">Ще раз</button></div>
   </div>
-  <div id="v-end" hidden><button class="big-go" id="btnAgain">Ще раз</button></div>
   <div class="progress" id="progress" hidden></div>
 </section>
 
 <button class="corner" id="repeat" title="Повторити" hidden>👂</button>
 <button class="corner" id="exit" title="Утримати 3 секунди — вихід для дорослого" hidden><span class="fill"></span><span style="position:relative">✕</span></button>
 <button class="corner" id="gear" title="Панель для дорослого">⚙</button>
-<div class="novoice-note" id="novoiceNote" hidden>немає українського голосу в браузері</div>
 
 <!-- 8. Батьківський бар'єр -->
 <div class="modal" id="m-gate" hidden>
@@ -167,7 +225,7 @@
     <h2>Вихід для дорослого</h2>
     <div>Скільки буде 7 + 8?</div>
     <div class="row">
-      <input id="gateAns" type="text" inputmode="numeric" autocomplete="off" maxlength="3">
+      <input id="gateAns" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="3">
       <button class="btn main" id="gateOk">Вийти</button>
       <button class="btn" id="gateCancel">Повернутися до заняття</button>
     </div>
@@ -179,17 +237,16 @@
   <div class="box">
     <h2>Засвоєння навичок</h2>
     <div class="row" id="panelKids" style="margin-top:0"></div>
-    <div class="muted" id="panelDay" style="margin-top:10px"></div>
-    <table>
-      <thead><tr><th>Навичка</th><th>Правильних сьогодні</th><th>Днів із правильними</th><th>Сесій</th><th>Статус</th></tr></thead>
+    <div class="muted" id="panelDay" style="margin-top:8px"></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Навичка</th><th title="Правильних сьогодні">✓ сьогодні</th><th title="Днів із правильними">Днів з ✓</th><th>Сесій</th><th>Статус</th></tr></thead>
       <tbody id="panelBody"></tbody>
-    </table>
-    <p class="muted">Правильна відповідь = з першої спроби. «Засвоєно» — 3 правильні щонайменше у 2 різні дні.
+    </table></div>
+    <p class="muted">✓ — правильна відповідь з першої спроби. «Засвоєно» — 3 правильні щонайменше у 2 різні дні.
       «Застряг» — 3 сесії поспіль без жодної правильної. Дані лише в цьому браузері (localStorage).</p>
     <div class="row">
       <button class="btn" id="panelTomorrow">Імітувати завтра</button>
       <button class="btn" id="panelReset">Скинути</button>
-      <span style="flex:1"></span>
       <button class="btn main" id="panelClose">Закрити</button>
     </div>
   </div>
@@ -202,9 +259,10 @@
    Згодом сюди додасться поле mp3 зі справжнім записом. */
 const PHRASES = {
   greet:    {t:'Привіт! Я Мудрик. Пограємося зі звуками?'},
-  mouse:    {t:'Наведи стрілочку на зірочку й клацни.'},
-  mouseMore:{t:'Ще! Де тепер зірочка?'},
-  mouseDone:{t:'Чудово! Тепер пограємося.'},
+  starTouch:{t:'Торкнися зірочки пальчиком.'},
+  starMouse:{t:'Наведи стрілочку на зірочку й клацни.'},
+  starMore: {t:'Ще! Де тепер зірочка?'},
+  starDone: {t:'Чудово! Тепер пограємося.'},
   g01:      {t:'Скільки слів ти почув?'},
   g02:      {t:'Скільки разів плеснемо?'},
   g03:      {t:'Яка картинка починається на [м]?', s:'Яка картинка починається на звук ммм?'},
@@ -222,25 +280,25 @@ const SKILLS = {G01:'Г01 · слова в реченні', G02:'Г02 · скл�
 const IDLE_MS = 8000, IDLE_MAX = 3, HOLD_MS = 3000, NEXT_MS = 1000;
 
 const $ = id => document.getElementById(id);
-const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = a[i]; a[i] = a[j]; a[j] = x; } return a; };
 const pick = a => a[Math.floor(Math.random() * a.length)];
+// Пальцем чи мишею — перевіряємо щоразу: планшет може мати й те, й те
+const coarse = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
 
 /* ================= Голос ================= */
 const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
 let ukVoice = null;
 function findVoice() {
-  if (!TTS) return;
-  const vs = TTS.getVoices() || [];
-  ukVoice = vs.find(v => /^uk/i.test(v.lang)) || null;
+  ukVoice = null;
+  if (TTS) {
+    const vs = TTS.getVoices() || [];
+    ukVoice = vs.find(v => /^uk/i.test(v.lang)) || null;
+  }
   document.body.classList.toggle('novoice', !ukVoice);
-  $('novoiceNote').hidden = !!ukVoice || $('s-child').hidden;
 }
-if (TTS) {
-  findVoice();
-  // Голоси в Firefox і Chromium приходять із запізненням
-  if ('onvoiceschanged' in TTS) TTS.addEventListener('voiceschanged', findVoice);
-}
-document.body.classList.toggle('novoice', !ukVoice);
+findVoice();
+// Голоси в Firefox і Chromium приходять із запізненням
+if (TTS && TTS.addEventListener) TTS.addEventListener('voiceschanged', findVoice);
 
 let speaking = false;
 // parts: масив фраз {t,s}; показуємо всі разом, вимовляємо по черзі
@@ -349,7 +407,7 @@ const idle = {
     repeat();
   }
 };
-document.addEventListener('mousedown', () => idle.fresh(), true);
+document.addEventListener('pointerdown', () => idle.fresh(), true);
 
 /* ================= Перебіг заняття ================= */
 const G = {kid: null, sid: null, stage: null, instr: null, tasks: [], i: 0, errors: 0, lock: false, stars: 0};
@@ -361,29 +419,32 @@ function show(stage) {
   $('repeat').hidden = $('exit').hidden = stage === 'who';
   $('v-greet').hidden = stage !== 'greet';
   $('mouseArea').hidden = stage !== 'mouse';
-  $('s-child').classList.toggle('top', stage === 'mouse');
   $('v-task').hidden = stage !== 'task';
   $('v-end').hidden = stage !== 'end';
   $('progress').hidden = stage !== 'task';
-  $('novoiceNote').hidden = !!ukVoice || stage === 'who';
-  document.querySelectorAll('.fall,.check').forEach(n => n.remove());
+  const old = document.querySelectorAll('.fall,.check');
+  for (let i = 0; i < old.length; i++) old[i].remove();
 }
 function instruct(parts) { G.instr = parts; idle.fresh(); say(parts); }
 function repeat() { if (G.instr) say(G.instr); }
 
 function toWho() { hush(); idle.stop(); G.instr = null; G.lock = false; show('who'); }
 function toGreet() { show('greet'); instruct(PHRASES.greet); }
-function toMouse() { G.stars = 0; show('mouse'); placeStar(); instruct(PHRASES.mouse); }
+// Урок пальчика/мишки
+function toStars() { G.stars = 0; G.lock = false; show('mouse'); placeStar(true); instruct(coarse() ? PHRASES.starTouch : PHRASES.starMouse); }
 
-function placeStar() {
+function placeStar(fresh) {
   const a = $('mouseArea'), st = $('star');
-  const w = a.clientWidth - 170, h = a.clientHeight - 170;
+  const w = Math.max(0, a.clientWidth - st.offsetWidth), h = Math.max(0, a.clientHeight - st.offsetHeight);
+  const px = fresh ? -999 : (parseFloat(st.style.left) || 0), py = fresh ? -999 : (parseFloat(st.style.top) || 0);
+  // Щоразу помітно в іншому місці (наскільки дозволяє екран)
+  const far = Math.min(250, Math.max(w, h) * 0.5);
   let x, y, tries = 0;
-  const px = parseFloat(st.style.left) || -999, py = parseFloat(st.style.top) || -999;
-  // Щоразу помітно в іншому місці
-  do { x = Math.random() * w; y = Math.random() * h; tries++; } while (Math.hypot(x - px, y - py) < 250 && tries < 30);
-  st.style.left = Math.max(0, x) + 'px'; st.style.top = Math.max(0, y) + 'px';
+  do { x = Math.random() * w; y = Math.random() * h; tries++; } while (Math.sqrt((x - px) * (x - px) + (y - py) * (y - py)) < far && tries < 40);
+  st.style.left = x + 'px'; st.style.top = y + 'px';
 }
+// Поворот планшета посеред уроку — зірка не повинна опинитися за краєм
+window.addEventListener('resize', () => { if (G.stage === 'mouse') placeStar(true); });
 
 function buildTasks() {
   const t = [];
@@ -423,7 +484,7 @@ function renderTask() {
     const b = document.createElement('button');
     b.className = 'card'; b.innerHTML = o.html;
     if (o.title) b.title = o.title;
-    if (o.ok) b.dataset.ok = '1';
+    if (o.ok) b.setAttribute('data-ok', '1');
     b.addEventListener('click', () => answer(b, o.ok));
     cards.appendChild(b);
   });
@@ -461,7 +522,7 @@ function toEnd() {
   for (let i = 0; i < 24; i++) {
     const s = document.createElement('div'); s.className = 'fall';
     s.textContent = i % 3 ? '⭐' : '🌟';
-    s.style.left = (Math.random() * 96) + 'vw';
+    s.style.left = (Math.random() * 92) + 'vw';
     s.style.animationDuration = (2.5 + Math.random() * 2.5) + 's';
     s.style.animationDelay = (Math.random() * 1.8) + 's';
     document.body.appendChild(s);
@@ -469,30 +530,40 @@ function toEnd() {
 }
 
 /* ================= Події ================= */
-document.querySelectorAll('.kid').forEach(b => b.addEventListener('click', () => { G.kid = b.dataset.kid; toGreet(); }));
-$('btnStart').addEventListener('click', () => { blip(); toMouse(); });
+// click спрацьовує і від миші, і від дотику; затримки 300 мс немає завдяки touch-action
+const kidBtns = document.querySelectorAll('.kid');
+for (let i = 0; i < kidBtns.length; i++) kidBtns[i].addEventListener('click', function () { G.kid = this.getAttribute('data-kid'); toGreet(); });
+$('btnStart').addEventListener('click', () => { blip(); toStars(); });
 $('star').addEventListener('click', () => {
+  if (G.lock) return;
   blip(); G.stars++;
-  if (G.stars < 3) { placeStar(); instruct(PHRASES.mouseMore); }
-  else { G.lock = true; $('star').style.visibility = 'hidden'; say(PHRASES.mouseDone);
+  if (G.stars < 3) { placeStar(); instruct(PHRASES.starMore); }
+  else { G.lock = true; $('star').style.visibility = 'hidden'; say(PHRASES.starDone);
     setTimeout(() => { $('star').style.visibility = ''; if (G.stage === 'mouse') startTasks(); }, 1500); }
 });
 $('btnAgain').addEventListener('click', () => toGreet());
 $('repeat').addEventListener('click', () => repeat());
-document.addEventListener('contextmenu', e => e.preventDefault());
+// Довге натискання пальцем на Android відкриває меню/лупу — глушимо всюди, крім поля вводу
+document.addEventListener('contextmenu', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
 document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('selectstart', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
 
-// Вихід: утримати 3 с, потім питання
+// Вихід: утримати 3 с (мишею чи пальцем), потім питання
 let holdT = 0;
 const ex = $('exit');
-function holdStop() { clearTimeout(holdT); ex.classList.remove('holding'); }
-ex.addEventListener('mousedown', e => {
-  if (e.button !== 0) return;
+function holdStop() { clearTimeout(holdT); holdT = 0; ex.classList.remove('holding'); }
+ex.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  holdStop();
   ex.classList.add('holding');
   holdT = setTimeout(() => { holdStop(); openGate(); }, HOLD_MS);
 });
-ex.addEventListener('mouseup', holdStop);
-ex.addEventListener('mouseleave', holdStop);
+ex.addEventListener('pointerup', holdStop);
+ex.addEventListener('pointercancel', holdStop);
+ex.addEventListener('pointerleave', holdStop);
+// Без цього старий Android після ~0,5 с утримання показує меню або скасовує дотик
+ex.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
 
 function openGate() {
   hush(); idle.stop();
@@ -501,12 +572,12 @@ function openGate() {
 }
 function gateTry() {
   const inp = $('gateAns');
-  if (parseInt(inp.value.trim(), 10) === 15) { $('m-gate').hidden = true; toWho(); }
+  if (parseInt(inp.value.trim(), 10) === 15) { inp.blur(); $('m-gate').hidden = true; toWho(); }
   else { inp.classList.remove('bad'); void inp.offsetWidth; inp.classList.add('bad'); inp.value = ''; inp.focus(); }
 }
 $('gateOk').addEventListener('click', gateTry);
 $('gateAns').addEventListener('keydown', e => { if (e.key === 'Enter') gateTry(); });
-$('gateCancel').addEventListener('click', () => { $('m-gate').hidden = true; idle.fresh(); });
+$('gateCancel').addEventListener('click', () => { $('gateAns').blur(); $('m-gate').hidden = true; idle.fresh(); });
 
 // Панель дорослого
 let panelKid = null;
