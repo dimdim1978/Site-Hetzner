@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Студія звуків · Мудрик</title>
+<style>
+  /* Палітра проєкту. Сторінка для дорослого: спокійна, читабельна, без анімацій. */
+  :root{
+    --green:#2F6F4E; --green-soft:#E8F1EC; --sand:#C77D2E; --sand-soft:#FBF1E6;
+    --sky:#3D7EA6; --ink:#101828; --muted:#5B6474; --line:#E4E7EC; --bg:#F7F8FA;
+    --card:#FFFFFF; --bad:#B42318; --bad-soft:#FDECEA;
+    --sa-t:env(safe-area-inset-top,0px); --sa-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;touch-action:manipulation}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(12px + var(--sa-t)) 16px calc(24px + var(--sa-b))}
+  h1{font-size:clamp(20px,5vw,26px);margin:8px 0 4px}
+  h2{font-size:19px;margin:0 0 8px}
+  p{margin:6px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:14px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+  .btn{appearance:none;border:0;border-radius:12px;font:inherit;font-weight:600;cursor:pointer;
+    min-height:52px;padding:10px 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--line);color:var(--ink);user-select:none;-webkit-user-select:none}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn.main{background:var(--green);color:#fff}
+  .btn.rec{background:var(--bad);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid var(--line)}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .row .btn{flex:1 1 140px}
+  label.f{display:block;font-weight:600;margin:10px 0 4px}
+  input[type=text]{font:inherit;width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  ul.tips{margin:6px 0 0;padding-left:20px}
+  ul.tips li{margin:3px 0}
+
+  /* Картка звука */
+  .card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+  .card .top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .group{font-size:14px;font-weight:600;color:var(--muted)}
+  .count{font-size:14px;color:var(--muted)}
+  .sound{font-size:clamp(64px,22vw,110px);font-weight:700;line-height:1.1;text-align:center;margin:6px 0 2px;color:var(--green)}
+  .sound.soft{color:var(--sky)}
+  .sound.vow{color:var(--bad)}
+  .example{text-align:center;font-size:19px;margin-bottom:6px}
+  .how{background:var(--sand-soft);border-radius:12px;padding:10px 12px;margin:10px 0}
+  .meter{height:14px;border-radius:7px;background:var(--line);overflow:hidden;margin:12px 0}
+  .meter i{display:block;height:100%;width:0;background:var(--green);transition:width .06s linear}
+  .status{min-height:26px;font-weight:600;text-align:center}
+  .status.ok{color:var(--green)}
+  .status.warn{color:var(--bad)}
+  .status.bad{color:var(--bad)}
+
+  /* Сітка прогресу */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px}
+  .cell{appearance:none;font:inherit;font-weight:700;font-size:18px;min-height:52px;border-radius:10px;cursor:pointer;
+    border:2px solid var(--line);background:#fff;color:var(--ink)}
+  .cell.done{background:var(--green-soft);border-color:var(--green)}
+  .cell.warn{background:var(--bad-soft);border-color:var(--bad)}
+  .cell.cur{outline:3px solid var(--sky);outline-offset:1px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:14px;color:var(--muted);margin-top:8px}
+  .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:2px solid var(--line)}
+  .legend .l-done::before{background:var(--green-soft);border-color:var(--green)}
+  .legend .l-warn::before{background:var(--bad-soft);border-color:var(--bad)}
+  .err{background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:12px;margin:12px 0;font-weight:600}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Студія звуків</h1>
+  <p class="muted">Записуємо окремі звуки української мови для уроків грамоти. Голос браузера їх не вміє:
+    замість звука [м] він каже назву букви «ем». Тому звуки записує людина — один раз, і далі вони звучать у всіх уроках.</p>
+
+  <div class="box" id="intro">
+    <h2>Перед записом</h2>
+    <ul class="tips">
+      <li>Тиха кімната, вимкнений телевізор, закрите вікно.</li>
+      <li>Телефон чи планшет — на відстані долоні від рота (15–20 см). Тримайте цю відстань весь час.</li>
+      <li>Усі звуки записує <b>одна людина</b> — дитина має чути один голос.</li>
+      <li>Кажіть <b>звук, а не букву</b>: «ммм», а не «ем»; «п», а не «пе».</li>
+      <li>Не вийшло — перезапишіть. Записане зберігається на цьому пристрої, можна робити з перервами.</li>
+    </ul>
+    <label class="f" for="who">Хто записує (ім'я — потрапить у файл з описом)</label>
+    <input type="text" id="who" placeholder="Наприклад: Олена Петрівна" autocomplete="off">
+    <div class="row" style="margin-top:12px">
+      <button class="btn main" id="start">Почати</button>
+    </div>
+    <p class="small muted" style="margin-top:10px">Сторінці потрібен дозвіл на мікрофон. Браузер спитає про це один раз.</p>
+  </div>
+
+  <div class="err" id="err" hidden></div>
+
+  <div id="studio" hidden>
+    <div class="card" id="card">
+      <div class="top"><span class="group" id="group"></span><span class="count" id="count"></span></div>
+      <div class="sound" id="sound"></div>
+      <div class="example" id="example"></div>
+      <div class="how" id="how"></div>
+      <div class="meter"><i id="level"></i></div>
+      <div class="status" id="status"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn rec" id="rec">● Записати</button>
+        <button class="btn" id="play" disabled>▶ Прослухати</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="prev">← Назад</button>
+        <button class="btn main" id="next">Далі →</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Усі звуки</h2>
+      <div class="grid" id="grid"></div>
+      <div class="legend"><span class="l-done">записано</span><span class="l-warn">варто перезаписати</span><span>ще ні</span></div>
+    </div>
+
+    <div class="box">
+      <h2>Готово? Забрати файли</h2>
+      <p id="summary" class="muted"></p>
+      <div class="row">
+        <button class="btn" id="playall">▶ Прослухати всі підряд</button>
+        <button class="btn main" id="zip">⬇ Завантажити архів</button>
+      </div>
+      <p class="small muted" style="margin-top:10px">Архів <b>sounds-….zip</b> містить файли WAV з іменами, які чекають уроки
+        (наприклад, <code>snd_m.wav</code>, <code>snd_l_soft.wav</code>), і файл <code>manifest.json</code> з описом.
+        Передайте архів Дмитру — він покладе його в <code>D:\Classes\03_Content\audio</code>.</p>
+      <p class="small muted">Почати все спочатку: <button class="btn ghost" id="wipe" style="min-height:40px;padding:6px 12px">Стерти всі записи на цьому пристрої</button></p>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   ПЕРЕЛІК ЗВУКІВ. Правиться тут, без пошуку по коду.
+   id   — ім'я файлу: snd_<id>.wav. Тільки латиниця: файли поїдуть на сервер.
+   s    — як показати звук (у квадратних дужках — так позначають звук у школі).
+   ex   — слово-приклад: де цей звук чути найкраще.
+   kind — vowel (голосний), long (тягучий приголосний), short (вибуховий
+          чи африката — тягнути не можна), soft (м'який; тягучий або короткий).
+   Порядок: спершу голосні, потім тягучі (їх легше чути й записати),
+   потім короткі, потім м'які. Так само їх подає методика.
+   ===================================================================== */
+const SOUNDS = [
+  {id:'a',  s:'а', ex:'як на початку «аґрус»', kind:'vowel', grp:'Голосні'},
+  {id:'o',  s:'о', ex:'як на початку «оса»',   kind:'vowel', grp:'Голосні'},
+  {id:'u',  s:'у', ex:'як на початку «удав»',  kind:'vowel', grp:'Голосні'},
+  {id:'y',  s:'и', ex:'як у середині «сир»',   kind:'vowel', grp:'Голосні'},
+  {id:'i',  s:'і', ex:'як на початку «Іра»',   kind:'vowel', grp:'Голосні'},
+  {id:'e',  s:'е', ex:'як на початку «ехо»',   kind:'vowel', grp:'Голосні'},
+
+  {id:'m',  s:'м', ex:'як на початку «мак»',   kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'n',  s:'н', ex:'як на початку «нора»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'l',  s:'л', ex:'як на початку «лапа»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'r',  s:'р', ex:'як на початку «рак»',   kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'s',  s:'с', ex:'як на початку «сир»',   kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'z',  s:'з', ex:'як на початку «зуб»',   kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'sh', s:'ш', ex:'як на початку «шапка»', kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'zh', s:'ж', ex:'як на початку «жаба»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'v',  s:'в', ex:'як на початку «вовк»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'f',  s:'ф', ex:'як на початку «фара»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'kh', s:'х', ex:'як на початку «хата»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+  {id:'h',  s:'г', ex:'як на початку «гора»',  kind:'long', grp:'Тверді приголосні, тягучі'},
+
+  {id:'b',  s:'б', ex:'як у кінці «зуб»',      kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'p',  s:'п', ex:'як у кінці «суп»',      kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'d',  s:'д', ex:'як у кінці «мед»',      kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'t',  s:'т', ex:'як у кінці «кит»',      kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'k',  s:'к', ex:'як у кінці «мак»',      kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'g',  s:'ґ', ex:'як на початку «ґанок»', kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'ts', s:'ц', ex:'як у кінці «палац»',    kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'ch', s:'ч', ex:'як у кінці «м\u2019яч»', kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'dzh',s:'дж',ex:'як на початку «джміль»',kind:'short', grp:'Тверді приголосні, короткі'},
+  {id:'dz', s:'дз',ex:'як на початку «дзвоник»',kind:'short',grp:'Тверді приголосні, короткі'},
+
+  {id:'l_soft', s:'л\u2019', ex:'як на початку «ліс»',   kind:'soft', long:true,  grp:'М\u2019які приголосні'},
+  {id:'n_soft', s:'н\u2019', ex:'як на початку «ніс»',   kind:'soft', long:true,  grp:'М\u2019які приголосні'},
+  {id:'s_soft', s:'с\u2019', ex:'як на початку «сік»',   kind:'soft', long:true,  grp:'М\u2019які приголосні'},
+  {id:'z_soft', s:'з\u2019', ex:'як на початку «зірка»', kind:'soft', long:true,  grp:'М\u2019які приголосні'},
+  {id:'r_soft', s:'р\u2019', ex:'як на початку «рюкзак»',kind:'soft', long:true,  grp:'М\u2019які приголосні'},
+  {id:'j',      s:'й',       ex:'як на початку «йогурт»',kind:'soft', long:true,  grp:'М\u2019які приголосні'},
+  {id:'d_soft', s:'д\u2019', ex:'як на початку «дім»',   kind:'soft', long:false, grp:'М\u2019які приголосні'},
+  {id:'t_soft', s:'т\u2019', ex:'як на початку «тінь»',  kind:'soft', long:false, grp:'М\u2019які приголосні'},
+  {id:'ts_soft',s:'ц\u2019', ex:'як у кінці «кінець»',   kind:'soft', long:false, grp:'М\u2019які приголосні'},
+  {id:'dz_soft',s:'дз\u2019',ex:'як на початку «дзьоб»', kind:'soft', long:false, grp:'М\u2019які приголосні'},
+];
+
+/* Як вимовляти — підказка під кожною карткою. */
+function howTo(x){
+  if (x.kind === 'vowel') return 'Скажіть звук рівно й спокійно, близько секунди: «' + x.s + x.s + x.s + '». Без наголосу, не співайте.';
+  if (x.kind === 'long')  return 'Тягніть звук 1–2 секунди, <b>без голосного</b>: «' + x.s + x.s + x.s + '». Не «е' + x.s + '», не «' + x.s + 'е» — тільки сам звук.';
+  if (x.kind === 'short') return 'Цей звук не тягнеться. Скажіть слово-приклад і <b>зупиніться на цьому звуці</b>. Коротко, без «е» чи «и» після нього. Глухі (п, т, к) — майже пошепки.';
+  if (x.long) return 'Губи ніби в усмішці, як перед звуком [і], — але сам [і] не кажіть. Тягніть 1–2 секунди: «' + x.s.replace('\u2019','') + x.s.replace('\u2019','') + '…» м\u2019яко.';
+  return 'Губи ніби в усмішці, як перед [і]. Коротко, без [і] після звука. Скажіть слово-приклад і зупиніться на цьому звуці.';
+}
+
+/* Межі якості запису. Підібрано на око, правиться тут. */
+const Q = {
+  maxSec: 3.0,        // запис сам зупиниться через стільки секунд
+  rate: 22050,        // частота у файлі: для голосу досить, файли маленькі
+  minPeak: 0.06,      // тихіше — «дуже тихо»
+  clipPeak: 0.985,    // гучніше — «перевантаження»
+  minVoiced: { vowel:0.35, long:0.6, short:0.05, softlong:0.6, softshort:0.05 } // мінімум звучання, с
+};
+
+const $ = id => document.getElementById(id);
+let cur = 0, stream = null, ctx = null, rec = null, chunks = [], timer = null, raf = 0;
+const takes = {};   // id -> {wav:Blob, sec:Number, warn:String|null}
+let audio = null;
+
+/* ---------------- Збереження на пристрої (IndexedDB) ----------------
+   Щоб запис можна було робити з перервами. Якщо сховище недоступне
+   (приватне вікно тощо) — працюємо без нього, просто не переживе перезавантаження. */
+const DB = {
+  db: null,
+  open(){ return new Promise(res => {
+    try {
+      const r = indexedDB.open('mudryk-studio', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('takes');
+      r.onsuccess = () => { DB.db = r.result; res(); };
+      r.onerror = () => res();
+    } catch(e){ res(); }
+  }); },
+  put(k,v){ try { if (DB.db) DB.db.transaction('takes','readwrite').objectStore('takes').put(v,k); } catch(e){} },
+  del(k){ try { if (DB.db) DB.db.transaction('takes','readwrite').objectStore('takes').delete(k); } catch(e){} },
+  all(){ return new Promise(res => {
+    try {
+      if (!DB.db) return res({});
+      const out = {}, st = DB.db.transaction('takes').objectStore('takes'), q = st.openCursor();
+      q.onsuccess = () => { const c = q.result; if (c){ out[c.key] = c.value; c.continue(); } else res(out); };
+      q.onerror = () => res({});
+    } catch(e){ res({}); }
+  }); }
+};
+function saveWho(){ try { localStorage.setItem('studio-who', $('who').value.trim()); } catch(e){} }
+function loadWho(){ try { $('who').value = localStorage.getItem('studio-who') || ''; } catch(e){} }
+
+/* ---------------- Відображення ---------------- */
+function render(){
+  const x = SOUNDS[cur];
+  $('group').textContent = x.grp;
+  $('count').textContent = (cur+1) + ' з ' + SOUNDS.length;
+  const el = $('sound');
+  el.textContent = '[' + x.s + ']';
+  el.className = 'sound' + (x.kind === 'vowel' ? ' vow' : x.kind === 'soft' ? ' soft' : '');
+  $('example').textContent = x.ex;
+  $('how').innerHTML = howTo(x);
+  const t = takes[x.id];
+  $('play').disabled = !t;
+  setStatus(t ? (t.warn ? ['warn', t.warn + ' Можна перезаписати.'] : ['ok', '✓ Записано (' + t.sec.toFixed(1) + ' с)']) : ['', '']);
+  $('rec').textContent = t ? '↺ Перезаписати' : '● Записати';
+  $('prev').disabled = cur === 0;
+  $('next').textContent = cur === SOUNDS.length - 1 ? 'До архіву ↓' : 'Далі →';
+  renderGrid();
+}
+function renderGrid(){
+  const g = $('grid'); g.innerHTML = '';
+  SOUNDS.forEach((x,i) => {
+    const b = document.createElement('button');
+    const t = takes[x.id];
+    b.className = 'cell' + (t ? (t.warn ? ' warn' : ' done') : '') + (i === cur ? ' cur' : '');
+    b.textContent = x.s; b.title = x.ex;
+    b.addEventListener('click', () => { stopAll(); cur = i; render(); $('card').scrollIntoView({behavior:'smooth', block:'start'}); });
+    g.appendChild(b);
+  });
+  const n = Object.keys(takes).filter(k => SOUNDS.some(s => s.id === k)).length;
+  const w = SOUNDS.filter(s => takes[s.id] && takes[s.id].warn).length;
+  $('summary').textContent = 'Записано ' + n + ' з ' + SOUNDS.length + (w ? ', з них ' + w + ' варто перезаписати.' : '.');
+}
+function setStatus(a){ const s = $('status'); s.className = 'status ' + a[0]; s.textContent = a[1]; }
+function showErr(m){ const e = $('err'); e.textContent = m; e.hidden = !m; }
+
+/* ---------------- Мікрофон ---------------- */
+async function ensureMic(){
+  if (stream) return true;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    showErr('Цей браузер не вміє записувати звук. Відкрийте сторінку в Chrome або Firefox.'); return false;
+  }
+  try {
+    // Шумоподавлення вимкнено свідомо: воно «з'їдає» шиплячі [с], [ш], [ф] і тиху частину звуків.
+    stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  } catch(e){
+    showErr(e && e.name === 'NotAllowedError'
+      ? 'Браузер не дав доступу до мікрофона. Дозвольте мікрофон для цієї сторінки (значок замка біля адреси) і натисніть «Почати» ще раз.'
+      : 'Не вдалося увімкнути мікрофон: ' + (e && e.message ? e.message : e));
+    return false;
+  }
+  showErr('');
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  return true;
+}
+
+function startRec(){
+  const an = ctx.createAnalyser(); an.fftSize = 1024;
+  const src = ctx.createMediaStreamSource(stream); src.connect(an);
+  const buf = new Float32Array(an.fftSize);
+  const tick = () => {
+    an.getFloatTimeDomainData(buf);
+    let p = 0; for (let i = 0; i < buf.length; i++){ const v = Math.abs(buf[i]); if (v > p) p = v; }
+    $('level').style.width = Math.min(100, p * 140) + '%';
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+  chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => { cancelAnimationFrame(raf); $('level').style.width = '0'; try { src.disconnect(); } catch(e){} finish(); };
+  rec.start();
+  $('rec').textContent = '■ Стоп'; $('rec').classList.add('rec');
+  setStatus(['', 'Говоріть… (зупиниться сам через ' + Q.maxSec + ' с)']);
+  timer = setTimeout(() => stopRec(), Q.maxSec * 1000);
+}
+function stopRec(){ clearTimeout(timer); if (rec && rec.state === 'recording') rec.stop(); }
+
+async function finish(){
+  const x = SOUNDS[cur];
+  setStatus(['', 'Обробляю…']);
+  try {
+    const blob = new Blob(chunks, {type: rec.mimeType || 'audio/webm'});
+    const raw = await ctx.decodeAudioData(await blob.arrayBuffer());
+    const r = await process(raw, x);
+    takes[x.id] = r;
+    DB.put(x.id, r);
+    render();
+  } catch(e){
+    setStatus(['bad', 'Не вдалося обробити запис. Спробуйте ще раз.']);
+    console.warn(e);
+    $('rec').textContent = '● Записати';
+  }
+}
+
+/* ---------------- Обробка: обрізати тишу, вирівняти гучність, WAV ---------------- */
+async function process(buf, x){
+  const ch = buf.getChannelData(0), sr = buf.sampleRate;
+  let peak = 0, clipped = 0;
+  for (let i = 0; i < ch.length; i++){ const v = Math.abs(ch[i]); if (v > peak) peak = v; if (v >= Q.clipPeak) clipped++; }
+
+  // Межі звучання: вікна по 10 мс, поріг відносно найгучнішого вікна.
+  const w = Math.max(1, Math.round(sr * 0.01)), n = Math.floor(ch.length / w), rms = new Float32Array(n);
+  let rmax = 0;
+  for (let k = 0; k < n; k++){ let s = 0; for (let i = k*w; i < (k+1)*w; i++) s += ch[i]*ch[i]; rms[k] = Math.sqrt(s / w); if (rms[k] > rmax) rmax = rms[k]; }
+  const thr = Math.max(0.006, rmax * 0.08);
+  let a = 0, b = n - 1;
+  while (a < n && rms[a] < thr) a++;
+  while (b > a && rms[b] < thr) b--;
+  const pad = Math.round(sr * 0.06);
+  const s0 = Math.max(0, a*w - pad), s1 = Math.min(ch.length, (b+1)*w + pad);
+  const voiced = (b - a + 1) * 0.01;
+
+  // Вирівнюємо гучність до 0,9 від максимуму і плавно вводимо/виводимо (15 мс), щоб не клацало.
+  const g = peak > 0 ? 0.9 / peak : 1, len = Math.max(1, s1 - s0), fade = Math.round(sr * 0.015);
+  const seg = new Float32Array(len);
+  for (let i = 0; i < len; i++){
+    let v = ch[s0 + i] * g;
+    if (i < fade) v *= i / fade;
+    if (len - i < fade) v *= (len - i) / fade;
+    seg[i] = v;
+  }
+
+  // Перерахунок частоти до Q.rate через OfflineAudioContext.
+  const outLen = Math.max(1, Math.round(len * Q.rate / sr));
+  const off = new OfflineAudioContext(1, outLen, Q.rate);
+  const ab = off.createBuffer(1, len, sr); ab.copyToChannel(seg, 0);
+  const node = off.createBufferSource(); node.buffer = ab; node.connect(off.destination); node.start();
+  const res = await off.startRendering();
+  const pcm = res.getChannelData(0);
+
+  const need = x.kind === 'soft' ? (x.long ? Q.minVoiced.softlong : Q.minVoiced.softshort) : Q.minVoiced[x.kind];
+  let warn = null;
+  if (peak < Q.minPeak) warn = 'Дуже тихо — підійдіть ближче до мікрофона.';
+  else if (clipped > sr * 0.005) warn = 'Занадто голосно — звук «рветься». Трохи далі або тихіше.';
+  else if (voiced < need) warn = x.kind === 'long' || x.long ? 'Закоротко — цей звук варто потягнути 1–2 секунди.' : 'Не чути звука — спробуйте ще раз.';
+
+  return { wav: toWav(pcm, Q.rate), sec: pcm.length / Q.rate, warn: warn };
+}
+
+function toWav(f, sr){
+  const n = f.length, b = new ArrayBuffer(44 + n*2), v = new DataView(b);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4, 36 + n*2, true); w(8,'WAVE'); w(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  w(36,'data'); v.setUint32(40, n*2, true);
+  for (let i = 0; i < n; i++){ const s = Math.max(-1, Math.min(1, f[i])); v.setInt16(44 + i*2, s < 0 ? s*0x8000 : s*0x7FFF, true); }
+  return new Blob([b], {type:'audio/wav'});
+}
+
+/* ---------------- Відтворення ---------------- */
+function stopAll(){ if (audio){ audio.pause(); audio = null; } stopRec(); }
+function playBlob(blob){
+  return new Promise(res => {
+    if (audio) audio.pause();
+    const url = URL.createObjectURL(blob);
+    audio = new Audio(url);
+    audio.onended = audio.onerror = () => { URL.revokeObjectURL(url); res(); };
+    const p = audio.play(); if (p && p.catch) p.catch(() => res());
+  });
+}
+
+/* ---------------- ZIP без бібліотек (зберігання без стиснення) ----------------
+   WAV і так погано стискається, а без стиснення код простий і надійний. */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function makeZip(files){
+  const enc = new TextEncoder(), parts = [], central = [];
+  let off = 0;
+  const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF,
+        dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth()+1) << 5) | d.getDate()) & 0xFFFF;
+  for (const f of files){
+    const name = enc.encode(f.name), data = new Uint8Array(await f.blob.arrayBuffer()), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true);
+    h.setUint16(10,dt,true); h.setUint16(12,dd,true); h.setUint32(14,crc,true);
+    h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,name.length,true); h.setUint16(28,0,true);
+    parts.push(h.buffer, name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true);
+    c.setUint16(12,dt,true); c.setUint16(14,dd,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true);
+    c.setUint16(28,name.length,true); c.setUint16(30,0,true); c.setUint16(32,0,true); c.setUint16(34,0,true); c.setUint16(36,0,true);
+    c.setUint32(38,0,true); c.setUint32(42,off,true);
+    central.push(c.buffer, name);
+    off += 30 + name.length + data.length;
+  }
+  const csize = central.reduce((s,p) => s + (p.byteLength !== undefined ? p.byteLength : p.length), 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true);
+  e.setUint32(12,csize,true); e.setUint32(16,off,true);
+  return new Blob(parts.concat(central, [e.buffer]), {type:'application/zip'});
+}
+
+async function downloadZip(){
+  const ids = SOUNDS.filter(s => takes[s.id]);
+  if (!ids.length){ alertBox('Ще нічого не записано.'); return; }
+  const stamp = new Date().toISOString().slice(0,10);
+  const manifest = {
+    what: 'Звуки для уроків грамоти, ГО «Берегиня» / Мудрик',
+    speaker: $('who').value.trim() || null,
+    date: stamp, sampleRate: Q.rate, format: 'WAV PCM 16-bit mono',
+    files: ids.map(s => ({file: 'snd_' + s.id + '.wav', sound: '[' + s.s + ']', example: s.ex, seconds: +takes[s.id].sec.toFixed(2), warn: takes[s.id].warn}))
+  };
+  const files = ids.map(s => ({name: 'sounds/snd_' + s.id + '.wav', blob: takes[s.id].wav}));
+  files.push({name: 'sounds/manifest.json', blob: new Blob([JSON.stringify(manifest, null, 2)], {type:'application/json'})});
+  const zip = await makeZip(files);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(zip); a.download = 'sounds-' + stamp + '.zip';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+function alertBox(m){ setStatus(['warn', m]); }
+
+/* ---------------- Кнопки ---------------- */
+$('start').addEventListener('click', async () => {
+  saveWho();
+  if (!(await ensureMic())) return;
+  $('intro').hidden = true; $('studio').hidden = false;
+  const first = SOUNDS.findIndex(s => !takes[s.id]);
+  cur = first < 0 ? 0 : first;
+  render();
+});
+$('who').addEventListener('change', saveWho);
+$('rec').addEventListener('click', async () => {
+  if (rec && rec.state === 'recording'){ stopRec(); return; }
+  stopAll();
+  if (!(await ensureMic())) return;
+  if (ctx.state === 'suspended') await ctx.resume();
+  startRec();
+});
+$('play').addEventListener('click', () => { const t = takes[SOUNDS[cur].id]; if (t) playBlob(t.wav); });
+$('prev').addEventListener('click', () => { stopAll(); if (cur > 0){ cur--; render(); } });
+$('next').addEventListener('click', () => {
+  stopAll();
+  if (cur < SOUNDS.length - 1){ cur++; render(); }
+  else $('zip').scrollIntoView({behavior:'smooth', block:'center'});
+});
+$('playall').addEventListener('click', async () => {
+  stopAll();
+  for (let i = 0; i < SOUNDS.length; i++){
+    const t = takes[SOUNDS[i].id]; if (!t) continue;
+    cur = i; render();
+    await playBlob(t.wav);
+    await new Promise(r => setTimeout(r, 350));
+  }
+});
+$('zip').addEventListener('click', () => { downloadZip().catch(e => alertBox('Не вдалося зібрати архів: ' + e.message)); });
+$('wipe').addEventListener('click', () => {
+  if (!confirmWipe()) return;
+  Object.keys(takes).forEach(k => { delete takes[k]; DB.del(k); });
+  render();
+});
+// Підтвердження без системного діалогу: друге натискання протягом 4 с.
+let wipeArmed = 0;
+function confirmWipe(){
+  const now = Date.now();
+  if (now - wipeArmed < 4000){ wipeArmed = 0; $('wipe').textContent = 'Стерти всі записи на цьому пристрої'; return true; }
+  wipeArmed = now; $('wipe').textContent = 'Натисніть ще раз, щоб стерти';
+  setTimeout(() => { if (wipeArmed === now){ wipeArmed = 0; $('wipe').textContent = 'Стерти всі записи на цьому пристрої'; } }, 4000);
+  return false;
+}
+
+/* ---------------- Старт ---------------- */
+loadWho();
+DB.open().then(DB.all).then(saved => {
+  Object.keys(saved).forEach(k => { if (saved[k] && saved[k].wav) takes[k] = saved[k]; });
+  const n = Object.keys(takes).length;
+  if (n) $('start').textContent = 'Продовжити (записано ' + n + ')';
+});
+</script>
+</body>
+</html>
