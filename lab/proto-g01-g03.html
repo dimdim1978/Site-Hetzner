@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мудрик · Звуки Г01–Г03 (прототип)</title>
+<style>
+  :root{
+    --green:#2F6F4E; --sand:#C77D2E; --sky:#3D7EA6; --ink:#101828; --line:#E4E7EC;
+    --bg:#F6F4EE; --card:#FFFFFF; --soft:#667085;
+  }
+  /* Правило проєкту №2: display:flex сильніший за hidden — тому примусово */
+  [hidden]{display:none !important}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+    overflow:hidden; user-select:none; -moz-user-select:none;
+  }
+  button{font:inherit;color:inherit;cursor:pointer}
+  img,svg{-webkit-user-drag:none}
+
+  .screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:110px 24px 70px}
+
+  /* ---- вхід дорослого ---- */
+  h1{font-size:34px;margin:0 0 36px;font-weight:600}
+  .kids{display:flex;gap:40px}
+  .kid{width:200px;height:220px;border:3px solid var(--line);border-radius:28px;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:28px}
+  .kid span{font-size:90px;line-height:1}
+  .kid:hover{border-color:var(--green);transform:translateY(-3px)}
+
+  /* ---- провідник ---- */
+  .guide{display:flex;align-items:center;gap:18px;max-width:900px;min-height:150px}
+  .owl{width:140px;height:150px;flex:none}
+  .owl.talk{animation:bob .5s ease-in-out infinite alternate}
+  @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+  .bubble{position:relative;background:var(--card);border:3px solid var(--line);border-radius:24px;
+    padding:14px 22px;font-size:22px;max-width:640px;min-height:56px}
+  .bubble:before{content:"";position:absolute;left:-14px;top:40px;border:12px solid transparent;
+    border-right-color:var(--line);border-left:0}
+  /* Без українського голосу дорослий читає фразу вголос — тому великим */
+  body.novoice .bubble{font-size:32px;font-weight:600}
+  .novoice-note{position:fixed;bottom:10px;right:14px;font-size:13px;color:var(--soft)}
+
+  .big-go{margin-top:44px;min-width:260px;min-height:96px;border:0;border-radius:28px;
+    background:var(--green);color:#fff;font-size:36px;font-weight:600;box-shadow:0 6px 0 #1f4b35}
+  .big-go:hover{filter:brightness(1.1)}
+  .big-go:active{transform:translateY(4px);box-shadow:0 2px 0 #1f4b35}
+
+  /* ---- урок миші ---- */
+  /* На уроці миші провідник угорі, щоб зірка не лягала на бульбашку */
+  #s-child.top{justify-content:flex-start}
+  #mouseArea{position:absolute;left:40px;right:40px;top:270px;bottom:60px}
+  .star{position:absolute;width:170px;height:170px;border:0;background:none;font-size:130px;line-height:170px;
+    padding:0;transition:transform .15s}
+  .star:hover{transform:scale(1.2)}
+
+  /* ---- завдання ---- */
+  .pic{font-size:120px;line-height:1;height:140px;margin:6px 0 14px}
+  .cards{display:flex;gap:44px;margin-top:18px}
+  .card{width:190px;height:190px;border:4px solid var(--line);border-radius:30px;background:var(--card);
+    display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px;
+    transition:border-color .15s, transform .15s}
+  .card:hover{border-color:var(--sky);transform:translateY(-4px)}
+  .card .dots{font-size:44px;letter-spacing:4px;color:var(--sky)}
+  .card .claps{font-size:48px;line-height:1.1}
+  .card .emo{font-size:110px;line-height:1}
+  .card.shake{animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}
+    40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+  .card.hint{animation:glow 1.4s ease-in-out infinite}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(47,111,78,0)}50%{box-shadow:0 0 0 14px rgba(47,111,78,.35);border-color:var(--green)}}
+  .progress{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:10px}
+  .progress i{width:16px;height:16px;border-radius:50%;background:var(--line)}
+  .progress i.done{background:var(--green)}
+  .progress i.now{background:var(--sand)}
+
+  .check{position:fixed;top:50%;left:50%;width:260px;height:260px;margin:-130px 0 0 -130px;border-radius:50%;
+    background:var(--green);color:#fff;font-size:180px;line-height:260px;text-align:center;
+    animation:pop .3s ease-out;pointer-events:none;z-index:30}
+  @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+  /* ---- кінець ---- */
+  .fall{position:fixed;top:-80px;font-size:54px;animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{to{transform:translateY(110vh) rotate(300deg)}}
+
+  /* ---- кнопки в кутках ---- */
+  .corner{position:fixed;z-index:20;border:3px solid var(--line);background:var(--card);border-radius:24px}
+  #repeat{top:16px;left:16px;width:110px;height:96px;font-size:50px;line-height:1}
+  #repeat:hover{border-color:var(--sky)}
+  #exit{top:16px;right:16px;width:72px;height:72px;font-size:30px;color:var(--soft);overflow:hidden}
+  #exit .fill{position:absolute;left:0;bottom:0;width:100%;height:0;background:rgba(199,125,46,.35)}
+  #exit.holding .fill{height:100%;transition:height 3s linear}
+  #gear{bottom:12px;left:12px;width:40px;height:40px;font-size:20px;border-radius:12px;color:var(--soft);border-width:2px}
+
+  /* ---- вікна для дорослого ---- */
+  .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(16,24,40,.55);z-index:50;
+    display:flex;align-items:center;justify-content:center}
+  .box{background:#fff;border-radius:18px;padding:24px 28px;min-width:420px;max-width:760px;font-size:18px}
+  .box h2{margin:0 0 14px;font-size:24px}
+  .box input{font-size:28px;width:120px;padding:6px 10px;border:2px solid var(--line);border-radius:10px}
+  .box input.bad{border-color:#B42318;animation:shake .45s}
+  .row{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+  .btn{border:2px solid var(--line);background:#fff;border-radius:10px;padding:8px 16px;font-size:17px}
+  .btn.main{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.on{border-color:var(--green);background:#E8F1EC}
+  table{border-collapse:collapse;margin-top:14px;width:100%}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;font-size:16px}
+  th{background:#F2F4F7}
+  .st-ok{color:var(--green);font-weight:600}
+  .st-stuck{color:#B42318;font-weight:600}
+  .muted{color:var(--soft);font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- 1. Хто сьогодні займається -->
+<section class="screen" id="s-who">
+  <h1>Хто сьогодні займається?</h1>
+  <div class="kids">
+    <button class="kid" data-kid="liza"><span>🐰</span>Ліза</button>
+    <button class="kid" data-kid="marko"><span>🚀</span>Марко</button>
+    <button class="kid" data-kid="olia"><span>🌻</span>Оля</button>
+  </div>
+</section>
+
+<!-- 2–7. Дитячі екрани ділять одного провідника -->
+<section class="screen" id="s-child" hidden>
+  <div class="guide">
+    <svg class="owl" id="owl" viewBox="0 0 140 150" aria-hidden="true">
+      <!-- Сова Мудрик: власний простий малюнок -->
+      <path d="M30 30 L42 4 L56 26 Z M110 30 L98 4 L84 26 Z" fill="#9A5B1E"/>
+      <ellipse cx="70" cy="84" rx="52" ry="60" fill="#C77D2E"/>
+      <ellipse cx="70" cy="104" rx="32" ry="36" fill="#F1D3A8"/>
+      <path d="M50 96 q5 5 10 0 M66 108 q5 5 10 0 M80 96 q5 5 10 0 M58 120 q5 5 10 0 M74 120 q5 5 10 0" stroke="#C77D2E" stroke-width="3" fill="none"/>
+      <path d="M20 80 Q8 110 30 128 Q30 100 34 86 Z M120 80 Q132 110 110 128 Q110 100 106 86 Z" fill="#9A5B1E"/>
+      <circle cx="50" cy="58" r="20" fill="#fff"/><circle cx="90" cy="58" r="20" fill="#fff"/>
+      <circle cx="52" cy="60" r="9" fill="#101828"/><circle cx="88" cy="60" r="9" fill="#101828"/>
+      <circle cx="55" cy="56" r="3" fill="#fff"/><circle cx="91" cy="56" r="3" fill="#fff"/>
+      <path d="M62 72 L78 72 L70 86 Z" fill="#E8A33B"/>
+      <path d="M52 142 l-6 6 M58 143 l0 6 M82 143 l0 6 M88 142 l6 6" stroke="#9A5B1E" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div class="bubble" id="bubble"></div>
+  </div>
+
+  <div id="v-greet" hidden><button class="big-go" id="btnStart">Почати</button></div>
+  <div id="mouseArea" hidden><button class="star" id="star">⭐</button></div>
+  <div id="v-task" hidden style="display:flex;flex-direction:column;align-items:center">
+    <div class="pic" id="pic"></div>
+    <div class="cards" id="cards"></div>
+  </div>
+  <div id="v-end" hidden><button class="big-go" id="btnAgain">Ще раз</button></div>
+  <div class="progress" id="progress" hidden></div>
+</section>
+
+<button class="corner" id="repeat" title="Повторити" hidden>👂</button>
+<button class="corner" id="exit" title="Утримати 3 секунди — вихід для дорослого" hidden><span class="fill"></span><span style="position:relative">✕</span></button>
+<button class="corner" id="gear" title="Панель для дорослого">⚙</button>
+<div class="novoice-note" id="novoiceNote" hidden>немає українського голосу в браузері</div>
+
+<!-- 8. Батьківський бар'єр -->
+<div class="modal" id="m-gate" hidden>
+  <div class="box">
+    <h2>Вихід для дорослого</h2>
+    <div>Скільки буде 7 + 8?</div>
+    <div class="row">
+      <input id="gateAns" type="text" inputmode="numeric" autocomplete="off" maxlength="3">
+      <button class="btn main" id="gateOk">Вийти</button>
+      <button class="btn" id="gateCancel">Повернутися до заняття</button>
+    </div>
+  </div>
+</div>
+
+<!-- Панель для дорослого -->
+<div class="modal" id="m-panel" hidden>
+  <div class="box">
+    <h2>Засвоєння навичок</h2>
+    <div class="row" id="panelKids" style="margin-top:0"></div>
+    <div class="muted" id="panelDay" style="margin-top:10px"></div>
+    <table>
+      <thead><tr><th>Навичка</th><th>Правильних сьогодні</th><th>Днів із правильними</th><th>Сесій</th><th>Статус</th></tr></thead>
+      <tbody id="panelBody"></tbody>
+    </table>
+    <p class="muted">Правильна відповідь = з першої спроби. «Засвоєно» — 3 правильні щонайменше у 2 різні дні.
+      «Застряг» — 3 сесії поспіль без жодної правильної. Дані лише в цьому браузері (localStorage).</p>
+    <div class="row">
+      <button class="btn" id="panelTomorrow">Імітувати завтра</button>
+      <button class="btn" id="panelReset">Скинути</button>
+      <span style="flex:1"></span>
+      <button class="btn main" id="panelClose">Закрити</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* Усі фрази в одному місці: t — що показати, s — що вимовити (якщо інакше).
+   Згодом сюди додасться поле mp3 зі справжнім записом. */
+const PHRASES = {
+  greet:    {t:'Привіт! Я Мудрик. Пограємося зі звуками?'},
+  mouse:    {t:'Наведи стрілочку на зірочку й клацни.'},
+  mouseMore:{t:'Ще! Де тепер зірочка?'},
+  mouseDone:{t:'Чудово! Тепер пограємося.'},
+  g01:      {t:'Скільки слів ти почув?'},
+  g02:      {t:'Скільки разів плеснемо?'},
+  g03:      {t:'Яка картинка починається на [м]?', s:'Яка картинка починається на звук ммм?'},
+  again:    {t:'Спробуй ще.'},
+  praise:   [{t:'Молодець!'},{t:'Чудово!'},{t:'Так, правильно!'},{t:'Супер!'}],
+  end:      {t:'Молодець! На сьогодні досить.'},
+  sentences:[{t:'Кіт спить.', n:2},{t:'Мама варить суп.', n:3},{t:'Я бачу велику рибу.', n:4}],
+  words:[{t:'кіт',e:'🐱',n:1},{t:'сир',e:'🧀',n:1},{t:'риба',e:'🐟',n:2},{t:'сова',e:'🦉',n:2},
+         {t:'лимон',e:'🍋',n:2},{t:'машина',e:'🚗',n:3},{t:'корова',e:'🐄',n:3},{t:'молоко',e:'🥛',n:3}],
+  mRight:[{t:'миша',e:'🐭'},{t:'мавпа',e:'🐒'},{t:'морква',e:'🥕'}],
+  mWrong:[{t:'кіт',e:'🐱'},{t:'сонце',e:'☀️'},{t:'риба',e:'🐟'},{t:'дім',e:'🏠'},{t:'сир',e:'🧀'}]
+};
+const KIDS = {liza:'🐰 Ліза', marko:'🚀 Марко', olia:'🌻 Оля'};
+const SKILLS = {G01:'Г01 · слова в реченні', G02:'Г02 · склади', G03:'Г03 · перший звук'};
+const IDLE_MS = 8000, IDLE_MAX = 3, HOLD_MS = 3000, NEXT_MS = 1000;
+
+const $ = id => document.getElementById(id);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+/* ================= Голос ================= */
+const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let ukVoice = null;
+function findVoice() {
+  if (!TTS) return;
+  const vs = TTS.getVoices() || [];
+  ukVoice = vs.find(v => /^uk/i.test(v.lang)) || null;
+  document.body.classList.toggle('novoice', !ukVoice);
+  $('novoiceNote').hidden = !!ukVoice || $('s-child').hidden;
+}
+if (TTS) {
+  findVoice();
+  // Голоси в Firefox і Chromium приходять із запізненням
+  if ('onvoiceschanged' in TTS) TTS.addEventListener('voiceschanged', findVoice);
+}
+document.body.classList.toggle('novoice', !ukVoice);
+
+let speaking = false;
+// parts: масив фраз {t,s}; показуємо всі разом, вимовляємо по черзі
+function say(parts) {
+  if (!Array.isArray(parts)) parts = [parts];
+  $('bubble').textContent = parts.map(p => p.t).join(' ');
+  idle.reset();
+  if (!TTS) return;
+  TTS.cancel();
+  if (!ukVoice) return; // Чужий голос читає кирилицю абракадаброю — краще мовчати
+  parts.forEach((p, i) => {
+    const u = new SpeechSynthesisUtterance(p.s || p.t);
+    u.voice = ukVoice; u.lang = ukVoice.lang; u.rate = 0.9;
+    u.onstart = () => { speaking = true; $('owl').classList.add('talk'); };
+    if (i === parts.length - 1) u.onend = u.onerror = () => { speaking = false; $('owl').classList.remove('talk'); idle.reset(); };
+    TTS.speak(u);
+  });
+}
+function hush() { if (TTS) TTS.cancel(); speaking = false; $('owl').classList.remove('talk'); }
+
+/* ================= Звук (синтез, без файлів) ================= */
+let actx = null;
+function tone(freqs, dur) {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!actx) actx = new AC();
+    if (actx.state === 'suspended') actx.resume();
+    const t0 = actx.currentTime;
+    freqs.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      const s = t0 + i * dur;
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.exponentialRampToValueAtTime(0.25, s + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, s + dur * 1.8);
+      o.connect(g); g.connect(actx.destination);
+      o.start(s); o.stop(s + dur * 2);
+    });
+  } catch (e) { /* без звуку — не біда */ }
+}
+const chime = () => tone([523, 659, 784], 0.11);
+const blip = () => tone([660], 0.08);
+
+/* ================= Збереження ================= */
+const KEY = 'beregynia-proto-g01-g03';
+let mem = null; // запасна пам'ять, якщо localStorage недоступний (file:// у суворих режимах)
+function load() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = mem; }
+  if (!d || typeof d !== 'object') d = {};
+  d.offset = d.offset || 0; d.kids = d.kids || {};
+  return d;
+}
+function store(d) { mem = d; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* лишається в пам'яті */ } }
+function today(d) {
+  const x = new Date(); x.setDate(x.getDate() + (d || load()).offset);
+  const p = n => (n < 10 ? '0' : '') + n;
+  return x.getFullYear() + '-' + p(x.getMonth() + 1) + '-' + p(x.getDate());
+}
+// Сесія = один прохід 9 завдань; у ній по навичках — масив «з першої спроби?»
+function newSession(kid) {
+  const d = load();
+  const k = d.kids[kid] = d.kids[kid] || {sessions: []};
+  const s = {id: Date.now(), d: today(d), ev: {G01: [], G02: [], G03: []}};
+  k.sessions.push(s); store(d);
+  return s.id;
+}
+function record(kid, sid, skill, ok) {
+  const d = load(); const k = d.kids[kid]; if (!k) return;
+  const s = k.sessions.find(x => x.id === sid); if (!s) return;
+  s.ev[skill].push(ok); store(d);
+}
+function stats(kid) {
+  const d = load(), t = today(d);
+  const ss = (d.kids[kid] && d.kids[kid].sessions) || [];
+  const out = {};
+  Object.keys(SKILLS).forEach(sk => {
+    const withSk = ss.filter(s => s.ev[sk] && s.ev[sk].length);
+    const okOf = s => s.ev[sk].filter(Boolean).length;
+    const total = withSk.reduce((a, s) => a + okOf(s), 0);
+    const todayOk = withSk.filter(s => s.d === t).reduce((a, s) => a + okOf(s), 0);
+    const days = new Set(withSk.filter(s => okOf(s) > 0).map(s => s.d)).size;
+    const last3 = withSk.slice(-3);
+    let st = 'вчиться';
+    if (total >= 3 && days >= 2) st = 'засвоєно';
+    else if (last3.length === 3 && last3.every(s => okOf(s) === 0)) st = 'застряг';
+    if (!withSk.length) st = '—';
+    out[sk] = {todayOk, days, n: withSk.length, st};
+  });
+  return out;
+}
+
+/* ================= Простій: інструкція звучить знову ================= */
+const idle = {
+  timer: 0, count: 0,
+  reset() { clearTimeout(this.timer); this.timer = setTimeout(() => this.fire(), IDLE_MS); },
+  fresh() { this.count = 0; this.reset(); },
+  stop() { clearTimeout(this.timer); },
+  fire() {
+    if ($('s-child').hidden || !$('m-gate').hidden || !$('m-panel').hidden || G.lock) return this.reset();
+    if (speaking) return this.reset();
+    // Не більше трьох нагадувань поспіль — далі хай дорослий підійде
+    if (this.count >= IDLE_MAX) return;
+    this.count++;
+    repeat();
+  }
+};
+document.addEventListener('mousedown', () => idle.fresh(), true);
+
+/* ================= Перебіг заняття ================= */
+const G = {kid: null, sid: null, stage: null, instr: null, tasks: [], i: 0, errors: 0, lock: false, stars: 0};
+
+function show(stage) {
+  G.stage = stage;
+  $('s-who').hidden = stage !== 'who';
+  $('s-child').hidden = stage === 'who';
+  $('repeat').hidden = $('exit').hidden = stage === 'who';
+  $('v-greet').hidden = stage !== 'greet';
+  $('mouseArea').hidden = stage !== 'mouse';
+  $('s-child').classList.toggle('top', stage === 'mouse');
+  $('v-task').hidden = stage !== 'task';
+  $('v-end').hidden = stage !== 'end';
+  $('progress').hidden = stage !== 'task';
+  $('novoiceNote').hidden = !!ukVoice || stage === 'who';
+  document.querySelectorAll('.fall,.check').forEach(n => n.remove());
+}
+function instruct(parts) { G.instr = parts; idle.fresh(); say(parts); }
+function repeat() { if (G.instr) say(G.instr); }
+
+function toWho() { hush(); idle.stop(); G.instr = null; G.lock = false; show('who'); }
+function toGreet() { show('greet'); instruct(PHRASES.greet); }
+function toMouse() { G.stars = 0; show('mouse'); placeStar(); instruct(PHRASES.mouse); }
+
+function placeStar() {
+  const a = $('mouseArea'), st = $('star');
+  const w = a.clientWidth - 170, h = a.clientHeight - 170;
+  let x, y, tries = 0;
+  const px = parseFloat(st.style.left) || -999, py = parseFloat(st.style.top) || -999;
+  // Щоразу помітно в іншому місці
+  do { x = Math.random() * w; y = Math.random() * h; tries++; } while (Math.hypot(x - px, y - py) < 250 && tries < 30);
+  st.style.left = Math.max(0, x) + 'px'; st.style.top = Math.max(0, y) + 'px';
+}
+
+function buildTasks() {
+  const t = [];
+  PHRASES.sentences.forEach(s => t.push({sk: 'G01', s}));
+  // Склади: по одному слову з кожною кількістю, щоб не вгадувалося
+  [1, 2, 3].forEach(n => t.push({sk: 'G02', w: pick(PHRASES.words.filter(w => w.n === n))}));
+  PHRASES.mRight.forEach(r => t.push({sk: 'G03', r, wrong: shuffle(PHRASES.mWrong).slice(0, 2)}));
+  // Упереміш, але не три однакові навички підряд
+  let s;
+  do { s = shuffle(t); } while (s.some((x, i) => i > 1 && x.sk === s[i - 1].sk && x.sk === s[i - 2].sk));
+  return s;
+}
+
+function startTasks() {
+  G.sid = newSession(G.kid);
+  G.tasks = buildTasks(); G.i = 0;
+  show('task'); renderTask();
+}
+
+function renderTask() {
+  const task = G.tasks[G.i]; G.errors = 0; G.lock = false;
+  const cards = $('cards'); cards.innerHTML = ''; $('pic').textContent = '';
+  let opts, parts;
+  if (task.sk === 'G01') {
+    opts = shuffle([2, 3, 4]).map(n => ({ok: n === task.s.n, html: '<span class="dots">' + '●'.repeat(n) + '</span>'}));
+    parts = [task.s, PHRASES.g01];
+    $('pic').textContent = '👂';
+  } else if (task.sk === 'G02') {
+    opts = shuffle([1, 2, 3]).map(n => ({ok: n === task.w.n, html: '<span class="claps">' + '👏'.repeat(n) + '</span>'}));
+    parts = [{t: task.w.t + '.'}, PHRASES.g02];
+    $('pic').textContent = task.w.e;
+  } else {
+    opts = shuffle([task.r].concat(task.wrong)).map(p => ({ok: p === task.r, html: '<span class="emo">' + p.e + '</span>', title: p.t}));
+    parts = [PHRASES.g03];
+  }
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'card'; b.innerHTML = o.html;
+    if (o.title) b.title = o.title;
+    if (o.ok) b.dataset.ok = '1';
+    b.addEventListener('click', () => answer(b, o.ok));
+    cards.appendChild(b);
+  });
+  $('progress').innerHTML = G.tasks.map((_, i) => '<i class="' + (i < G.i ? 'done' : i === G.i ? 'now' : '') + '"></i>').join('');
+  instruct(parts);
+}
+
+function answer(card, ok) {
+  if (G.lock) return;
+  if (ok) {
+    G.lock = true;
+    record(G.kid, G.sid, G.tasks[G.i].sk, G.errors === 0);
+    chime();
+    const c = document.createElement('div'); c.className = 'check'; c.textContent = '✓';
+    document.body.appendChild(c);
+    say(pick(PHRASES.praise));
+    setTimeout(() => {
+      c.remove();
+      if (G.stage !== 'task') return; // дорослий міг вийти за цю секунду
+      G.i++;
+      if (G.i < G.tasks.length) renderTask(); else toEnd();
+    }, NEXT_MS);
+  } else {
+    G.errors++;
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    say(PHRASES.again);
+    // Після двох помилок поспіль правильна картка світиться
+    if (G.errors >= 2) { const r = $('cards').querySelector('[data-ok]'); if (r) r.classList.add('hint'); }
+    setTimeout(() => { if (G.stage === 'task' && !G.lock) say(G.instr); }, 1200);
+  }
+}
+
+function toEnd() {
+  show('end'); instruct(PHRASES.end);
+  for (let i = 0; i < 24; i++) {
+    const s = document.createElement('div'); s.className = 'fall';
+    s.textContent = i % 3 ? '⭐' : '🌟';
+    s.style.left = (Math.random() * 96) + 'vw';
+    s.style.animationDuration = (2.5 + Math.random() * 2.5) + 's';
+    s.style.animationDelay = (Math.random() * 1.8) + 's';
+    document.body.appendChild(s);
+  }
+}
+
+/* ================= Події ================= */
+document.querySelectorAll('.kid').forEach(b => b.addEventListener('click', () => { G.kid = b.dataset.kid; toGreet(); }));
+$('btnStart').addEventListener('click', () => { blip(); toMouse(); });
+$('star').addEventListener('click', () => {
+  blip(); G.stars++;
+  if (G.stars < 3) { placeStar(); instruct(PHRASES.mouseMore); }
+  else { G.lock = true; $('star').style.visibility = 'hidden'; say(PHRASES.mouseDone);
+    setTimeout(() => { $('star').style.visibility = ''; if (G.stage === 'mouse') startTasks(); }, 1500); }
+});
+$('btnAgain').addEventListener('click', () => toGreet());
+$('repeat').addEventListener('click', () => repeat());
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+
+// Вихід: утримати 3 с, потім питання
+let holdT = 0;
+const ex = $('exit');
+function holdStop() { clearTimeout(holdT); ex.classList.remove('holding'); }
+ex.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  ex.classList.add('holding');
+  holdT = setTimeout(() => { holdStop(); openGate(); }, HOLD_MS);
+});
+ex.addEventListener('mouseup', holdStop);
+ex.addEventListener('mouseleave', holdStop);
+
+function openGate() {
+  hush(); idle.stop();
+  $('m-gate').hidden = false; $('gateAns').value = ''; $('gateAns').classList.remove('bad');
+  setTimeout(() => $('gateAns').focus(), 0);
+}
+function gateTry() {
+  const inp = $('gateAns');
+  if (parseInt(inp.value.trim(), 10) === 15) { $('m-gate').hidden = true; toWho(); }
+  else { inp.classList.remove('bad'); void inp.offsetWidth; inp.classList.add('bad'); inp.value = ''; inp.focus(); }
+}
+$('gateOk').addEventListener('click', gateTry);
+$('gateAns').addEventListener('keydown', e => { if (e.key === 'Enter') gateTry(); });
+$('gateCancel').addEventListener('click', () => { $('m-gate').hidden = true; idle.fresh(); });
+
+// Панель дорослого
+let panelKid = null;
+function renderPanel() {
+  const d = load();
+  $('panelKids').innerHTML = '';
+  Object.keys(KIDS).forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'btn' + (k === panelKid ? ' on' : ''); b.textContent = KIDS[k];
+    b.addEventListener('click', () => { panelKid = k; renderPanel(); });
+    $('panelKids').appendChild(b);
+  });
+  $('panelDay').textContent = 'Сьогодні: ' + today(d).split('-').reverse().join('.') + (d.offset ? '  (імітовано, +' + d.offset + ' дн.)' : '');
+  const st = stats(panelKid);
+  $('panelBody').innerHTML = Object.keys(SKILLS).map(sk => {
+    const r = st[sk], cls = r.st === 'засвоєно' ? 'st-ok' : r.st === 'застряг' ? 'st-stuck' : '';
+    return '<tr><td>' + SKILLS[sk] + '</td><td>' + r.todayOk + '</td><td>' + r.days + '</td><td>' + r.n + '</td><td class="' + cls + '">' + r.st + '</td></tr>';
+  }).join('');
+}
+$('gear').addEventListener('click', () => { hush(); panelKid = G.kid || panelKid || 'liza'; renderPanel(); $('m-panel').hidden = false; });
+$('panelClose').addEventListener('click', () => { $('m-panel').hidden = true; idle.fresh(); });
+$('panelTomorrow').addEventListener('click', () => { const d = load(); d.offset++; store(d); renderPanel(); });
+$('panelReset').addEventListener('click', () => {
+  if (!confirm('Стерти всі дані прототипу (усіх дітей) і повернути справжню дату?')) return;
+  store({offset: 0, kids: {}}); renderPanel();
+});
+
+show('who');
+</script>
+</body>
+</html>
