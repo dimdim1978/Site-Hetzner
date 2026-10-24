@@ -1,5 +1,6 @@
-/* Наскрізна перевірка lab/uroky.html (docs/uroky-10.md §5, docs/uroky-11.md §D).
+/* Наскрізна перевірка lab/uroky.html (docs/uroky-10.md §5, docs/uroky-11.md §D, docs/uroky-12.md §F).
    Запуск: NODE_PATH=$(npm root -g) node lab/perevirka-uroky.js [тека-для-скріншотів]
+   ONLY=phone (tablet, pc) — лише один пристрій; PARTS=run,files,novoice — лише ці проходи.
    Голос браузера підмінено: кожен speak() записується, і ми перевіряємо правило §0 —
    жоден текст не є окремим приголосним, нічого в квадратних дужках, жодного «мммак».
    Два проходи: без записів звуків (тека audio/ поруч порожня) і з фейковими WAV у тимчасовій
@@ -34,9 +35,24 @@ function voiceBad(text) {
   return '';
 }
 
+// Голоси: український і два англійські — сторінка має обрати en-GB, хоч en-US і йде першим
+const EN_WORDS = ['stand up', 'sit down', 'clap your hands', 'jump', 'stop', 'turn around', 'red', 'blue', 'green', 'yellow', 'orange',
+  'pink', 'black', 'white', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'cat', 'dog', 'fish', 'bird', 'rabbit', 'cow', 'horse', 'duck'];
+const UK_TRANSL = ['встань', 'вставай', 'сядь', 'сідай', 'плесн', 'оплеск', 'стрибн', 'стрибай', 'стій', 'стоп', 'повернис', 'обернис',
+  'червон', 'синій', 'синя', 'синє', 'блакит', 'зелен', 'жовт', 'помаранч', 'оранж', 'рожев', 'чорн', 'біл',
+  'один', 'одна', 'два', 'дві', 'три', 'чотири', 'п’ять', "п'ять", 'шість', 'сім', 'вісім', 'дев’ять', "дев'ять", 'десять',
+  'кіт', 'кішк', 'котик', 'собак', 'пес', 'песик', 'риб', 'птах', 'пташ', 'кролик', 'зайч', 'заєць', 'коров', 'кінь', 'коня', 'конячк', 'качк', 'каченя'];
+function translated(text) {
+  const words = String(text).toLowerCase().split(/[^а-яіїєґ'’]+/).filter(Boolean);
+  return UK_TRANSL.filter(t => words.some(w => w.indexOf(t) === 0));
+}
+
 function fakeVoice() {
-  window.__spoken = [];
+  window.__spoken = []; window.__utt = [];
   const voice = {lang: 'uk-UA', name: 'Тестовий голос', voiceURI: 'test-uk', default: true, localService: true};
+  const us = {lang: 'en-US', name: 'Test US', voiceURI: 'test-en-us', default: false, localService: true};
+  const gb = {lang: 'en-GB', name: 'Test GB', voiceURI: 'test-en-gb', default: false, localService: true};
   const q = []; let busy = false;
   const pump = () => {
     if (busy) return; const u = q.shift(); if (!u) return; busy = true;
@@ -44,9 +60,9 @@ function fakeVoice() {
   };
   const synth = {
     speaking: false, pending: false, paused: false,
-    getVoices: () => [voice], addEventListener() {}, removeEventListener() {},
+    getVoices: () => [voice, us, gb], addEventListener() {}, removeEventListener() {},
     cancel() { q.length = 0; }, pause() {}, resume() {},
-    speak(u) { window.__spoken.push(u.text); q.push(u); pump(); }
+    speak(u) { window.__spoken.push(u.text); window.__utt.push({text: u.text, lang: u.lang, voice: u.voice && u.voice.name}); q.push(u); pump(); }
   };
   Object.defineProperty(window, 'speechSynthesis', {value: synth, configurable: true});
   window.SpeechSynthesisUtterance = function (text) { this.text = text; };
@@ -104,6 +120,28 @@ async function run(dev) {
   const sessions = () => page.evaluate(() => { const d = load(); return Object.keys(d.kids).reduce((a, k) => a + d.kids[k].sessions.length, 0); });
 
   await page.goto(FILE);
+  // Міграція М03 → Ф01, М04 → Ф03: дані старого формату — до старту сторінки
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('beregynia-uroky', JSON.stringify({offset: 0, prep: {}, kids: {olia: {bukvar: '?', sessions: [
+      {id: 1, d: '2026-10-01', l: 'MX', ev: {M03: [true, true], M04: [true, true], M05: [true]}},
+      {id: 2, d: '2026-10-02', l: 'MX', ev: {M03: [true], M04: [true]}}],
+      checks: [{date: '2026-10-01', kind: 'start', items: {G01: [1, 1], M03: [1, 0]}}]}}}));
+  });
+  await page.reload();
+  await page.waitForFunction(() => SND_DONE, null, {timeout: 20000});
+  const mig = await page.evaluate(() => {
+    const raw = localStorage.getItem('beregynia-uroky'), s = stats('olia');
+    return {old: /"M0[34]"/.test(raw), f01: s.F01.st + '/' + s.F01.days, f03: s.F03.st + '/' + s.F03.days, chk: JSON.stringify(load().kids.olia.checks[0].items)};
+  });
+  !mig.old && mig.f01 === 'засвоєно/2' && mig.f03 === 'засвоєно/2' && mig.chk === '{"G01":[1,1],"F01":[1,0]}'
+    ? ok('міграція: М03 → Ф01 (' + mig.f01 + '), М04 → Ф03 (' + mig.f03 + '), у перевірці теж; старих ключів немає')
+    : fail(dev.name, 'міграція: ' + JSON.stringify(mig));
+  // Повторний старт нічого не змінює
+  await page.reload();
+  await page.waitForFunction(() => SND_DONE, null, {timeout: 20000});
+  const mig2 = await page.evaluate(() => stats('olia').F01.n + ' ' + stats('olia').F03.n);
+  mig2 === '2 2' ? ok('міграція одноразова: після повторного старту ті самі дані') : fail(dev.name, 'після повторного старту: ' + mig2);
   await page.evaluate(() => { localStorage.clear(); });
   await page.reload();
   await page.waitForFunction(() => SND_DONE, null, {timeout: 20000});
@@ -121,20 +159,68 @@ async function run(dev) {
       await page.waitForFunction(() => $('cards').style.visibility !== 'hidden', null, {timeout: 8000});
     }
     if (type === 'compare' && pairFirst) { await tap('#stage .pair-btn'); await page.waitForTimeout(700); }
+    if (type === 'compose') { await compose(wrongFirst); await page.waitForFunction(i => G.stage !== 'task' || G.i > i, i0, {timeout: 8000}); return type; }
     if (wrongFirst) {
-      const wrong = page.locator('#v-task .card:not([data-ok]), #v-task .zone:not([data-ok])');
+      const wrong = page.locator('#v-task .card:not([data-ok]), #v-task .zone:not([data-ok]), #v-task .pick:not([data-ok]):not(.got)');
       if (await wrong.count()) {
         await tap(wrong.first());
         const e = await page.evaluate(() => G.errors);
         if (e !== 1) fail(dev.name, 'помилка не зарахована (' + type + ')');
       }
     }
-    await tap('#v-task [data-ok]');
+    // «Знайди всі» — правильних кілька: торкаємось, доки завдання не зарахується
+    for (let k = 0; k < 8; k++) {
+      await tap('#v-task [data-ok]');
+      if (await page.evaluate(() => G.lock || !document.querySelector('#v-task [data-ok]'))) break;
+    }
     await page.waitForFunction(i => G.stage !== 'task' || G.i > i, i0, {timeout: 8000});
     return type;
   }
+  // Ф05: торкнутися деталі, (повернути), торкнутися місця. wrong — спершу скласти без повороту
+  const tapSlot = async k => {
+    const pt = await page.evaluate(k => {
+      const sl = G.task.z.slots[k], P = PIECES[sl.p], a = sl.r * Math.PI / 180, c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a));
+      const vs = P.pts.map(q => [sl.x + q[0] * c - q[1] * s, sl.y + q[0] * s + q[1] * c]);
+      const svg = $('sil').querySelector('svg'), m = svg.getScreenCTM(), p = svg.createSVGPoint();
+      p.x = vs.reduce((t, v) => t + v[0], 0) / vs.length * 80; p.y = vs.reduce((t, v) => t + v[1], 0) / vs.length * 80;
+      const q = p.matrixTransform(m);
+      return {x: q.x, y: q.y};
+    }, k);
+    if (dev.hasTouch) await page.touchscreen.tap(pt.x, pt.y); else await page.mouse.click(pt.x, pt.y);
+  };
+  async function compose(wrong) {
+    const z = await page.evaluate(() => G.task.z.slots.map(s => s.p));
+    if (wrong) {
+      for (let k = 0; k < z.length; k++) {
+        const i = await page.evaluate(p => G.task.pieces.findIndex((pc, i) => pc.p === p && G.task.st.at.indexOf(i) < 0), z[k]);
+        await tap('#tray [data-piece="' + i + '"]');
+        await tapSlot(k);
+      }
+      const st = await page.evaluate(() => ({e: G.errors, lock: G.lock, i: G.i}));
+      st.e === 1 && !st.lock ? ok('Ф05: без правильного повороту фігура не зарахована (помилка 1)') : fail(dev.name, 'Ф05 без повороту: ' + JSON.stringify(st));
+      await page.waitForTimeout(800);
+    }
+    for (let k = 0; k < z.length; k++) {
+      const plan = await page.evaluate(k => {
+        const sl = G.task.z.slots[k], st = G.task.st;
+        if (st.at[k] >= 0 && rotFits(G.task.pieces[st.at[k]], sl)) return null;
+        const i = G.task.pieces.findIndex((pc, i) => pc.p === sl.p && st.at.indexOf(i) < 0);
+        const pc = G.task.pieces[i];
+        let n = 0; while (n < 4 && !rotFits({p: pc.p, r: (pc.r + n * 90) % 360}, sl)) n++;
+        return {i, n};
+      }, k);
+      if (!plan) continue;
+      await tap('#tray [data-piece="' + plan.i + '"]');
+      for (let r = 0; r < plan.n; r++) await tap('#rotBtn');
+      await tapSlot(k);
+    }
+  }
+  let enCount = 0;
+  const enFails = [];
   async function playLesson(id, opts) {
     opts = opts || {};
+    const u0 = await page.evaluate(() => window.__utt.length);
+    const seen = [];
     if (await stage() !== 'greet') throw new Error('очікував привітання, маю ' + await stage());
     await tap('#btnStart');
     for (let k = 0; k < 3; k++) { await tap('#star'); await page.waitForTimeout(80); }
@@ -144,9 +230,27 @@ async function run(dev) {
     while (await stage() === 'task') {
       if (first && opts.shot) await shot('lesson-' + id);
       if (opts.onTask) await opts.onTask(n);
+      if (opts.en) {
+        await page.waitForTimeout(150);
+        seen.push(await page.evaluate(() => {
+          const ts = Array.from(document.querySelectorAll('#v-task [title], #v-task [aria-label]')).map(e => e.getAttribute('title') + ' ' + e.getAttribute('aria-label'));
+          return {bubble: $('bubble').textContent, task: $('v-task').textContent + ' ' + ts.join(' '), tag: !$('enTag').hidden};
+        }));
+      }
       types.add(await solve(first, true));
       first = false; n++;
       if (n > 15) throw new Error('забагато завдань у ' + id);
+    }
+    if (opts.en) {
+      const utt = await page.evaluate(n => window.__utt.slice(n), u0);
+      const eng = utt.filter(u => /[a-z]/i.test(u.text));
+      enCount += eng.length;
+      eng.filter(u => !/^en/.test(u.lang) || u.voice !== 'Test GB').forEach(u => enFails.push(id + ': «' + u.text + '» lang=' + u.lang + ' голос ' + u.voice));
+      eng.filter(u => EN_WORDS.indexOf(u.text) < 0).forEach(u => enFails.push(id + ': незнайоме слово «' + u.text + '»'));
+      utt.filter(u => !/[a-z]/i.test(u.text)).forEach(u => { const t = translated(u.text); if (t.length) enFails.push(id + ': голос сказав «' + u.text + '» — переклад ' + t); if (!/^uk/.test(u.lang)) enFails.push(id + ': українське «' + u.text + '» не українським голосом'); });
+      seen.forEach(x => { const t = translated(x.bubble + ' ' + x.task); if (t.length) enFails.push(id + ': на екрані переклад ' + t + ' («' + x.bubble + '»)'); });
+      if (!eng.length) enFails.push(id + ': жодного англійського слова');
+      if (!seen.some(x => x.tag)) enFails.push(id + ': не видно 🇬🇧');
     }
     const st = await stage();
     if (st !== 'end') fail(dev.name, id + ': після завдань стан ' + st);
@@ -171,7 +275,13 @@ async function run(dev) {
   waits.length === 4 && waits.every(w => /^G0[4569]: Чекає на записи звуків: \[/.test(w))
     ? ok('без записів: Г04 Г05 Г06 Г09 сірі у вчителя («' + waits[0].slice(5) + '»)') : fail(dev.name, 'сірі картки: ' + JSON.stringify(waits));
   const order = await page.$$eval('#listBody .lesson .code', cs => cs.map(c => c.textContent).join(' '));
-  order === 'Г01 Г02 Г03 Г04 Г05 Г06 Г07 Г08 Г09 Г11 Г12 М01 М02 М03–М06' ? ok('порядок у списку: ' + order) : fail(dev.name, 'порядок: ' + order);
+  order === 'Г01 Г02 Г03 Г04 Г05 Г06 Г07 Г08 Г09 Г11 Г12 М01 М02 М05–М06 Ф01 Ф02 Ф03 Ф04 Ф05 А01 А02 А03 А04' ? ok('порядок у списку: ' + order) : fail(dev.name, 'порядок: ' + order);
+  const lines = await page.$$eval('#listBody details.line > summary', ss => ss.map(x => x.firstChild.textContent).join(' · '));
+  lines === 'Грамота · Математика · Геометрія · Англійська' ? ok('список — чотири лінії: ' + lines) : fail(dev.name, 'лінії: ' + lines);
+  await tap('#listBody details.line[data-line="g"] > summary');
+  const shut = await page.evaluate(() => !document.querySelector('details.line[data-line="g"]').open);
+  await tap('#listBody details.line[data-line="g"] > summary');
+  shut ? ok('лінія згортається') : fail(dev.name, 'лінія не згорнулась');
   // Сіра картка відкриває лише підготовку, заняття не стартує
   await tap('#listBody [data-lesson="G04"]');
   const g04 = await page.evaluate(() => ({st: G.stage, tryDis: !!document.querySelector('#guideBody [data-act="try"][disabled]'),
@@ -223,21 +333,31 @@ async function run(dev) {
   await shot('list-mama');
   const mamaSnd = await page.locator('#listBody [data-lesson="G04"], #listBody [data-lesson="G05"], #listBody [data-lesson="G06"], #listBody [data-lesson="G09"]').count();
   mamaSnd === 0 ? ok('без записів мама звукових уроків не бачить') : fail(dev.name, 'мама бачить звукових уроків: ' + mamaSnd);
-  await tap('#listBody .rec-go');
-  const l1 = await page.evaluate(() => G.lesson);
-  (await stage()) === 'greet' && l1 === 'G01' ? ok('мама: рекомендований урок стартує однією кнопкою (Г01)') : fail(dev.name, 'мама: ' + l1 + ' ' + await stage());
-  await playLesson('G01', {shot: true, endShot: true});
-  const rec1 = await page.evaluate(() => recommended('marko'));
-  rec1 === 'G02' ? ok('після Г01 сьогодні рекомендовано Г02') : fail(dev.name, 'після Г01 рекомендовано ' + rec1);
+  // Рекомендований чергує лінії: чотири уроки поспіль однією кнопкою — чотири лінії
+  const recs = [];
+  for (let k = 0; k < 4; k++) {
+    await tap('#listBody .rec-go');
+    const l1 = await page.evaluate(() => G.lesson);
+    if (k === 0) (await stage()) === 'greet' && l1 === 'G01' ? ok('мама: рекомендований урок стартує однією кнопкою (Г01)') : fail(dev.name, 'мама: ' + l1 + ' ' + await stage());
+    recs.push(l1);
+    await playLesson(l1, {shot: true, endShot: k === 0, en: /^A/.test(l1)});
+  }
+  const rec5 = await page.evaluate(() => recommended('marko'));
+  recs.join(' ') === 'G01 M01 F01 A01' && rec5 === 'G02'
+    ? ok('рекомендований чергує лінії: ' + recs.join(' → ') + ' → ' + rec5) : fail(dev.name, 'чергування: ' + recs.join(' ') + ', далі ' + rec5);
 
   // Решта уроків
-  for (const id of ['G02', 'G03', 'G07', 'G08', 'G11', 'G12', 'M02', 'MX']) {
+  for (const id of ['G02', 'G03', 'G07', 'G08', 'G11', 'G12', 'M02', 'MX', 'F02', 'F03', 'F04', 'F05', 'A02', 'A03', 'A04']) {
     await openOther(id);
-    await playLesson(id, {shot: true});
+    await playLesson(id, {shot: true, en: /^A/.test(id)});
   }
-  // Урок 10 пише кожну навичку окремо
-  const mx = await page.evaluate(() => { const s = stats('marko'); return ['M03', 'M04', 'M05', 'M06'].map(k => s[k].n); });
-  mx.every(n => n === 1) ? ok('урок М03–М06 записав М03, М04, М05, М06 окремо') : fail(dev.name, 'урок-мікс записав ' + mx);
+  // Мікс тепер — лише М05 і М06; фігури й простір пишуться в геометрію
+  const mx = await page.evaluate(() => { const s = stats('marko'); return ['M05', 'M06', 'F01', 'F03', 'M03', 'M04'].map(k => s[k] ? s[k].n : '-').join(' '); });
+  mx === '1 1 1 1 - -' ? ok('урок М05–М06 записав М05 і М06; Ф01 і Ф03 — окремі уроки; М03/М04 більше немає') : fail(dev.name, 'навички: ' + mx);
+  // Англійська: один голос en-GB і жодного перекладу
+  const en = await page.evaluate(() => ({saved: localStorage.getItem('beregynia-uroky-en-voice')}));
+  enFails.length ? enFails.forEach(x => fail(dev.name, 'англійська: ' + x))
+    : ok('англійська: ' + enCount + ' слів, усі lang=en-GB одним голосом «Test GB» (збережено: ' + en.saved + '); перекладу ні в голосі, ні на екрані');
 
   // Буквар: різний порядок голосних у Г08
   if (dev.name === 'phone') {
@@ -259,7 +379,8 @@ async function run(dev) {
   await page.waitForTimeout(200);
   await shot('panel');
   const rows = await page.locator('#panelBody tr').count();
-  rows >= 14 ? ok('⚙: ' + rows + ' рядків (10 уроків + навички міксу)') : fail(dev.name, '⚙: лише ' + rows + ' рядків');
+  const lh = await page.$$eval('#panelBody tr.line-h', rs => rs.map(r => r.textContent).join(' · '));
+  rows >= 27 && lh === 'Грамота · Математика · Геометрія · Англійська' ? ok('⚙: ' + rows + ' рядків по лініях (' + lh + ')') : fail(dev.name, '⚙: ' + rows + ' рядків, лінії ' + lh);
   await tap('#panelClose');
 
   // Вихід через батьківський бар'єр (утримання 3 с)
@@ -296,7 +417,7 @@ async function run(dev) {
     return said;
   });
   // ---------- Стартова й повторна перевірка ----------
-  await checkFlow(page, dev, tap, shot, {kidWrong: 'olia', kidRight: 'liza', total: 18});
+  await checkFlow(page, dev, tap, shot, {kidWrong: 'olia', kidRight: 'liza', total: 24});
 
   const all = (await page.evaluate(() => window.__spoken)).concat(sweep);
   const blocked = await page.evaluate(() => VOICE_BLOCKED.slice());
@@ -309,7 +430,7 @@ async function run(dev) {
 
   net.length ? fail(dev.name, 'мережеві запити: ' + net.join(', ')) : ok('жодного мережевого запиту');
   cons.length ? fail(dev.name, 'консоль: ' + cons.join(' | ')) : ok('консоль чиста' + (missS ? ' (крім ' + missS + '× «Failed to load resource» на audio/snd_s.wav — браузер сам пише про відсутній запис)' : ''));
-  if (missS > 2) fail(dev.name, 'snd_s.wav пробувався ' + missS + ' разів на 2 завантаження');
+  if (missS > 4) fail(dev.name, 'snd_s.wav пробувався ' + missS + ' разів на 4 завантаження (2 з них — перевірка міграції)');
   await browser.close();
 }
 
@@ -333,7 +454,7 @@ async function oneCheck(page, dev, tap, right) {
       if (!t.flash) { const c = await page.locator('#stage .cnt').count(); for (let k = 0; k < c; k++) await tap(page.locator('#stage .cnt').nth(k)); }
       await page.waitForFunction(() => $('cards').style.visibility !== 'hidden', null, {timeout: 8000});
     }
-    await tap(right ? '#v-task [data-ok]' : page.locator('#v-task .card:not([data-ok])').first());
+    await tap(right ? '#v-task [data-ok]' : page.locator('#v-task .card:not([data-ok]), #v-task .zone:not([data-ok])').first());
     feedback += await page.evaluate(() => document.querySelectorAll('.check, .shake, .hint').length);
     await page.waitForFunction(i => G.stage !== 'task' || G.i > i, t.i, {timeout: 8000});
     if (++n > 30) throw new Error('перевірка не закінчується');
@@ -346,10 +467,10 @@ async function oneCheck(page, dev, tap, right) {
   if (sessions1 !== sessions0) fail(dev.name, 'перевірка записала сесію уроку');
   if (await page.evaluate(() => G.stage) !== 'end') fail(dev.name, 'після перевірки немає зорепаду');
   await tap('#btnDone');
-  const res = await page.evaluate(() => ({st: G.stage, rows: Array.from(document.querySelectorAll('#checkTbl tr')).map(r => r.getAttribute('data-row') + '=' + r.cells[1].textContent),
-    concl: $('checkConcl').textContent}));
+  const res = await page.evaluate(() => ({st: G.stage, rows: Array.from(document.querySelectorAll('#checkTbl tr[data-row]')).map(r => r.getAttribute('data-row') + '=' + r.cells[1].textContent),
+    concl: $('checkConcl').textContent, lines: Array.from(document.querySelectorAll('#checkConcl p')).map(p => p.textContent)}));
   if (res.st !== 'check') fail(dev.name, 'після зорепаду немає результату для дорослого');
-  return {n, rows: res.rows, concl: res.concl};
+  return {n, rows: res.rows, concl: res.concl, lines: res.lines};
 }
 
 async function checkFlow(page, dev, tap, shot, o) {
@@ -358,9 +479,13 @@ async function checkFlow(page, dev, tap, shot, o) {
   await toKid(o.kidWrong);
   const w = await oneCheck(page, dev, tap, false);
   const skipped = w.rows.filter(r => /пропущено/.test(r)).map(r => r.split('=')[0]);
-  w.n === 8 && skipped.join(' ') === (o.total === 22 ? 'G03 G04 G08 G09 G11 M05 M06' : 'G03 G08 G11 M05 M06')
-    ? ok('«усе неправильно»: ' + w.n + ' завдань, зупинка після двох нулів у лінії; пропущено ' + skipped.join(' ') + '; ' + w.concl)
-    : fail(dev.name, '«усе неправильно»: ' + w.n + ' завдань, ' + w.rows.join(', '));
+  const wl = w.lines.join(' ');
+  w.n === 14 && skipped.join(' ') === (o.total === 28 ? 'G03 G04 G08 G09 G11 M05 M06' : 'G03 G08 G11 M05 M06') &&
+    /Грамота: почати з уроку Г01/.test(wl) && /Математика: почати з уроку М01/.test(wl) && /Геометрія: почати з уроку Ф01/.test(wl) && /Англійська: почати з уроку А04/.test(wl)
+    ? ok('«усе неправильно»: ' + w.n + ' завдань, зупинка після двох нулів у лінії; пропущено ' + skipped.join(' ') + '; висновок по лініях: ' + w.lines.join(' | '))
+    : fail(dev.name, '«усе неправильно»: ' + w.n + ' завдань, ' + w.rows.join(', ') + '; ' + wl);
+  const fa = w.rows.filter(r => /^(F01|F03|A04)=/.test(r)).join(' ');
+  fa === 'F01=0 з 2 F03=0 з 2 A04=0 з 2' ? ok('у перевірці Ф01, Ф03 і А04 по 2 завдання') : fail(dev.name, 'Ф/А у перевірці: ' + fa);
   await tap('#checkBody [data-act="list"]');
   const lbl0 = await page.textContent('#listBody .check-box');
   /Сьогодні перевірку вже пройдено/.test(lbl0) ? ok('того ж дня повторна недоступна') : fail(dev.name, 'того ж дня: ' + lbl0);
@@ -376,7 +501,7 @@ async function checkFlow(page, dev, tap, shot, o) {
   await shot('check-result');
   await tap('#checkBody [data-act="list"]');
   await tap('#listGear');
-  const t = await page.$$eval('#panelChecksBody tr', rs => rs.map(r => r.cells[0].textContent.split(' ')[0] + ' ' + r.cells[1].textContent + ' → ' + r.cells[2].textContent + ' ' + r.cells[3].textContent));
+  const t = await page.$$eval('#panelChecksBody tr[data-row]', rs => rs.map(r => r.cells[0].textContent.split(' ')[0] + ' ' + r.cells[1].textContent + ' → ' + r.cells[2].textContent + ' ' + r.cells[3].textContent));
   t.length === o.total / 2 && t.every(x => /↑$/.test(x)) ? ok('⚙ «перша → повторна»: ' + t.length + ' навичок, усі ↑ (' + t[0] + '; ' + t[t.length - 1] + ')')
     : fail(dev.name, '⚙ перша → повторна: ' + t.join(' | '));
   await page.evaluate(() => $('panelChecks').scrollIntoView());
@@ -385,7 +510,7 @@ async function checkFlow(page, dev, tap, shot, o) {
   // Усе правильно як стартова — в іншої дитини
   await toKid(o.kidRight);
   const a = await oneCheck(page, dev, tap, true);
-  a.n === o.total && /^Усі перевірені навички — 2 з 2/.test(a.concl) ? ok('стартова «усе правильно»: ' + a.n + ' завдань; ' + a.concl)
+  a.n === o.total && /^Усі перевірені навички — 2 з 2/.test(a.concl) && a.lines.length === 5 ? ok('стартова «усе правильно»: ' + a.n + ' завдань; ' + a.lines.join(' | '))
     : fail(dev.name, 'стартова «усе правильно»: ' + a.n + ', ' + a.concl);
   await tap('#checkBody [data-act="list"]');
 }
@@ -466,7 +591,7 @@ async function withFiles(dev) {
   }
   // Перевірка з записами: + Г04 і Г09, 22 завдання
   await tap('#listBack');
-  await checkFlow(page, dev, tap, shot, {kidWrong: 'olia', kidRight: 'liza', total: 22});
+  await checkFlow(page, dev, tap, shot, {kidWrong: 'olia', kidRight: 'liza', total: 28});
 
   const srcs = await page.evaluate(() => window.__played.map(x => x.src));
   const foreign = srcs.filter(s => !/\/audio\/snd_[a-z_]+\.wav$/.test(s));
@@ -503,18 +628,27 @@ async function noVoice() {
   await page.screenshot({path: path.join(SHOTS, 'novoice-G11.png')});
   /Скажіть уголос: \S+ · \S+ · \S+/.test(aloud) ? ok('без голосу дорослий бачить: ' + aloud) : fail('novoice', 'підказка дорослому: ' + aloud);
   lit === 1 ? ok('без голосу кнопки засвічуються таймером') : fail('novoice', 'засвічених кнопок: ' + lit);
+  await page.evaluate(() => { hush(); G.lesson = 'A04'; startTasks(); });
+  await page.waitForTimeout(1500);
+  const en = await page.evaluate(() => ({aloud: $('aloud').textContent, why: $('noteWhy').textContent, shown: getComputedStyle(document.querySelector('.note')).display !== 'none',
+    size: parseFloat(getComputedStyle($('aloud')).fontSize), tag: !$('enTag').hidden, word: G.task.r.en}));
+  await page.screenshot({path: path.join(SHOTS, 'novoice-A04.png')});
+  en.shown && en.aloud === en.word && en.size >= 24 && /англійського/.test(en.why) && en.tag
+    ? ok('без англійського голосу дорослий бачить слово великим: «' + en.aloud + '» (' + en.size + 'px), 🇬🇧 видно') : fail('novoice', 'англійська без голосу: ' + JSON.stringify(en));
   cons.length ? fail('novoice', 'консоль: ' + cons.join(' | ')) : ok('консоль чиста');
   await browser.close();
 }
 
 (async () => {
-  for (const d of DEVICES) {
+  const devs = DEVICES.filter(d => !process.env.ONLY || process.env.ONLY.split(',').indexOf(d.name) >= 0);
+  const part = x => !process.env.PARTS || process.env.PARTS.split(',').indexOf(x) >= 0;
+  if (part('run')) for (const d of devs) {
     try { await run(d); } catch (e) { fail(d.name, 'зупинилось: ' + e.message.split('\n')[0]); }
   }
-  for (const d of DEVICES) {
+  if (part('files')) for (const d of devs) {
     try { await withFiles(d); } catch (e) { fail(d.name + '/snd', 'зупинилось: ' + e.message.split('\n')[0]); }
   }
-  try { await noVoice(); } catch (e) { fail('novoice', 'зупинилось: ' + e.message.split('\n')[0]); }
+  if (part('novoice')) try { await noVoice(); } catch (e) { fail('novoice', 'зупинилось: ' + e.message.split('\n')[0]); }
   console.log('\n' + (problems.length ? 'ПРОБЛЕМИ (' + problems.length + '):\n' + problems.join('\n') : 'УСЕ ГАРАЗД'));
   console.log('Скріншоти: ' + SHOTS);
   process.exit(problems.length ? 1 : 0);

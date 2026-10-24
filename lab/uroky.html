@@ -140,6 +140,8 @@
   .dice{display:inline-block;position:relative;vertical-align:middle}
   .dice i{position:absolute;width:22%;height:22%;margin:-11% 0 0 -11%;border-radius:50%;background:var(--ink)}
   .card .dice{width:calc(var(--card) * .44);height:calc(var(--card) * .44);margin-top:4px}
+  .card .dice.ten{width:calc(var(--card) * .78);height:calc(var(--card) * .5);margin:0}
+  .dice.ten i{width:14%;height:22%;margin:-11% 0 0 -7%}
   .pic .dice{width:clamp(120px, 28vmin, 220px);height:clamp(120px, 28vmin, 220px);background:#fff;border:4px solid var(--line);border-radius:24px}
   .pic .dice i{width:16%;height:16%;margin:-8% 0 0 -8%}
   /* М01: лічба */
@@ -168,6 +170,42 @@
   .track b{display:flex;align-items:center;justify-content:center;width:clamp(30px, 8.4vw, 64px);height:clamp(40px, 10vw, 72px);
     margin:2px;border:3px solid var(--line);border-radius:12px;background:#fff;font-size:clamp(18px, 4.6vw, 34px)}
   .track b.q{border-color:var(--sand);border-style:dashed;color:var(--sand)}
+
+  /* Ф02: стрічки, вежі, доріжки — кожна окремою кнопкою */
+  .pick{border:3px solid var(--line);border-radius:16px;background:#fff;padding:4px;margin:calc(var(--gap) / 3)}
+  .pick.shake{animation:shake .45s}
+  .pick.hint{animation:glow 1.4s ease-in-out infinite}
+  .size-col{display:flex;flex-direction:column;align-items:stretch;width:min(100%, 560px)}
+  .size-col .pick{width:100%;height:clamp(58px, 10vmin, 84px)}
+  .size-row{display:flex;justify-content:center;align-items:flex-end;width:min(100%, 520px)}
+  .size-row .pick{flex:1 1 0;max-width:150px;height:clamp(190px, 38vmin, 330px)}
+  .pick > svg{display:block;width:100%;height:100%}
+  /* А02: «знайди всі» — шість предметів */
+  .finder{display:flex;flex-wrap:wrap;justify-content:center;width:min(100%, 520px)}
+  .finder .pick{position:relative;width:calc(var(--card-s) * 1.05);height:calc(var(--card-s) * 1.05);background:#F2F4F7}
+  .finder .pick.got{border-color:var(--green);background:#E8F1EC}
+  .finder .pick.got:after{content:"✓";position:absolute;right:4px;top:0;color:var(--green);font-weight:700;font-size:calc(var(--card-s) * .3)}
+  .card.spot{background:#F2F4F7}
+  /* Ф05: силует і деталі */
+  .compose{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;width:100%}
+  .sil{margin:calc(var(--gap) / 2);border-radius:18px;padding:6px;background:#fff;border:3px solid var(--line)}
+  .sil.shake{animation:shake .45s}
+  .sil > svg{display:block}
+  .sil .slot{fill:rgba(255,255,255,0);stroke:none;cursor:pointer}
+  .sil .seam{stroke:none;fill:none}
+  .sil.hint{animation:glow 1.4s ease-in-out infinite}
+  .sil.hint .seam{stroke:var(--sand);stroke-width:4;stroke-dasharray:8 6}
+  .tray{display:flex;flex-wrap:wrap;align-items:center;justify-content:center}
+  .piece{border:3px solid var(--line);border-radius:16px;background:#fff;padding:6px;margin:6px}
+  .piece.sel{border-color:var(--sand);box-shadow:0 0 0 6px rgba(199,125,46,.3)}
+  .piece > svg{display:block}
+  .rot-btn{width:72px;height:72px;margin:6px;border:3px solid var(--sky);border-radius:50%;background:#fff;color:var(--sky);font-size:40px;line-height:1;padding:0}
+  .rot-btn:disabled{opacity:.35}
+  /* Англійська звучить — біля сови прапорець */
+  .owl-box{position:relative;display:flex;flex:none}
+  .en-tag{position:absolute;left:-6px;bottom:2px;width:clamp(30px, 6vmin, 44px);height:auto;border:2px solid #fff;border-radius:4px;box-shadow:0 1px 4px rgba(16,24,40,.3)}
+  .noen .note{display:block}
+  .noen .note b{font-size:clamp(24px, 3vmin + 12px, 36px)}
 
   .check{position:fixed;top:50%;left:50%;width:clamp(140px, 40vmin, 260px);height:clamp(140px, 40vmin, 260px);
     transform:translate(-50%,-50%);border-radius:50%;background:var(--green);color:#fff;
@@ -259,6 +297,11 @@
   .lesson .code{flex:none;min-width:72px;font-weight:700;color:#fff;background:var(--green);border-radius:10px;padding:4px 6px;
     text-align:center;margin-right:12px;font-size:15px}
   .lesson.m .code{background:var(--sky)}
+  .lesson.f .code{background:#6941C6}
+  .lesson.a .code{background:#B42318}
+  details.line{margin:10px 0 4px}
+  details.line > summary{font-size:20px;font-weight:600;min-height:48px;line-height:48px;cursor:pointer;color:var(--ink)}
+  details.line > summary .muted{font-weight:400;margin-left:6px}
   .lesson .nm{flex:1 1 auto;min-width:0}
   .lesson .stt{flex:none;font-size:14px;color:var(--soft);margin-left:8px;text-align:right;white-space:nowrap}
   .lesson .stt.ok{color:var(--green);font-weight:600}
@@ -277,6 +320,8 @@
   .check-box p{margin:6px 0 0}
   .btn[disabled],.speak[disabled],.say-sm[disabled]{opacity:.5;cursor:default}
   .res-2{color:var(--green);font-weight:600}.res-0{color:#B42318}.res-s{color:var(--soft)}
+  tr.line-h th{background:#E8F1EC;color:var(--green);font-size:15px}
+  .concl p{margin:4px 0}
   .concl{font-size:21px;border-left:6px solid var(--sand);background:#FBF3EA;padding:10px 14px;border-radius:8px;margin-top:14px}
   .rec-go small{display:block;font-size:17px;font-weight:400;opacity:.92;margin-top:4px}
   details.more{border-top:1px solid var(--line);margin-top:8px}
@@ -300,6 +345,7 @@
   .tile .tag{font-size:14px;color:var(--soft)}
   .tile.lit,.sp.lit{border-color:var(--sand);box-shadow:0 0 0 5px rgba(199,125,46,.3)}
   .tile .dice{width:46px;height:46px}
+  .tile .dice.ten{width:70px;height:45px}
   .tile .e .ico{width:46px;height:46px}
   /* Г01: речення як ряд цеглинок */
   .brick{display:flex;flex-direction:column;align-items:center}
@@ -480,7 +526,7 @@
 <!-- Дитячі екрани ділять одного провідника -->
 <section class="screen" id="s-child" hidden>
   <div class="guide">
-    <svg class="owl" id="owl" viewBox="0 0 140 150" aria-hidden="true">
+    <span class="owl-box"><svg class="owl" id="owl" viewBox="0 0 140 150" aria-hidden="true">
       <!-- Сова Мудрик: власний простий малюнок -->
       <path d="M30 30 L42 4 L56 26 Z M110 30 L98 4 L84 26 Z" fill="#9A5B1E"/>
       <ellipse cx="70" cy="84" rx="52" ry="60" fill="#C77D2E"/>
@@ -493,7 +539,13 @@
       <path d="M62 72 L78 72 L70 86 Z" fill="#E8A33B"/>
       <path d="M52 142 l-6 6 M58 143 l0 6 M82 143 l0 6 M88 142 l6 6" stroke="#9A5B1E" stroke-width="4" stroke-linecap="round"/>
     </svg>
-    <div class="bubble"><div id="bubble"></div><div class="note">немає українського голосу в браузері<b id="aloud"></b></div></div>
+    <!-- 🇬🇧 намальовано: Windows емодзі-прапорів не показує, лише літери «GB» -->
+    <svg class="en-tag" id="enTag" viewBox="0 0 60 30" aria-label="англійська" hidden>
+      <rect width="60" height="30" fill="#012169"/><path d="M0 0 L60 30 M60 0 L0 30" stroke="#fff" stroke-width="6"/>
+      <path d="M0 0 L60 30 M60 0 L0 30" stroke="#C8102E" stroke-width="2.4"/><path d="M30 0 V30 M0 15 H60" stroke="#fff" stroke-width="10"/>
+      <path d="M30 0 V30 M0 15 H60" stroke="#C8102E" stroke-width="6"/>
+    </svg></span>
+    <div class="bubble"><div id="bubble"></div><div class="note"><span id="noteWhy">немає українського голосу в браузері</span><b id="aloud"></b></div></div>
   </div>
 
   <div class="main">
@@ -1074,49 +1126,19 @@ const LESSONS = {
   },
 
   MX: {
-    code: 'М03–М06', title: 'Фігури, місце, цифри, сусіди числа', level: 1, area: 'm',
-    hello: {t: 'Сьогодні фігури, місця і числа.'},
-    data: {
-      shapes: [{id: 'circle', name: 'круг'}, {id: 'square', name: 'квадрат'}, {id: 'triangle', name: 'трикутник'}, {id: 'rect', name: 'прямокутник'}],
-      places: {top: [{id: 'on', t: 'Постав м’ячик на стіл.'}, {id: 'under', t: 'Постав м’ячик під стіл.'}],
-               side: [{id: 'left', t: 'Постав м’ячик ліворуч від кошика.'}, {id: 'right', t: 'Постав м’ячик праворуч від кошика.'}]}
-    },
-    // Чотири короткі частини по 2 завдання; кожна пише свою навичку
+    code: 'М05–М06', title: 'Цифри й сусіди числа', level: 1, area: 'm',
+    hello: {t: 'Сьогодні цифри і числа.'},
+    // Колись тут були ще фігури й простір (М03, М04) — вони переїхали в геометрію як Ф01 і Ф03
     tasks() {
-      const D = this.data, t = [];
-      shuffle(D.shapes).slice(0, 2).forEach(s => t.push({type: 'shape', sk: 'M03', s}));
-      t.push({type: 'place', sk: 'M04', p: pick(D.places.top)});
-      t.push({type: 'place', sk: 'M04', p: pick(D.places.side)});
-      const d1 = 1 + Math.floor(Math.random() * 5), d2 = 5 + Math.floor(Math.random() * 5);
-      [d1, d2].forEach(n => t.push({type: 'dotsDigit', sk: 'M05', n}));
-      const g = shuffle([2, 3, 4, 5, 6, 7, 8, 9]);
-      [g[0], g[1]].forEach(n => t.push({type: 'gap', sk: 'M06', n}));
+      const t = [];
+      const lo = shuffle([1, 2, 3, 4, 5]), hi = shuffle([5, 6, 7, 8, 9]), g = shuffle([2, 3, 4, 5, 6, 7, 8, 9]);
+      [lo[0], hi[0], lo[1], hi[1]].forEach((n, i) => {
+        t.push({type: 'dotsDigit', sk: 'M05', n});
+        t.push({type: 'gap', sk: 'M06', n: g[i]});
+      });
       return t;
     },
     skills: {
-      M03: {short: 'фігури', guide: {
-        title: 'М03. Фігури: круг, квадрат, трикутник, прямокутник',
-        what: 'Фігуру визначає не колір, розмір чи поворот, а сторони й кути.',
-        visual: {type: 'shapes', note: 'Той самий трикутник — великий, малий, повернутий. Він лишається трикутником.'},
-        show: ['Обводьте фігуру пальцем, рахуйте кути: «У трикутника три кути».',
-               'Поверніть ту саму фігуру — вона лишається трикутником.'],
-        together: {name: '«Знайди фігуру в кімнаті»',
-                   steps: ['Вікно — прямокутник, тарілка — круг.', 'Викладаємо фігури з паличок.']},
-        alone: 'Сова називає фігуру, дитина знаходить її серед чотирьох — повернутих, різного розміру й кольору.',
-        pitfalls: [{p: 'Не визнає «перевернутий» трикутник.', fix: 'Показувати фігури в різних положеннях і розмірах.'},
-                   {p: 'Плутає квадрат і прямокутник.', fix: 'Порівнювати сторони, приклавши паличку.'}]
-      }},
-      M04: {short: 'простір', guide: {
-        title: 'М04. Простір: на, під, ліворуч, праворуч',
-        what: 'Слова, що описують, де предмет: вгорі, внизу, на, під, перед, за, між, ліворуч, праворуч.',
-        visual: {type: 'scene', note: 'На екрані — стіл і кошик; сова каже, куди поставити м’ячик. Ліворуч і праворуч — з погляду дитини.'},
-        show: ['Кажіть і показуйте рукою від себе: «Лампа вгорі, килим внизу».',
-               'Для «праворуч» піднімайте праву руку.'],
-        together: {name: '«Сховай іграшку»',
-                   steps: ['«Під стіл», «на стілець», «між подушками».', 'Потім дитина ховає, а ви шукаєте за її словами.']},
-        alone: 'Сова каже: «Постав м’ячик під стіл» (на стіл, ліворуч чи праворуч від кошика) — дитина торкається потрібного місця.',
-        pitfalls: [{p: 'Плутає ліво й право.', fix: 'Спершу лише вгорі-внизу, на-під. Ліво-право — від тіла дитини, з браслетиком на правій руці.'}]
-      }},
       M05: {short: 'цифри', guide: {
         title: 'М05. Лічба до 10, цифри',
         what: 'Цифра — це знак, яким записують кількість.',
@@ -1144,6 +1166,238 @@ const LESSONS = {
                    {p: 'Плутає «перед» і «після».', fix: 'Показувати на доріжці кроком назад і вперед.'}]
       }}
     }
+  },
+
+  /* ---------------- Геометрія і простір (docs/uroky-12.md §B, docs/pedagogy_F01-F11.csv) ---------------- */
+  F01: {
+    code: 'Ф01', title: 'Фігури', level: 0, area: 'f',
+    hello: {t: 'Сьогодні шукаємо фігури.'},
+    data: {
+      names: {circle: 'круг', square: 'квадрат', triangle: 'трикутник', rect: 'прямокутник'},
+      // Якою буває правильна фігура: незвичні приклади — серцевина навички
+      looks: {circle: ['plain', 'small'], square: ['rot', 'small', 'plain'], triangle: ['rot', 'thin', 'right', 'small'], rect: ['rot', 'thin', 'stand', 'small']}
+    },
+    tasks() {
+      const D = this.data, t = [];
+      const order = shuffle(['triangle', 'triangle', 'triangle', 'square', 'square', 'rect', 'rect', 'circle', 'circle']);
+      const used = {};
+      order.forEach((id, i) => {
+        const ls = D.looks[id], k = used[id] = (used[id] || 0) + 1;
+        // Кожне третє — контури: тоді «майже фігура» — незамкнена; інакше — із заокругленим кутом (або овал)
+        t.push({type: 'figure', sk: 'F01', id, look: ls[(k - 1 + Math.floor(Math.random() * ls.length)) % ls.length], outline: i % 3 === 2});
+      });
+      return mixNoRun(t, x => x.id);
+    },
+    skills: {F01: {short: 'фігури', guide: {
+      title: 'Ф01. Круг, квадрат, трикутник, прямокутник',
+      what: 'Фігуру визначає її вигляд у цілому, а не колір, розмір чи поворот.',
+      school: 'розпізнає трикутник, чотирикутник, квадрат, круг (1 клас).',
+      visual: {type: 'figs', note: 'Угорі — усе трикутники: великий, малий, повернутий, «худий». Унизу — «майже» трикутники: із заокругленим кутом і незамкнений. Вони трикутниками не є.'},
+      show: ['Показуйте ту саму фігуру великою й маленькою, червоною й синьою, «стоячою» й поверненою: «Все одно трикутник».',
+             'Покажіть і «неприклад»: «А тут кут круглий — це не трикутник».'],
+      together: {name: '«Чарівний мішечок»',
+                 steps: ['На дотик знайти круг серед квадратів.', 'Сортувати паперові фігури по коробках.']},
+      alone: 'Сова каже: «Знайди трикутник» — серед чотирьох фігур. Правильна буває повернутою, витягнутою, малою, будь-якого кольору; серед хибних є «майже» фігури — із заокругленим кутом або незамкнений контур.',
+      pitfalls: [{p: 'Не визнає повернутий або «худий» трикутник.', fix: 'Давати незвичні приклади і «неприклади».'},
+                 {p: 'Плутає квадрат і прямокутник.', fix: 'Прикласти паличку до сторін.'}]
+    }}}
+  },
+
+  F02: {
+    code: 'Ф02', title: 'Довший, вищий, ширший', level: 0, area: 'f',
+    hello: {t: 'Сьогодні порівнюємо, що довше і вище.'},
+    // В одному завданні з трьох предмети не вирівняні з одного краю — і правильний не той, що «стирчить»
+    tasks() {
+      const kinds = mixNoRun(['long', 'long', 'long', 'tall', 'tall', 'tall', 'wide', 'wide', 'wide'], x => x);
+      return kinds.map((kind, i) => ({type: 'size', sk: 'F02', kind, n: i < 4 || Math.random() < 0.5 ? 2 : 3, trick: i % 3 === 1}));
+    },
+    skills: {F02: {short: 'довший, вищий, ширший', guide: {
+      title: 'Ф02. Довший, вищий, ширший',
+      what: 'Порівнювати можна тільки однакові «боки»: довжину з довжиною, висоту з висотою, приклавши предмети один до одного.',
+      visual: {type: 'sizes', note: 'Угорі олівці вирівняні з одного краю — видно, котрий довший. Унизу — ні: довший той самий, хоч «стирчить» інший.'},
+      show: ['Ставте олівці поруч, рівняйте кінці: «Цей довший».', 'Ставте ляльок поряд: «Ця вища».'],
+      together: {name: '«Хто вищий?»',
+                 steps: ['Стати спиною до спини — хто вищий?', 'Скласти стрічки від найкоротшої до найдовшої.']},
+      alone: 'Дві-три стрічки, вежі чи доріжки — торкнутися довшої, вищої, ширшої. У кожному третьому завданні предмети не вирівняні з одного краю, і правильна відповідь — не та, що «стирчить» далі.',
+      pitfalls: [{p: 'Порівнює, не вирівнявши кінці.', fix: 'Завжди починати з однієї лінії.'},
+                 {p: 'Плутає «довший» і «вищий».', fix: 'Лежачий предмет довгий, стоячий — високий.'}]
+    }}}
+  },
+
+  F03: {
+    code: 'Ф03', title: 'Простір: де лежить м’ячик', level: 0, area: 'f',
+    hello: {t: 'Сьогодні ховаємо м’ячик.'},
+    data: {
+      easy: [{id: 'top', s: 'shelf', t: 'Постав м’ячик вгорі.'}, {id: 'bottom', s: 'shelf', t: 'Постав м’ячик внизу.'},
+             {id: 'on', s: 'table', t: 'Постав м’ячик на стіл.'}, {id: 'under', s: 'table', t: 'Постав м’ячик під стіл.'}],
+      hard: [{id: 'between', s: 'shelf', t: 'Постав м’ячик між кубиками.'}, {id: 'between', s: 'shelf', t: 'Постав м’ячик між кубиками.'},
+             {id: 'left', s: 'table', t: 'Постав м’ячик ліворуч від кошика.'}, {id: 'right', s: 'table', t: 'Постав м’ячик праворуч від кошика.'}]
+    },
+    // Спершу вгорі-внизу, на-під (методика: ліво-право — пізніше), потім між, ліворуч, праворуч
+    tasks() {
+      const D = this.data;
+      return shuffle(D.easy).concat(shuffle(D.hard.concat([pick(D.easy)]))).map(p => ({type: 'place', sk: 'F03', p}));
+    },
+    skills: {F03: {short: 'простір', guide: {
+      title: 'Ф03. Простір: вгорі, внизу, на, під, ліворуч, праворуч, між',
+      what: 'Слова, що описують, де предмет відносно іншого.',
+      school: 'орієнтується на площині і в просторі (1 клас).',
+      visual: {type: 'scene', note: 'На екрані — шафа з кубиками, стіл і кошик; сова каже, куди поставити м’ячик. Ліворуч і праворуч — з погляду дитини.'},
+      show: ['Кажіть і показуйте рукою від себе: «Лампа вгорі, килим внизу».', 'Для «праворуч» піднімайте праву руку.'],
+      together: {name: '«Сховай іграшку»',
+                 steps: ['«Під стіл», «на стілець», «між подушками».', 'Потім дитина ховає, а ви шукаєте за її словами.']},
+      alone: 'Голос каже, куди поставити м’ячик на малюнку (вгорі, внизу, на стіл, під стіл, між кубиками, ліворуч чи праворуч від кошика) — дитина торкається потрібного місця.',
+      pitfalls: [{p: 'Плутає ліво й право.', fix: 'Спершу лише вгорі-внизу, на-під. Ліво-право — від тіла дитини, браслетик на правій руці.'}]
+    }}}
+  },
+
+  F04: {
+    code: 'Ф04', title: 'Фігури в предметах', level: 1, area: 'f',
+    hello: {t: 'Сьогодні шукаємо фігури у речах.'},
+    // Лише плоскі й однозначні. Вафля — власний малюнок: 🧇 з'явився тільки в Android 10
+    data: {things: [{e: '🍕', f: 'triangle'}, {e: '🥪', f: 'triangle'}, {e: '🚪', f: 'rect', stand: true}, {e: '📺', f: 'rect'},
+                    {e: '✉️', f: 'rect'}, {e: '🕒', f: 'circle'}, {e: '🍪', f: 'circle'}, {svg: 'waffle', f: 'square'}, {svg: 'cracker', f: 'square'}]},
+    tasks() {
+      return mixNoRun(shuffle(this.data.things).concat([pick(this.data.things)]).slice(0, 9), x => x.f).map(x => ({type: 'shapeOf', sk: 'F04', x}));
+    },
+    skills: {F04: {short: 'фігури в предметах', guide: {
+      title: 'Ф04. Фігури в предметах довкола',
+      what: 'Форма предмета нагадує геометричну фігуру.',
+      school: 'співвідносить реальні об’єкти з моделями фігур (1 клас).',
+      visual: {type: 'things', note: 'Обводьте пальцем край предмета й називайте фігуру.'},
+      show: ['Обводьте пальцем вікно: «Прямокутник».', 'Тарілку: «Круг».'],
+      together: {name: '«Полювання на фігури»',
+                 steps: ['Знайти в кімнаті три круги і два прямокутники.', 'Дитина обводить знахідку пальцем.']},
+      alone: 'Предмет (піца, двері, годинник, вафля…) — дитина обирає з трьох фігуру, на яку він схожий.',
+      pitfalls: [{p: 'Називає предмет замість форми.', fix: '«На яку фігуру схоже?»'},
+                 {p: 'Плутає об’ємне з плоским (м’яч — круг).', fix: 'Тут лише плоскі предмети; об’ємні — пізніше, в Ф06.'}]
+    }}}
+  },
+
+  F05: {
+    code: 'Ф05', title: 'Склади фігуру', level: 1, area: 'f',
+    hello: {t: 'Сьогодні складаємо фігури із частин.'},
+    /* Деталі (одиниця — клітинка): sq квадрат 1×1, tri прямокутний трикутник з катетами 1,
+       rect 2×1, rtri трикутник з катетами 2 і 1. sym — через скільки градусів деталь виглядає так само.
+       Місце в силуеті: деталь, центр (x, y) і поворот за годинниковою стрілкою від початкового вигляду. */
+    data: {
+      two: [
+        {id: 'sq2tri', w: 1, h: 1, out: [[0, 0], [1, 0], [1, 1], [0, 1]], slots: [{p: 'tri', x: .5, y: .5, r: 0}, {p: 'tri', x: .5, y: .5, r: 180}]},
+        {id: 'rect2sq', w: 2, h: 1, out: [[0, 0], [2, 0], [2, 1], [0, 1]], slots: [{p: 'sq', x: .5, y: .5, r: 0}, {p: 'sq', x: 1.5, y: .5, r: 0}]},
+        {id: 'tri2tri', w: 2, h: 1, out: [[0, 1], [1, 0], [2, 1]], slots: [{p: 'tri', x: .5, y: .5, r: 270}, {p: 'tri', x: 1.5, y: .5, r: 0}]},
+        {id: 'rect2tri', w: 2, h: 1, out: [[0, 0], [2, 0], [2, 1], [0, 1]], slots: [{p: 'rtri', x: 1, y: .5, r: 0}, {p: 'rtri', x: 1, y: .5, r: 180}]}
+      ],
+      three: [
+        {id: 'boat', w: 3, h: 1, out: [[0, 1], [1, 0], [2, 0], [3, 1]], slots: [{p: 'tri', x: .5, y: .5, r: 270}, {p: 'sq', x: 1.5, y: .5, r: 0}, {p: 'tri', x: 2.5, y: .5, r: 0}]},
+        {id: 'house', w: 2, h: 2, out: [[0, 1], [1, 0], [2, 1], [2, 2], [0, 2]], slots: [{p: 'tri', x: .5, y: .5, r: 270}, {p: 'tri', x: 1.5, y: .5, r: 0}, {p: 'rect', x: 1, y: 1.5, r: 0}]},
+        {id: 'cup', w: 3, h: 1, out: [[0, 0], [3, 0], [2, 1], [1, 1]], slots: [{p: 'tri', x: .5, y: .5, r: 180}, {p: 'sq', x: 1.5, y: .5, r: 0}, {p: 'tri', x: 2.5, y: .5, r: 90}]}
+      ]
+    },
+    // Почати з 2 деталей, потім 3. Перше — завжди квадрат з двох трикутників: там без повороту не вийде
+    tasks() {
+      const D = this.data;
+      const two = [D.two[0]].concat(shuffle(D.two.slice(1)));
+      const three = shuffle(D.three).concat([pick(D.three)]);
+      return two.concat(three).map(z => ({type: 'compose', sk: 'F05', z}));
+    },
+    skills: {F05: {short: 'склади фігуру', guide: {
+      title: 'Ф05. Складає фігуру з частин',
+      what: 'З кількох фігур можна скласти іншу: з двох трикутників — квадрат, з двох квадратів — прямокутник.',
+      visual: {type: 'compose', note: 'Два трикутники складаються в квадрат, лише коли другий повернутий. На екрані для цього є кнопка ↻.'},
+      show: ['Складайте з двох паперових трикутників квадрат, потім знову розкладайте.', 'Повертайте трикутник уголос: «Ні, не так. Поверну — тепер підходить».'],
+      together: {name: '«Пазли-силуети»',
+                 steps: ['Обведіть на папері силует і складайте його з паперових фігур.', 'Танграм на 3–4 деталі.']},
+      alone: 'Силует і 2–3 деталі збоку. Дитина торкається деталі, потім місця в силуеті — деталь стає туди. Кнопка ↻ повертає вибрану деталь на чверть оберту. Зараховується, коли всі деталі на місцях і правильно повернуті; повернута не так деталь повертається назад. Спершу 2 деталі, потім 3.',
+      pitfalls: [{p: 'Кладе деталь не тим боком.', fix: 'Кнопка «повернути» і підказка-контур (після двох помилок у силуеті з’являються лінії деталей).'},
+                 {p: 'Багато деталей — губиться.', fix: 'Починати з 2 деталей.'}]
+    }}}
+  },
+
+  /* ---------------- Англійська (docs/uroky-12.md §C, docs/pedagogy_A01-A11.csv) ----------------
+     Слово звучить англійським голосом ({en: true}) і ніколи не перекладається — ні голосом, ні текстом
+     для дитини. Інструкція сови однакова: «Послухай і торкнися». */
+  A01: {
+    code: 'А01', title: 'Команди', level: 0, area: 'a',
+    hello: {t: 'Сьогодні граємо англійською.'},
+    data: {words: [{en: 'stand up', svg: 'standUp'}, {en: 'sit down', svg: 'sitDown'}, {en: 'clap your hands', svg: 'clap'},
+                   {en: 'jump', svg: 'jump'}, {en: 'stop', svg: 'stop'}, {en: 'turn around', svg: 'turn'}]},
+    // Спершу протилежні stand up / sit down (методика), далі всі
+    tasks() { return enTasks(this.data.words, 'A01', 3, [0, 1]); },
+    skills: {A01: {short: 'команди', guide: {
+      title: 'А01. Розуміє прості команди',
+      what: 'Слова: stand up, sit down, clap your hands, jump, stop, turn around. Без перекладу: рух і є переклад.',
+      visual: {type: 'enWords', lesson: 'A01', note: 'Натисніть 🔊 — команди звучать англійським голосом. Показуйте рух разом зі словом.'},
+      show: ['Кажіть команду англійською і самі виконуйте рух.', 'Не перекладайте: рух і є переклад.'],
+      together: {name: '«Simon says»',
+                 steps: ['Виконуємо команду, лише якщо почули «Simon says…».', 'Пісня з рухами.']},
+      alone: 'Голос каже команду — дитина торкається картинки з цією дією з трьох.',
+      pitfalls: [{p: 'Чекає українського перекладу.', fix: 'Не перекладати, показувати рух.'},
+                 {p: 'Плутає схожі (stand up / sit down).', fix: 'Спершу дві протилежні команди.'}]
+    }}}
+  },
+
+  A02: {
+    code: 'А02', title: 'Кольори', level: 0, area: 'a',
+    hello: {t: 'Сьогодні граємо англійською.'},
+    data: {words: [{en: 'red', c: '#D92D20'}, {en: 'blue', c: '#1570EF'}, {en: 'green', c: '#16A34A'}, {en: 'yellow', c: '#FACC15'},
+                   {en: 'orange', c: '#F97316'}, {en: 'pink', c: '#F472B6'}, {en: 'black', c: '#101828'}, {en: 'white', c: '#FFFFFF'}]},
+    // Кожне третє — «знайди всі red» на малюнку з 6 предметів
+    tasks() {
+      const W = this.data.words, t = enTasks(W, 'A02', i => i > 3 ? 4 : 3);
+      return t.map((x, i) => i % 3 === 2 ? {type: 'enAll', sk: 'A02', r: x.r} : x);
+    },
+    skills: {A02: {short: 'кольори', guide: {
+      title: 'А02. Кольори',
+      what: 'Слова: red, blue, green, yellow, orange, pink, black, white. Одне нове слово за раз.',
+      visual: {type: 'enWords', lesson: 'A02', note: 'Показуйте предмет і називайте колір: «Red. A red apple».'},
+      show: ['Показуйте предмет і називайте колір: «Red. A red apple».', 'Одне нове слово за раз.'],
+      together: {name: '«Touch something red!»',
+                 steps: ['Дитина біжить і торкається червоного в кімнаті.', 'Міняйтеся: тепер дитина називає колір.']},
+      alone: 'Голос каже колір — дитина торкається плями цього кольору. Кожне третє завдання — «знайди всі» предмети цього кольору на малюнку з шести.',
+      pitfalls: [{p: 'Плутає схожі кольори (orange / yellow).', fix: 'Показувати поруч.'},
+                 {p: 'Відповідає українською.', fix: 'Це нормально: розуміння важливіше.'}]
+    }}}
+  },
+
+  A03: {
+    code: 'А03', title: 'Числа 1–10', level: 0, area: 'a',
+    hello: {t: 'Сьогодні граємо англійською.'},
+    data: {words: ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']},
+    // Спершу 1–5, потім до 10
+    tasks() {
+      const W = this.data.words, a = shuffle([1, 2, 3, 4, 5]), b = shuffle([6, 7, 8, 9, 10, 4, 5]).slice(0, 4);
+      return a.concat(b).map((n, i) => ({type: 'enCount', sk: 'A03', n, en: W[n - 1], max: i < 5 ? 5 : 10}));
+    },
+    skills: {A03: {short: 'числа 1–10', guide: {
+      title: 'А03. Числа 1–10',
+      what: 'Слова: one … ten. Лічба англійською з торканням, як у М01.',
+      visual: {type: 'enWords', lesson: 'A03', note: 'Натисніть 🔊 і лічіть разом, торкаючись крапок.'},
+      show: ['Лічіть предмети англійською, торкаючись кожного, як у М01.', 'Показуйте пальці.'],
+      together: {name: '«Show me three!»',
+                 steps: ['Лічилка англійською з оплесками.', '«Show me three!» — дитина показує пальцями.']},
+      alone: 'Голос каже число — дитина обирає групу з такою кількістю крапок (як на кубику; більше шести — у два ряди). Спершу до 5, потім до 10.',
+      pitfalls: [{p: 'Пропускає числа при лічбі.', fix: 'Лічилки щодня.'},
+                 {p: 'Плутає «three» і «tree».', fix: 'На цьому етапі не важливо: лише розуміння числа.'}]
+    }}}
+  },
+
+  A04: {
+    code: 'А04', title: 'Тварини', level: 0, area: 'a',
+    hello: {t: 'Сьогодні граємо англійською.'},
+    data: {words: [{en: 'cat', e: '🐱'}, {en: 'dog', e: '🐶'}, {en: 'fish', e: '🐟'}, {en: 'bird', e: '🐦'},
+                   {en: 'rabbit', e: '🐰'}, {en: 'cow', e: '🐮'}, {en: 'horse', e: '🐴'}, {en: 'duck', e: '🦆'}]},
+    // Спершу з трьох, потім з чотирьох
+    tasks() { return enTasks(this.data.words, 'A04', i => i > 3 ? 4 : 3); },
+    skills: {A04: {short: 'тварини', guide: {
+      title: 'А04. Тварини',
+      what: 'Слова: cat, dog, fish, bird, rabbit, cow, horse, duck.',
+      visual: {type: 'enWords', lesson: 'A04', note: 'Називайте тварину і її звук: «A cat. Meow!»'},
+      show: ['Показуйте іграшку або картинку, називайте тварину і її звук: «A cat. Meow!»'],
+      together: {name: '«What’s this?»',
+                 steps: ['Іграшки в мішечку: «What’s this?»', 'Рухатися, як тварина: «Jump like a rabbit!»']},
+      alone: 'Голос каже тварину — дитина торкається картинки з трьох-чотирьох.',
+      pitfalls: [{p: 'Повторює лише звук тварини.', fix: 'Заохочувати сказати слово, але не вимагати.'}]
+    }}}
   }
 };
 
@@ -1181,6 +1435,32 @@ const SVG = {
   smoke: '<rect x="38" y="70" width="24" height="28" fill="#9A3412"/><rect x="34" y="66" width="32" height="8" fill="#7C2D12"/>' +
          '<g fill="#98A2B3"><circle cx="50" cy="56" r="11"/><circle cx="60" cy="42" r="13"/><circle cx="48" cy="28" r="12"/><circle cx="62" cy="15" r="11"/><circle cx="40" cy="44" r="8"/></g>'
 };
+// Ф04: квадратні предмети власним малюнком
+Object.assign(SVG, {
+  waffle: '<rect x="14" y="14" width="72" height="72" rx="6" fill="#E3A857" stroke="#B7791F" stroke-width="4"/>' +
+          '<path d="M32 16 V84 M50 16 V84 M68 16 V84 M16 32 H84 M16 50 H84 M16 68 H84" stroke="#B7791F" stroke-width="4"/>',
+  cracker: '<rect x="14" y="14" width="72" height="72" rx="3" fill="#F2C879" stroke="#C99A3E" stroke-width="3"/>' +
+           '<g fill="#C99A3E"><circle cx="32" cy="32" r="3.5"/><circle cx="50" cy="32" r="3.5"/><circle cx="68" cy="32" r="3.5"/>' +
+           '<circle cx="32" cy="50" r="3.5"/><circle cx="50" cy="50" r="3.5"/><circle cx="68" cy="50" r="3.5"/>' +
+           '<circle cx="32" cy="68" r="3.5"/><circle cx="50" cy="68" r="3.5"/><circle cx="68" cy="68" r="3.5"/></g>'
+});
+/* А01: прості фігурки людини в позі — емодзі для дій двозначні. Стрілки підказують рух. */
+const MAN = (head, body) => '<path d="' + body + '" stroke="#101828" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+  '<circle cx="' + head[0] + '" cy="' + head[1] + '" r="9" fill="#101828"/>';
+const CHAIR = '<path d="M64 58 H84 M84 30 V92 M66 58 V92" stroke="#9A5B1E" stroke-width="5" stroke-linecap="round" fill="none"/>';
+const ARR = (d, c) => '<path d="' + d + '" stroke="' + (c || '#C77D2E') + '" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+Object.assign(SVG, {
+  standUp: CHAIR + MAN([40, 16], 'M40 26 V60 M40 34 L30 54 M40 34 L50 54 M40 60 L33 92 M40 60 L47 92') + ARR('M14 52 V22 M7 30 L14 21 L21 30'),
+  sitDown: CHAIR + MAN([62, 30], 'M62 40 L66 58 M62 46 L52 60 M66 58 H42 M42 58 L44 92') + ARR('M18 24 V54 M11 46 L18 55 L25 46'),
+  clap: MAN([50, 16], 'M50 26 V60 M50 34 L40 46 L48 50 M50 34 L60 46 L52 50 M50 60 L42 92 M50 60 L58 92') +
+        ARR('M34 38 Q30 46 34 54 M66 38 Q70 46 66 54 M26 34 Q20 46 26 58 M74 34 Q80 46 74 58'),
+  jump: MAN([50, 10], 'M50 20 V48 M50 26 L36 12 M50 26 L64 12 M50 48 L40 58 L44 70 M50 48 L60 58 L56 70') +
+        '<ellipse cx="50" cy="92" rx="18" ry="4" fill="#D0D5DD"/>' + ARR('M24 84 V66 M76 84 V66'),
+  stop: MAN([42, 16], 'M42 26 V60 M42 34 H72 M42 34 L34 54 M42 60 L35 92 M42 60 L49 92') +
+        '<rect x="72" y="22" width="12" height="22" rx="5" fill="#101828"/>',
+  turn: MAN([50, 16], 'M50 26 V60 M50 34 L40 54 M50 34 L60 54 M50 60 L43 92 M50 60 L57 92') +
+        ARR('M24 50 A26 10 0 1 0 50 40 M43 33 L51 40 L43 47')
+});
 const svgPic = k => '<svg class="ico" viewBox="0 0 100 100" aria-hidden="true">' + SVG[k] + '</svg>';
 const picOf = x => x.svg ? svgPic(x.svg) : x.e;
 
@@ -1210,12 +1490,22 @@ const coarse = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').mat
 
 /* ================= Голос ================= */
 const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
-let ukVoice = null;
+let ukVoice = null, enVoice = null, enSaved = null;
+/* Англійська (docs/uroky-12.md §C): ОДИН голос на пристрій — перший en-GB, інакше перший en-*.
+   Обраний запам'ятовуємо: інакше після оновлення браузера слова могли б зазвучати іншим голосом. */
+const EN_KEY = 'beregynia-uroky-en-voice';
 function findVoice() {
-  ukVoice = null;
+  ukVoice = null; enVoice = null;
   if (TTS) {
     const vs = TTS.getVoices() || [];
     ukVoice = vs.find(v => /^uk/i.test(v.lang)) || null;
+    try { enSaved = localStorage.getItem(EN_KEY) || enSaved; } catch (e) { /* лишається в пам'яті */ }
+    const en = vs.filter(v => /^en/i.test(v.lang));
+    enVoice = (enSaved && en.find(v => v.voiceURI === enSaved)) || en.find(v => /^en[-_]gb/i.test(v.lang)) || en[0] || null;
+    if (enVoice && enVoice.voiceURI !== enSaved) {
+      enSaved = enVoice.voiceURI;
+      try { localStorage.setItem(EN_KEY, enSaved); } catch (e) { /* лишається в пам'яті */ }
+    }
   }
   document.body.classList.toggle('novoice', !ukVoice);
 }
@@ -1238,6 +1528,8 @@ function voiceOk(text) {
 // Великими літерами браузер може прочитати склад як абревіатуру («ЕМ-А») — тому завжди малими
 const voiceText = p => String(p.s || p.t).toLowerCase();
 const hasSpeech = x => /[а-яіїєґ0-9]/i.test(x);
+// Фраза англійською: {en: true} — звучить англійським голосом; §0 її не стосується
+const partSpeech = p => p.en ? /[a-z0-9]/i.test(String(p.s || p.t)) : hasSpeech(voiceText(p));
 
 let speaking = false, sayTok = 0, sayTimers = [];
 // parts: масив фраз {t, s, hide, on, snd}; показуємо всі разом, вимовляємо по черзі.
@@ -1250,17 +1542,22 @@ function say(parts) {
   const tok = ++sayTok;
   sayTimers.forEach(clearTimeout); sayTimers = [];
   $('bubble').textContent = parts.filter(p => !p.hide && p.t).map(p => p.t).join(' ');
-  const secret = parts.filter(p => p.hide && hasSpeech(p.s || p.t)).map(p => p.s || p.t);
-  $('aloud').textContent = secret.length ? 'Скажіть уголос: ' + secret.join(' · ') : '';
+  const secret = parts.filter(p => p.hide && !p.en && hasSpeech(p.s || p.t)).map(p => p.s || p.t);
+  // Немає англійського голосу — слово великим для дорослого (без перекладу)
+  const enSay = enVoice ? [] : parts.filter(p => p.en).map(p => p.s || p.t);
+  $('aloud').textContent = (secret.length ? 'Скажіть уголос: ' + secret.join(' · ') : '') +
+    (enSay.length ? (secret.length ? ' · ' : '') + enSay.join(' · ') : '');
+  $('s-child').classList.toggle('noen', enSay.length > 0);
+  $('noteWhy').textContent = enSay.length ? 'немає англійського голосу — скажіть уголос англійською' : 'немає українського голосу в браузері';
   idle.reset();
   if (TTS) TTS.cancel();
   stopSounds();
   const segs = [];
-  parts.filter(p => p.snd || hasSpeech(voiceText(p)) || p.on).forEach(p => {
+  parts.filter(p => p.snd || partSpeech(p) || p.on).forEach(p => {
     const last = segs[segs.length - 1];
     if (p.snd) segs.push({snd: p});
-    else if (last && last.tts) last.tts.push(p);
-    else segs.push({tts: [p]});
+    else if (last && last.tts && last.en === !!p.en) last.tts.push(p);
+    else segs.push({tts: [p], en: !!p.en});
   });
   const talk = on => { speaking = on; $('owl').classList.toggle('talk', on); };
   const run = k => {
@@ -1268,6 +1565,7 @@ function say(parts) {
     const seg = segs[k];
     if (!seg) { if (k) { talk(false); idle.reset(); } return; }
     const next = () => run(k + 1);
+    $('enTag').hidden = !seg.en;
     if (seg.snd) {
       talk(true);
       if (seg.snd.on) seg.snd.on();
@@ -1275,9 +1573,9 @@ function say(parts) {
       playSeq(seg.snd.snd, 450).then(() => {}, () => {}).then(() => { sayTimers.push(setTimeout(next, 250)); });
       return;
     }
-    const live = seg.tts;
+    const live = seg.tts, voice = seg.en ? enVoice : ukVoice;
     // Без голосу (чужий голос читає кирилицю абракадаброю — краще мовчати) дії йдуть таймером
-    if (!ukVoice) {
+    if (!voice) {
       live.forEach((p, i) => { if (p.on) sayTimers.push(setTimeout(() => { if (tok === sayTok) p.on(); }, 300 + i * 1000)); });
       if (k < segs.length - 1) sayTimers.push(setTimeout(next, 300 + live.length * 1000));
       return;
@@ -1285,10 +1583,10 @@ function say(parts) {
     const spoken = [];
     live.forEach(p => {
       const text = voiceText(p);
-      if (!hasSpeech(text)) { if (p.on) p.on(); return; }
-      if (!voiceOk(text)) { VOICE_BLOCKED.push(text); if (p.on) p.on(); return; }
+      if (!partSpeech(p)) { if (p.on) p.on(); return; }
+      if (!seg.en && !voiceOk(text)) { VOICE_BLOCKED.push(text); if (p.on) p.on(); return; }
       const u = new SpeechSynthesisUtterance(text);
-      u.voice = ukVoice; u.lang = ukVoice.lang; u.rate = 0.9;
+      u.voice = voice; u.lang = voice.lang; u.rate = seg.en ? 0.8 : 0.9;
       u.onstart = () => { if (tok !== sayTok) return; talk(true); if (p.on) p.on(); };
       spoken.push(u);
     });
@@ -1298,7 +1596,7 @@ function say(parts) {
   };
   run(0);
 }
-function hush() { sayTok++; sayTimers.forEach(clearTimeout); sayTimers = []; if (TTS) TTS.cancel(); stopSounds(); speaking = false; $('owl').classList.remove('talk'); }
+function hush() { sayTok++; sayTimers.forEach(clearTimeout); sayTimers = []; if (TTS) TTS.cancel(); stopSounds(); speaking = false; $('owl').classList.remove('talk'); $('enTag').hidden = true; }
 
 /* ================= Звук (синтез, без файлів) ================= */
 let actx = null;
@@ -1434,6 +1732,27 @@ function today(d) {
   const p = n => (n < 10 ? '0' : '') + n;
   return x.getFullYear() + '-' + p(x.getMonth() + 1) + '-' + p(x.getDate());
 }
+/* Прохід 3 (docs/uroky-12.md §A): М03 → Ф01, М04 → Ф03. Переносимо відповіді в сесіях
+   (з них рахуються дні з ✓ і стан) і результати перевірок; старі ключі прибираємо. Один раз, тихо:
+   після першого перенесення старих ключів уже немає. */
+const MOVED = {M03: 'F01', M04: 'F03'};
+function migrate() {
+  const d = load();
+  let ch = false;
+  Object.keys(d.kids).forEach(k => {
+    const kid = d.kids[k];
+    (kid.sessions || []).forEach(x => Object.keys(MOVED).forEach(o => {
+      if (!x.ev || !(o in x.ev)) return;
+      x.ev[MOVED[o]] = (x.ev[MOVED[o]] || []).concat(x.ev[o]); delete x.ev[o]; ch = true;
+    }));
+    (kid.checks || []).forEach(c => Object.keys(MOVED).forEach(o => {
+      if (!c.items || !(o in c.items)) return;
+      if (!(MOVED[o] in c.items)) c.items[MOVED[o]] = c.items[o];
+      delete c.items[o]; ch = true;
+    }));
+  });
+  if (ch) store(d);
+}
 function getBukvar(kid) { if (!kid) return '?'; const b = kidRec(load(), kid).bukvar; return BUKVAR[b] ? b : '?'; }
 function setBukvar(kid, b) { const d = load(); kidRec(d, kid).bukvar = b; store(d); }
 // Сесія = один урок; у ній по навичках — масив «з першої спроби?»
@@ -1476,21 +1795,41 @@ function lessonState(st, id) {
   if (sks.some(x => x === 'застряг')) return 'stuck';
   return 'learn';
 }
-/* Рекомендований: рівень дитини — найнижчий рівень, де ще є незасвоєні уроки.
-   У ньому — перший за програмою, який сьогодні ще не проходили і де дитина не застрягла
-   (застряглий урок — справа дорослого: повернутися до «Робимо разом»). */
-function recommended(kid) {
-  const st = stats(kid), av = ORDER.filter(avail);
-  // Після перевірки: спершу урок, з якого вона радить почати; уроки, де вона дала 2 з 2, — уже вміє
-  const last = lastCheck(kid), x = last && checkStart(last);
-  if (x && avail(x) && ['ok', 'stuck'].indexOf(lessonState(st, x)) < 0 && !st._today.has(x)) return x;
+/* Чотири лінії (docs/uroky-12.md §D). sk — перша літера коду навички. */
+const LINES = [{id: 'g', sk: 'G', name: 'Грамота'}, {id: 'm', sk: 'M', name: 'Математика'},
+               {id: 'f', sk: 'F', name: 'Геометрія'}, {id: 'a', sk: 'A', name: 'Англійська'}];
+const lineIds = area => ORDER.filter(id => LESSONS[id].area === area);
+/* Рекомендований урок у лінії: спершу той, з якого радить почати перевірка; далі — перший
+   за програмою незасвоєний на найнижчому рівні, де дитина не застрягла (застряглий — справа
+   дорослого: повернутися до «Робимо разом»). anyDay — дозволити й урок, пройдений сьогодні. */
+function lineRec(kid, area, anyDay, st) {
+  st = st || stats(kid);
+  const last = lastCheck(kid), fresh = id => anyDay || !st._today.has(id);
   const passed = id => !!last && Object.keys(LESSONS[id].skills).every(sk => last.items[sk] && sum(last.items[sk]) === 2);
-  const open = av.filter(id => lessonState(st, id) !== 'ok' && !passed(id));
-  if (!open.length) return av[0];
-  const lvl = Math.min.apply(null, open.map(id => LESSONS[id].level));
-  const mine = open.filter(id => LESSONS[id].level === lvl);
-  const free = mine.filter(id => lessonState(st, id) !== 'stuck');
-  return free.filter(id => !st._today.has(id))[0] || free[0] || mine[0];
+  const x = last && checkStart(last, area);
+  if (x && avail(x) && ['ok', 'stuck'].indexOf(lessonState(st, x)) < 0 && fresh(x)) return x;
+  const open = lineIds(area).filter(id => avail(id) && lessonState(st, id) !== 'ok' && !passed(id));
+  const free = open.filter(id => lessonState(st, id) !== 'stuck' && fresh(id));
+  if (!free.length) return null;
+  const lvl = Math.min.apply(null, free.map(id => LESSONS[id].level));
+  return free.find(id => LESSONS[id].level === lvl);
+}
+/* Рекомендований: лінії по колу Г → М → Ф → А, починаючи з наступної після тієї, де було останнє
+   заняття. Так правило «2 різні дні» працює в кількох лініях паралельно, а дитині — різноманіття.
+   Лінія, де все засвоєно чи нічого не доступно, — пропускається. */
+function recommended(kid) {
+  const st = stats(kid), d = load();
+  const ss = (d.kids[kid] && d.kids[kid].sessions) || [];
+  const lastL = ss.length && LESSONS[ss[ss.length - 1].l];
+  const k0 = lastL ? (LINES.findIndex(L => L.id === lastL.area) + 1) % LINES.length : 0;
+  for (const anyDay of [false, true]) {
+    for (let k = 0; k < LINES.length; k++) {
+      const r = lineRec(kid, LINES[(k0 + k) % LINES.length].id, anyDay, st);
+      if (r) return r;
+    }
+  }
+  const av = ORDER.filter(avail);
+  return av.find(id => lessonState(st, id) !== 'ok') || av[0];
 }
 
 /* ================= Простій: інструкція звучить знову ================= */
@@ -1511,7 +1850,7 @@ const idle = {
 document.addEventListener('pointerdown', () => idle.fresh(), true);
 
 /* ================= Перебіг заняття ================= */
-const G = {kid: null, lesson: null, sid: null, stage: null, instr: null, tasks: [], i: 0, task: null, errors: 0, lock: false, stars: 0, trial: null, check: null};
+const G = {kid: null, lesson: null, sid: null, stage: null, instr: null, tasks: [], i: 0, task: null, errors: 0, lock: false, stars: 0, trial: null, check: null, shut: {}};
 
 function show(stage) {
   G.stage = stage;
@@ -1679,6 +2018,150 @@ function shapeSvg(id, rot, sc, color) {
 }
 const schemeHtml = sch => '<span class="sch">' + sch.split('').map(c => '<i class="' + (c === 'o' ? 'so' : c === '=' ? 'ss' : 'sh') + '"></i>').join('') + '</span>';
 const COLORS = ['#C77D2E', '#3D7EA6', '#2F6F4E', '#B42318', '#7A5AF8'];
+/* ---- Геометрія ---- */
+// Ф01: фігура в різному вигляді. look: plain, rot, small, thin, right, stand — правильні;
+// near — «майже» фігура: у контурах незамкнена, у заливці — із заокругленим кутом (круг — овал)
+const FIG = {
+  circle: {plain: 'M40 0 A40 40 0 1 1 -40 0 A40 40 0 1 1 40 0 Z', near: 'M44 0 A44 24 0 1 1 -44 0 A44 24 0 1 1 44 0 Z', open: 'M34.6 -20 A40 40 0 1 1 0 -40'},
+  square: {plain: 'M-34 -34 L34 -34 L34 34 L-34 34 Z', near: 'M-34 -34 L6 -34 Q34 -34 34 -6 L34 34 L-34 34 Z', open: 'M-34 0 L-34 -34 L34 -34 L34 34 L-34 34'},
+  triangle: {plain: 'M0 -42 L42 32 L-42 32 Z', thin: 'M0 -46 L15 40 L-15 40 Z', right: 'M-34 -38 L-34 36 L40 36 Z',
+             near: 'M-12 -21 Q0 -42 12 -21 L42 32 L-42 32 Z', open: 'M-14.7 -16.1 L0 -42 L42 32 L-42 32 L-27.3 6.1'},
+  rect: {plain: 'M-44 -22 L44 -22 L44 22 L-44 22 Z', thin: 'M-46 -12 L46 -12 L46 12 L-46 12 Z',
+         near: 'M-44 -22 L22 -22 Q44 -22 44 0 L44 22 L-44 22 Z', open: 'M-44 0 L-44 -22 L44 -22 L44 22 L-44 22'}
+};
+function figSvg(id, look, color, outline) {
+  const F = FIG[id], sg = () => Math.random() < 0.5 ? -1 : 1, rnd = (a, b) => a + Math.random() * (b - a);
+  let d = F[look] || F.plain, rot = 0, sc = 0.9;
+  if (look === 'near') d = outline ? F.open : F.near;
+  // Квадрат повертаємо несильно: на 45° діти бачать «ромб», а це вже інша фігура
+  if (look === 'rot') rot = id === 'square' ? sg() * rnd(10, 25) : id === 'rect' ? sg() * rnd(15, 35) : rnd(25, 155);
+  if (look === 'thin' || look === 'right') rot = id === 'triangle' && look === 'right' ? pick([0, 90, 180, 270]) + sg() * rnd(0, 15) : sg() * rnd(0, 20);
+  if (look === 'stand') rot = 90;
+  if (look === 'small') { sc = 0.5; rot = id === 'triangle' ? rnd(0, 360) : 0; }
+  const paint = outline ? 'fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"' : 'fill="' + color + '"';
+  return '<svg viewBox="0 0 100 100" aria-hidden="true"><g transform="translate(50 50) rotate(' + rot.toFixed(0) + ') scale(' + sc + ')"><path d="' + d + '" ' + paint + '/></g></svg>';
+}
+// Ф02: [порівняльний, найвищий ступінь] — відповідь завжди перший предмет (найбільший)
+const SIZE_WORDS = {long: ['довшої стрічки', 'найдовшої стрічки'], tall: ['вищої вежі', 'найвищої вежі'], wide: ['ширшої доріжки', 'найширшої доріжки']};
+function sizeItems(task) {
+  const n = task.n, cols = shuffle(['#D92D20', '#3D7EA6', '#2F6F4E', '#C77D2E', '#7A5AF8']);
+  if (task.kind === 'long') {
+    const L = n === 2 ? [200, 140] : [200, 155, 110];
+    // Хитрість: коротша стрічка зсунута й «стирчить» правіше за довшу
+    const X = !task.trick ? L.map(() => 10) : n === 2 ? [10, 115] : [10, 125, 40];
+    return L.map((l, i) => ({svg: '<svg viewBox="0 0 300 40" aria-hidden="true"><rect x="' + X[i] + '" y="9" width="' + l + '" height="22" rx="5" fill="' + cols[i] + '"/></svg>'}));
+  }
+  if (task.kind === 'tall') {
+    const H = n === 2 ? [180, 125] : [180, 140, 100];
+    // Хитрість: нижча вежа стоїть на підставці, і її верх вищий
+    const P = H.map((h, i) => task.trick && i === 1 ? H[0] - h + 30 : 0);
+    return H.map((h, i) => {
+      const y = 236 - P[i] - h;
+      let g = '<rect x="12" y="' + y + '" width="36" height="' + h + '" fill="' + cols[i] + '"/>' +
+        '<path d="M12 ' + y + ' v-10 h8 v10 h6 v-10 h8 v10 h6 v-10 h8 v10" fill="' + cols[i] + '"/>';
+      if (P[i]) g += '<rect x="4" y="' + (236 - P[i]) + '" width="52" height="' + P[i] + '" fill="#D0D5DD" stroke="#98A2B3" stroke-width="2"/>';
+      return {svg: '<svg viewBox="0 0 60 240" preserveAspectRatio="xMidYMax meet" aria-hidden="true">' + g + '<path d="M0 237 H60" stroke="#98A2B3" stroke-width="2"/></svg>'};
+    });
+  }
+  const Wd = n === 2 ? [40, 18] : [42, 27, 12];
+  // Хитрість: найширша доріжка коротша за решту
+  return Wd.map((w, i) => {
+    const x0 = task.trick && i === 0 ? 70 : 10, x1 = task.trick && i === 0 ? 230 : 290;
+    return {svg: '<svg viewBox="0 0 300 46" aria-hidden="true"><rect x="' + x0 + '" y="' + (23 - w / 2) + '" width="' + (x1 - x0) + '" height="' + w + '" fill="#98A2B3"/>' +
+      '<path d="M' + (x0 + 6) + ' 23 H' + (x1 - 6) + '" stroke="#fff" stroke-width="2" stroke-dasharray="10 8"/></svg>'};
+  });
+}
+// Ф03: дві сцени; координати місць — у відсотках від сцени
+const PLACE_SCENES = {
+  table: {svg: '<rect x="0" y="200" width="420" height="20" fill="#E8D8C0"/>' +
+      '<rect x="30" y="100" width="160" height="14" rx="4" fill="#9A5B1E"/><rect x="42" y="114" width="12" height="86" fill="#9A5B1E"/><rect x="166" y="114" width="12" height="86" fill="#9A5B1E"/>' +
+      '<path d="M285 200 L278 150 L342 150 L335 200 Z" fill="#C77D2E"/><path d="M286 150 Q310 108 334 150" stroke="#9A5B1E" stroke-width="6" fill="none"/>' +
+      '<path d="M282 165 L338 165 M284 182 L336 182" stroke="#9A5B1E" stroke-width="3"/>',
+    z: {on: [26.2, 31.8], under: [26.2, 72.7], left: [58.3, 79.5], right: [90.2, 79.5]}},
+  shelf: {svg: '<rect x="40" y="4" width="340" height="212" rx="6" fill="#F3E6D2" stroke="#9A5B1E" stroke-width="6"/>' +
+      '<rect x="40" y="70" width="340" height="8" fill="#9A5B1E"/><rect x="40" y="144" width="340" height="8" fill="#9A5B1E"/>' +
+      '<rect x="110" y="100" width="44" height="44" rx="4" fill="#3D7EA6"/><rect x="266" y="100" width="44" height="44" rx="4" fill="#2F6F4E"/>',
+    z: {top: [50, 17.7], between: [50, 51.4], end: [83, 51.4], bottom: [50, 84.5]}, w: 14}
+};
+/* Ф05: деталі в одиницях клітинки, центр — середина обрису в початковому повороті */
+const PIECES = {
+  sq: {pts: [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]], sym: 90, w: 1},
+  tri: {pts: [[-.5, -.5], [-.5, .5], [.5, .5]], sym: 360, w: 1},
+  rect: {pts: [[-1, -.5], [1, -.5], [1, .5], [-1, .5]], sym: 180, w: 2},
+  rtri: {pts: [[-1, -.5], [-1, .5], [1, .5]], sym: 360, w: 2}
+};
+function piecePath(p, x, y, r, U) {
+  const a = r * Math.PI / 180, c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a));
+  return 'M' + PIECES[p].pts.map(q => ((x + q[0] * c - q[1] * s) * U).toFixed(1) + ' ' + ((y + q[0] * s + q[1] * c) * U).toFixed(1)).join(' L') + ' Z';
+}
+/* Розмір клітинки під вільне місце: силует і деталі мають уміститися без прокрутки
+   (дитячий екран не прокручується). Силует і лоток поруч, якщо вміщаються в ширину, інакше одне під одним.
+   Запаси — рамки, відступи кнопок і кнопка ↻ (84 px). */
+function fitU(z, W, H) {
+  const pw = z.slots.map(sl => PIECES[sl.p].w);
+  for (let u = 130; u > 36; u -= 2) {
+    const silW = z.w * u + 46, silH = z.h * u + 46;
+    const items = pw.map(w => w * u + 44).concat([84]);
+    const rows = width => {
+      let tot = 0, cur = 0, hh = 0;
+      items.forEach(x => { if (cur && cur + x > width) { tot += hh; cur = 0; hh = 0; } cur += x; hh = Math.max(hh, x); });
+      return tot + hh;
+    };
+    const row = items.reduce((a, b) => a + b, 0);
+    if (silW + row <= W && Math.max(silH, rows(W)) <= H - 10) return u;
+    if (silW <= W && silH + rows(W) <= H - 10) return u;
+  }
+  return 36;
+}
+const rotFits = (pc, sl) => pc.p === sl.p && ((pc.r - sl.r) % PIECES[sl.p].sym + 360) % PIECES[sl.p].sym === 0;
+// Деталі — по одній на місце, у випадковому повороті. Хоч одна деталь, якій поворот важливий, стоїть не так:
+// інакше задачу можна скласти, не торкаючись ↻
+function composePieces(z) {
+  const cols = shuffle(['#3D7EA6', '#C77D2E', '#2F6F4E', '#7A5AF8']);
+  const ps = shuffle(z.slots.map((sl, i) => ({p: sl.p, r: pick([0, 90, 180, 270]), c: cols[i]})));
+  const fitsSome = pc => z.slots.some(sl => rotFits(pc, sl));
+  const need = ps.filter(pc => PIECES[pc.p].sym < 360 ? PIECES[pc.p].sym > 90 : true);
+  if (need.length && need.every(fitsSome)) {
+    const pc = need[0];
+    for (let k = 0; k < 4 && fitsSome(pc); k++) pc.r = (pc.r + 90) % 360;
+  }
+  return ps;
+}
+
+/* ---- Англійська ---- */
+const enWord = w => ({t: '', s: w, en: true, hide: true});
+// 9 завдань: кожне слово хоч раз, сусідні — різні; k(i) — скільки варіантів у i-му.
+// first — номери слів, з яких почати (протилежні команди в А01): у перших двох завданнях обидва поруч
+function enTasks(W, sk, k, first) {
+  const kk = typeof k === 'function' ? k : () => k;
+  let seq, n = 0;
+  do { seq = shuffle(W).concat(shuffle(W)).slice(0, 9); n++; } while (n < 200 && seq.some((x, i) => i && x === seq[i - 1]));
+  if (first) { const a = W[first[0]], b = W[first[1]]; seq = [a, b].concat(seq.filter(x => x !== a && x !== b)).slice(0, 9); while (seq.length < 9) seq.push(pick(W)); }
+  return seq.map((r, i) => {
+    const pool = first && i < 2 ? [W[first[0]], W[first[1]]].filter(x => x !== r) : [];
+    const others = pool.concat(shuffle(W.filter(x => x !== r && pool.indexOf(x) < 0))).slice(0, kk(i) - 1);
+    return {type: 'enPick', sk, r, opts: [r].concat(others)};
+  });
+}
+const BLOB = 'M50 8 C72 6 92 24 90 46 C88 70 72 92 48 90 C24 88 8 72 10 48 C12 26 28 10 50 8 Z';
+function enPic(w) {
+  if (w.svg) return '<svg viewBox="0 0 100 100" aria-hidden="true">' + SVG[w.svg] + '</svg>';
+  if (w.c) return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="' + BLOB + '" fill="' + w.c + '" stroke="#98A2B3" stroke-width="2"/></svg>';
+  return '<span class="emo">' + w.e + '</span>';
+}
+// А02: предмети для «знайди всі» — одна форма, будь-який колір
+const THINGS = {
+  heart: c => '<path d="M50 86 C20 64 8 46 18 30 C28 14 46 20 50 34 C54 20 72 14 82 30 C92 46 80 64 50 86 Z" fill="' + c + '" stroke="#475467" stroke-width="2"/>',
+  star: c => '<path d="M50 10 L61 38 L91 38 L67 56 L76 86 L50 68 L24 86 L33 56 L9 38 L39 38 Z" fill="' + c + '" stroke="#475467" stroke-width="2" stroke-linejoin="round"/>',
+  ball: c => '<circle cx="50" cy="52" r="34" fill="' + c + '" stroke="#475467" stroke-width="2"/><path d="M22 40 Q50 58 78 40" stroke="#475467" stroke-width="2" fill="none"/>',
+  balloon: c => '<ellipse cx="50" cy="40" rx="26" ry="30" fill="' + c + '" stroke="#475467" stroke-width="2"/><path d="M50 70 Q42 82 52 94" stroke="#475467" stroke-width="2" fill="none"/>',
+  flower: c => '<g fill="' + c + '" stroke="#475467" stroke-width="2"><circle cx="50" cy="28" r="15"/><circle cx="71" cy="44" r="15"/><circle cx="63" cy="69" r="15"/><circle cx="37" cy="69" r="15"/><circle cx="29" cy="44" r="15"/></g><circle cx="50" cy="51" r="10" fill="#FDE68A" stroke="#475467" stroke-width="2"/>',
+  block: c => '<rect x="20" y="20" width="60" height="60" rx="6" fill="' + c + '" stroke="#475467" stroke-width="2"/><rect x="32" y="32" width="36" height="36" rx="3" fill="none" stroke="#475467" stroke-width="2"/>'
+};
+// А03: до 6 — як на кубику, далі — у два ряди по п'ять
+const dots10 = n => n <= 6 ? dice(n) : '<span class="dice ten">' + Array.apply(null, Array(n)).map((_, k) =>
+  '<i style="left:' + (12 + (k % 5) * 19) + '%;top:' + (k < 5 ? 34 : 66) + '%"></i>').join('') + '</span>';
+
 
 const TYPES = {
   // Г01: скільки слів — картки з кружечками
@@ -1823,31 +2306,142 @@ const TYPES = {
              {ok: task.a === task.b, html: '<span class="eq">=</span>', title: 'порівну'}], true);
     ui.ask([{t: 'Чого більше: ' + task.set.q + '? Чи порівну?'}]);
   },
-  // М03: фігура серед повернутих і різних за розміром
-  shape(task, ui) {
-    const all = LESSONS.MX.data.shapes, cols = shuffle(COLORS);
-    ui.opts(shuffle(all).map((s, i) => {
-      // Квадрат повертаємо несильно: на 45° діти бачать «ромб», а це вже інша фігура
-      const rot = s.id === 'circle' ? 0 : (Math.random() < 0.5 ? -1 : 1) * (s.id === 'square' ? 10 + Math.random() * 15 : 15 + Math.random() * 35);
-      return {ok: s.id === task.s.id, html: shapeSvg(s.id, rot.toFixed(0), (0.55 + Math.random() * 0.4).toFixed(2), cols[i])};
-    }));
-    ui.ask([{t: 'Знайди ' + task.s.name + '.'}]);
-  },
-  // М04: торкнутися місця, куди поставити м'ячик
+  // Ф03: торкнутися місця, куди поставити м'ячик. Дві сцени: стіл і кошик (на, під, ліворуч, праворуч)
+  // і шафа з кубиками (вгорі, внизу, між)
   place(task, ui) {
-    const Z = {on: [26.2, 31.8], under: [26.2, 72.7], left: [58.3, 79.5], right: [90.2, 79.5]};
-    let html = '<div class="scene"><svg viewBox="0 0 420 220" aria-hidden="true">' +
-      '<rect x="0" y="200" width="420" height="20" fill="#E8D8C0"/>' +
-      '<rect x="30" y="100" width="160" height="14" rx="4" fill="#9A5B1E"/><rect x="42" y="114" width="12" height="86" fill="#9A5B1E"/><rect x="166" y="114" width="12" height="86" fill="#9A5B1E"/>' +
-      '<path d="M285 200 L278 150 L342 150 L335 200 Z" fill="#C77D2E"/><path d="M286 150 Q310 108 334 150" stroke="#9A5B1E" stroke-width="6" fill="none"/>' +
-      '<path d="M282 165 L338 165 M284 182 L336 182" stroke="#9A5B1E" stroke-width="3"/></svg>';
-    Object.keys(Z).forEach(k => { html += '<button class="zone" data-z="' + k + '" style="left:' + Z[k][0] + '%;top:' + Z[k][1] + '%"><span></span></button>'; });
+    const S = PLACE_SCENES[task.p.s];
+    let html = '<div class="scene"><svg viewBox="0 0 420 220" aria-hidden="true">' + S.svg + '</svg>';
+    Object.keys(S.z).forEach(k => { html += '<button class="zone" data-z="' + k + '" style="left:' + S.z[k][0] + '%;top:' + S.z[k][1] + '%' + (S.w ? ';width:' + S.w + '%' : '') + '"><span></span></button>'; });
     const s = ui.stage(html + '</div>');
     const zs = s.querySelectorAll('.zone');
     for (let i = 0; i < zs.length; i++) ui.bind(zs[i], zs[i].getAttribute('data-z') === task.p.id);
     ui.pic('⚽');
     task.done = el => { el.querySelector('span').textContent = '⚽'; $('pic').textContent = ''; };
     ui.ask([{t: task.p.t}]);
+  },
+  // Ф01: фігура серед повернутих, витягнутих, малих і «майже» фігур
+  figure(task, ui) {
+    const D = LESSONS.F01.data, cols = shuffle(COLORS);
+    const others = shuffle(Object.keys(D.names).filter(x => x !== task.id)).slice(0, 2);
+    const list = [{id: task.id, look: task.look, ok: true}, {id: task.id, look: 'near'}]
+      .concat(others.map(id => ({id, look: pick(D.looks[id])})));
+    ui.opts(list.map((x, i) => ({ok: !!x.ok, html: figSvg(x.id, x.look, cols[i], task.outline)})));
+    ui.ask([{t: 'Знайди ' + D.names[task.id] + '.'}]);
+  },
+  // Ф02: дві-три стрічки, вежі чи доріжки — кожна окремою кнопкою
+  size(task, ui) {
+    const W = SIZE_WORDS[task.kind], items = sizeItems(task);
+    const col = task.kind !== 'tall';
+    const s = ui.stage('<div class="' + (col ? 'size-col' : 'size-row') + '">' +
+      shuffle(items).map((x, i) => '<button class="pick" data-i="' + items.indexOf(x) + '">' + x.svg + '</button>').join('') + '</div>');
+    const bs = s.querySelectorAll('.pick');
+    for (let i = 0; i < bs.length; i++) ui.bind(bs[i], bs[i].getAttribute('data-i') === '0');
+    ui.ask([{t: 'Торкнися ' + (task.n === 3 ? W[1] : W[0]) + '.'}]);
+  },
+  // Ф04: предмет — на яку фігуру схожий
+  shapeOf(task, ui) {
+    const x = task.x;
+    ui.pic(x.svg ? '<svg viewBox="0 0 100 100" style="width:1.3em;height:1.3em" aria-hidden="true">' + SVG[x.svg] + '</svg>' : x.e);
+    const others = shuffle(['circle', 'square', 'triangle', 'rect'].filter(f => f !== x.f)).slice(0, 2);
+    ui.opts([x.f].concat(others).map(f => ({ok: f === x.f, html: shapeSvg(f, f === 'rect' && x.stand ? 90 : 0, 0.85, '#6941C6')})));
+    ui.ask([{t: 'На яку фігуру схоже?'}]);
+  },
+  // Ф05: силует і деталі. Торкнутися деталі, потім місця; ↻ повертає вибрану на 90°.
+  // Зараховується, коли всі місця зайняті деталями правильної форми в правильному повороті.
+  compose(task, ui) {
+    const z = task.z, U = 80;
+    if (!task.pieces) task.pieces = composePieces(z);
+    const st = {sel: -1, at: z.slots.map(() => -1)};  // at[місце] = номер деталі
+    task.st = st;
+    const vb = (w, h) => 'viewBox="-6 -6 ' + (w * U + 12) + ' ' + (h * U + 12) + '" style="width:calc(var(--u) * ' + w + ' + 12px);height:calc(var(--u) * ' + h + ' + 12px)"';
+    const m = document.querySelector('#s-child .main');
+    const s = ui.stage('<div class="compose" style="--u:' + fitU(z, m.clientWidth, m.clientHeight) + 'px">' +
+      '<div class="sil" id="sil"><svg ' + vb(z.w, z.h) + ' aria-hidden="true"></svg></div><div class="tray" id="tray"></div></div>');
+    const sil = s.querySelector('#sil');
+    sil.setAttribute('data-ok', '1');  // підказка після двох помилок — контури деталей у силуеті
+    const draw = () => {
+      let g = '<path d="M' + z.out.map(p => p[0] * U + ' ' + p[1] * U).join(' L') + ' Z" fill="#EAECF0" stroke="#475467" stroke-width="5" stroke-linejoin="round"/>';
+      z.slots.forEach((sl, i) => {
+        const pc = st.at[i] >= 0 ? task.pieces[st.at[i]] : null;
+        if (pc) g += '<path d="' + piecePath(pc.p, sl.x, sl.y, pc.r, U) + '" fill="' + pc.c + '" stroke="#fff" stroke-width="3"/>';
+      });
+      z.slots.forEach((sl, i) => {
+        const d = piecePath(sl.p, sl.x, sl.y, sl.r, U);
+        g += '<path class="seam" d="' + d + '"/><path class="slot" data-slot="' + i + '" d="' + d + '"/>';
+      });
+      sil.firstChild.innerHTML = g;
+      $('tray').innerHTML = task.pieces.map((pc, i) => st.at.indexOf(i) >= 0 ? '' :
+        '<button class="piece' + (i === st.sel ? ' sel' : '') + '" data-piece="' + i + '"><svg ' + vb(PIECES[pc.p].w, PIECES[pc.p].w) + ' aria-hidden="true">' +
+        '<path d="' + piecePath(pc.p, PIECES[pc.p].w / 2, PIECES[pc.p].w / 2, pc.r, U) + '" fill="' + pc.c + '"/></svg></button>').join('') +
+        '<button class="rot-btn" id="rotBtn" title="Повернути"' + (st.sel < 0 ? ' disabled' : '') + '>↻</button>';
+    };
+    draw();
+    const live = () => G.task === task && !G.lock && G.stage === 'task';
+    $('tray').addEventListener('click', e => {
+      if (!live()) return;
+      if (e.target.closest('#rotBtn')) {
+        if (st.sel < 0) return;
+        const pc = task.pieces[st.sel]; pc.r = (pc.r + 90) % 360; blip(); return draw();
+      }
+      const b = e.target.closest('[data-piece]'); if (!b) return;
+      const i = +b.getAttribute('data-piece');
+      st.sel = st.sel === i ? -1 : i; blip(); draw();
+    });
+    sil.addEventListener('click', e => {
+      const t = e.target.closest('[data-slot]'); if (!t || !live()) return;
+      const k = +t.getAttribute('data-slot');
+      // Торкнулися зайнятого місця без вибраної деталі — деталь повертається збоку
+      if (st.sel < 0) { if (st.at[k] >= 0) { st.at[k] = -1; blip(); draw(); } return; }
+      const pc = task.pieces[st.sel];
+      if (pc.p !== z.slots[k].p) return answer(sil, false);  // не та форма
+      st.at[k] = st.sel; st.sel = -1; blip(); draw();
+      if (st.at.some(x => x < 0)) return;
+      const wrong = z.slots.map((sl, j) => j).filter(j => !rotFits(task.pieces[st.at[j]], z.slots[j]));
+      if (!wrong.length) return answer(sil, true);
+      // Повернуто не так — не зараховуємо; хибні деталі за мить повертаються збоку
+      answer(sil, false);
+      setTimeout(() => { if (G.task !== task) return; wrong.forEach(j => { st.at[j] = -1; }); draw(); }, 700);
+    });
+    ui.ask([{t: 'Торкнися деталі, потім місця.'}, {t: 'Стрілка повертає деталь.'}]);
+  },
+  // А01, А02, А04: англійське слово — картинка, пляма кольору чи тварина
+  enPick(task, ui) {
+    ui.pic('👂');
+    ui.opts(task.opts.map(w => ({ok: w === task.r, cls: w.c ? 'spot' : '', html: enPic(w)})));
+    task.praise = enWord(task.r.en);
+    ui.ask([{t: 'Послухай і торкнися.'}, enWord(task.r.en)]);
+  },
+  // А02: «знайди всі red» — шість предметів, торкнутися всіх цього кольору
+  enAll(task, ui) {
+    const W = LESSONS.A02.data.words, r = task.r;
+    if (!task.items) {
+      const n = 2 + Math.floor(Math.random() * 2), other = shuffle(W.filter(w => w !== r));
+      const forms = shuffle(Object.keys(THINGS));
+      task.items = shuffle(forms.map((f, i) => ({f, w: i < n ? r : other[i - n]})));
+    }
+    const s = ui.stage('<div class="finder">' + task.items.map((x, i) => '<button class="pick" data-i="' + i + '"><svg viewBox="0 0 100 100" aria-hidden="true">' +
+      THINGS[x.f](x.w.c) + '</svg></button>').join('') + '</div>');
+    const bs = s.querySelectorAll('.pick');
+    let left = task.items.filter(x => x.w === r).length;
+    for (let i = 0; i < bs.length; i++) {
+      const b = bs[i], hit = task.items[i].w === r;
+      if (hit) b.setAttribute('data-ok', '1');
+      b.addEventListener('click', () => {
+        if (G.lock || G.task !== task || b.classList.contains('got')) return;
+        if (!hit) return answer(b, false);
+        if (--left === 0) return answer(b, true);
+        b.classList.add('got'); b.removeAttribute('data-ok'); b.classList.remove('hint'); blip();
+      });
+    }
+    task.praise = enWord(r.en);
+    ui.ask([{t: 'Послухай і торкнися всіх.'}, enWord(r.en)]);
+  },
+  // А03: англійське число — група крапок
+  enCount(task, ui) {
+    ui.pic('👂');
+    ui.opts(near3(task.n, 1, task.max).map(n => ({ok: n === task.n, html: dots10(n)})));
+    task.praise = enWord(task.en);
+    ui.ask([{t: 'Послухай і торкнися.'}, enWord(task.en)]);
   },
   // М05: крапки — цифра
   dotsDigit(task, ui) {
@@ -1879,11 +2473,11 @@ function toList() {
 function lessonCard(id, st, rec) {
   const L = LESSONS[id], s = lessonState(st, id), miss = missing(id);
   // Немає записів — вчитель бачить урок сірим (можна читати підготовку), заняття не стартує
-  if (miss.length) return '<button class="lesson wait' + (L.area === 'm' ? ' m' : '') + '" data-lesson="' + id + '">' +
+  if (miss.length) return '<button class="lesson wait ' + L.area + '" data-lesson="' + id + '">' +
     '<span class="code">' + esc(L.code) + '</span><span class="nm">' + esc(L.title) +
     '<span class="wn">' + (SND_DONE ? 'Чекає на записи звуків: ' + esc(miss.map(sndName).join(', ')) : 'Шукаю записи звуків…') + '</span></span>' +
     '<span class="stt">🔇</span></button>';
-  return '<button class="lesson' + (L.area === 'm' ? ' m' : '') + (id === rec ? ' rec' : '') + '" data-lesson="' + id + '">' +
+  return '<button class="lesson ' + L.area + (id === rec ? ' rec' : '') + '" data-lesson="' + id + '">' +
     '<span class="code">' + esc(L.code) + '</span><span class="nm">' + esc(L.title) +
     (id === rec ? ' <span class="rec-badge">Рекомендований</span>' : '') + '</span>' +
     '<span class="stt ' + s + '">' + ST[s][0] + ' ' + ST[s][1] + '</span></button>';
@@ -1898,16 +2492,23 @@ function renderList() {
   $('listKid').textContent = KIDS[kid];
   $('listRole').textContent = mama ? '· мама' : '· вчитель';
   const cards = ids => '<div class="lessons">' + ids.map(id => lessonCard(id, st, rec)).join('') + '</div>';
+  // Чотири розділи, кожен згортається; згорнуте пам'ятаємо, поки сторінка відкрита
+  const lines = keep => LINES.map(L => {
+    const ids = lineIds(L.id).filter(keep), ok = ids.filter(id => lessonState(st, id) === 'ok').length;
+    return ids.length ? '<details class="line" data-line="' + L.id + '"' + (G.shut[L.id] ? '' : ' open') + '><summary>' + esc(L.name) +
+      '<span class="muted">засвоєно ' + ok + ' з ' + ids.length + '</span></summary>' + cards(ids) + '</details>' : '';
+  }).join('');
   let h = '';
   if (mama) {
     // Мама уроків без записів не бачить зовсім
     h += checkBlock(kid) + '<button class="rec-go" data-lesson="' + rec + '">▶ Почати рекомендований урок<small>' +
       esc(LESSONS[rec].code + ' · ' + LESSONS[rec].title) + '</small></button>' +
-      '<details class="more"><summary>Інші уроки</summary>' + cards(ORDER.filter(avail)) + '</details>';
+      '<details class="more"><summary>Інші уроки</summary>' + lines(avail) + '</details>';
   } else {
-    h += '<h2>Уроки</h2>' + checkBlock(kid) + '<p class="lead">Рекомендований — перший незасвоєний урок рівня дитини, який сьогодні ще не проходили' +
-      (lastCheck(kid) ? ' (після перевірки — урок, з якого вона радить почати)' : '') + '. ' +
-      'Перед першим заняттям уроку на цьому пристрої відкриється підготовка до нього. Сірі уроки чекають на записи звуків зі студії.</p>' + cards(ORDER);
+    h += '<h2>Уроки</h2>' + checkBlock(kid) + '<p class="lead">Рекомендований урок чергує лінії по колу: грамота → математика → геометрія → англійська. ' +
+      'У лінії — перший незасвоєний урок рівня дитини, який сьогодні ще не проходили' +
+      (lastCheck(kid) ? ' (після перевірки — урок, з якого вона радить почати в цій лінії)' : '') + '. ' +
+      'Перед першим заняттям уроку на цьому пристрої відкриється підготовка до нього. Сірі уроки чекають на записи звуків зі студії.</p>' + lines(() => true);
   }
   h += '<div class="setting"><b>Буквар дитини</b>' + bukvarSeg(kid) +
     '<p class="muted">Впливає на порядок голосних у Г08. Склади й слова (Г11, Г12) — лише з букв, що в обох букварях ідуть рано: м, л, н, с, к.</p></div>';
@@ -1921,6 +2522,11 @@ $('s-list').addEventListener('click', e => {
   else if (id) openLesson(id);
   else if (bk) { setBukvar(G.kid, bk); renderList(); }
 });
+// toggle не спливає — ловимо на зануренні
+$('listBody').addEventListener('toggle', e => {
+  const l = e.target.getAttribute && e.target.getAttribute('data-line');
+  if (l) G.shut[l] = !e.target.open;
+}, true);
 $('listBack').addEventListener('click', () => toWho());
 $('listGear').addEventListener('click', () => $('gear').click());
 
@@ -1928,18 +2534,18 @@ $('listGear').addEventListener('click', () => $('gear').click());
    Орієнтир для дорослого, не тест: по 2 завдання на навичку тими самими механіками,
    без відгуку. Пишеться окремо від сесій: kids[kid].checks = [{date, kind, items: {G01: [1, 0], M05: null}}],
    null — навичку пропущено за правилом зупинки. У засвоєння не йде. */
-const CHECK_ORDER = ['G01', 'G02', 'G03', 'G04', 'G08', 'G09', 'G11', 'M01', 'M02', 'M05', 'M06'];
+const CHECK_ORDER = ['G01', 'G02', 'G03', 'G04', 'G08', 'G09', 'G11', 'M01', 'M02', 'M05', 'M06', 'F01', 'F03', 'A04'];
 const CHECK_HELLO = {t: 'Сьогодні пограємо у різні ігри.'};
 const sum = a => a.reduce((x, y) => x + y, 0);
-const lineOf = sk => sk.charAt(0);  // G — грамота, M — математика
+const lineOf = sk => sk.charAt(0);  // G грамота, M математика, F геометрія, A англійська
 const fmtDate = d => d.split('-').reverse().join('.');
 // Звукові навички — лише якщо їхні записи вже є
 const checkPlan = () => CHECK_ORDER.filter(sk => avail(SKILL[sk].lesson));
 function checksOf(kid) { const k = load().kids[kid]; return (k && k.checks) || []; }
 function lastCheck(kid) { const c = checksOf(kid); return c[c.length - 1] || null; }
-// Почати з першого уроку, де менше ніж 2 з 2 (пропущене — теж менше)
-function checkStart(c) {
-  const sk = CHECK_ORDER.find(x => x in c.items && !(c.items[x] && sum(c.items[x]) === 2));
+// Почати з першого уроку, де менше ніж 2 з 2 (пропущене — теж менше); area — у межах лінії
+function checkStart(c, area) {
+  const sk = CHECK_ORDER.find(x => (!area || LESSONS[SKILL[x].lesson].area === area) && x in c.items && !(c.items[x] && sum(c.items[x]) === 2));
   return sk ? SKILL[sk].lesson : null;
 }
 function checkBlock(kid) {
@@ -1962,7 +2568,8 @@ function toCheckIntro() {
     '<p class="lead">5–7 хвилин, ' + n + ' коротких ігор з різних уроків. Це <b>не тест і не оцінка</b> дитини — орієнтир для вас: з якого уроку почати' +
     (repeat ? ' і чи є зрушення від першої перевірки' : '') + '.</p>' +
     '<ul class="warn"><li><b>Не підказуйте.</b>Сова не каже, правильно чи ні, — так і має бути. Після кожної відповіді вона каже «Дякую!» і йде далі.</li>' +
-    '<li><b>Якщо не виходить — це нормально.</b>Коли дві навички поспіль не вдалися, сова сама пропустить решту цієї частини (грамоти чи математики): втома важить більше за повноту.</li></ul>' +
+    '<li><b>Якщо не виходить — це нормально.</b>Коли дві навички поспіль не вдалися, сова сама пропустить решту цієї частини (грамоти, математики, геометрії): втома важить більше за повноту.</li>' +
+    '<li><b>Англійська — без перекладу.</b>Слово звучить англійською, біля сови з’являється прапорець. Не перекладайте дитині.</li></ul>' +
     '<p>Перевірка нічого не зараховує в «засвоєно» — це роблять лише уроки.</p>' +
     '<div class="ready"><button class="btn main" data-act="go">▶ Почати перевірку</button>' +
     '<button class="btn" data-act="list">← До уроків</button></div>';
@@ -2004,18 +2611,28 @@ function saveCheck() {
 const resCell = v => v === undefined ? '<td class="res-s">—</td>' : v === null ? '<td class="res-s">пропущено</td>' :
   '<td class="res-' + (sum(v) === 2 ? '2' : sum(v) === 0 ? '0' : '1') + '">' + sum(v) + ' з ' + v.length + '</td>';
 const skName = sk => esc(SKILL[sk].code + ' · ' + SKILL[sk].short);
+// Рядки таблиці навичок, згруповані за лініями: над кожною лінією — рядок-заголовок
+const byLine = (sks, cols, row) => LINES.map(L => {
+  const mine = sks.filter(sk => lineOf(sk) === L.sk);
+  return mine.length ? '<tr class="line-h"><th colspan="' + cols + '">' + esc(L.name) + '</th></tr>' + mine.map(row).join('') : '';
+}).join('');
 function toCheckResult(c) {
   if (!c) return toList();
   leave(); G.check = null; show('check');
   $('checkKid').textContent = KIDS[G.kid];
-  const x = checkStart(c), rec = recommended(G.kid);
-  const concl = x ? 'Почати з уроку ' + LESSONS[x].code + ' · ' + LESSONS[x].title + '.' :
-    'Усі перевірені навички — 2 з 2. Далі — урок ' + LESSONS[rec].code + ' · ' + LESSONS[rec].title + '.';
+  // Висновок — для кожної лінії свій
+  const lname = L => LESSONS[L].code + ' · ' + LESSONS[L].title;
+  const used = LINES.filter(L => CHECK_ORDER.some(sk => lineOf(sk) === L.sk && sk in c.items));
+  const concl = (checkStart(c) ? '' : '<p><b>Усі перевірені навички — 2 з 2.</b></p>') + used.map(L => {
+    const x = checkStart(c, L.id), nx = x || lineRec(G.kid, L.id, true);
+    return '<p><b>' + esc(L.name) + ':</b> ' + (x ? 'почати з уроку ' + esc(lname(x)) + '.' :
+      'усе 2 з 2' + (nx ? ' — далі урок ' + esc(lname(nx)) + '.' : '.')) + '</p>';
+  }).join('');
   $('checkBody').innerHTML = '<h2>' + (c.kind === 'repeat' ? 'Повторна перевірка' : 'Стартова перевірка') + ' · ' + fmtDate(c.date) + '</h2>' +
     '<p class="lead">Орієнтир для дорослого, не оцінка дитини. Сова не підказувала, тож тут видно, що дитина вміє сама.</p>' +
     '<div class="tbl"><table><thead><tr><th>Навичка</th><th>Результат</th></tr></thead><tbody id="checkTbl">' +
-    CHECK_ORDER.filter(sk => sk in c.items).map(sk => '<tr data-row="' + sk + '"><td>' + skName(sk) + '</td>' + resCell(c.items[sk]) + '</tr>').join('') +
-    '</tbody></table></div><p class="concl" id="checkConcl">' + esc(concl) + '</p>' +
+    byLine(CHECK_ORDER.filter(sk => sk in c.items), 2, sk => '<tr data-row="' + sk + '"><td>' + skName(sk) + '</td>' + resCell(c.items[sk]) + '</tr>') +
+    '</tbody></table></div><div class="concl" id="checkConcl">' + concl + '</div>' +
     '<p class="muted">Рекомендований урок у списку тепер береться звідси. Повторити ту саму перевірку — через 4–6 тижнів, тією ж кнопкою; порівняння — у ⚙.</p>' +
     '<div class="ready"><button class="btn main" data-act="list">До уроків</button></div>';
   $('s-check').scrollTop = 0;
@@ -2030,8 +2647,8 @@ function checksTable(kid) {
     n(b.items[sk]) > n(a.items[sk]) ? '<td class="res-2">↑</td>' : n(b.items[sk]) < n(a.items[sk]) ? '<td class="res-0">↓</td>' : '<td>=</td>';
   return '<div class="tbl"><table><thead><tr><th>Навичка</th><th>Перша · ' + fmtDate(a.date) + '</th><th>Повторна' +
     (b ? ' · ' + fmtDate(b.date) : '') + '</th><th></th></tr></thead><tbody id="panelChecksBody">' +
-    CHECK_ORDER.filter(sk => sk in a.items || (b && sk in b.items)).map(sk => '<tr data-row="' + sk + '"><td>' + skName(sk) + '</td>' +
-      resCell(a.items[sk]) + (b ? resCell(b.items[sk]) : '<td class="res-s">ще не було</td>') + (arrow(sk) || '<td></td>') + '</tr>').join('') +
+    byLine(CHECK_ORDER.filter(sk => sk in a.items || (b && sk in b.items)), 4, sk => '<tr data-row="' + sk + '"><td>' + skName(sk) + '</td>' +
+      resCell(a.items[sk]) + (b ? resCell(b.items[sk]) : '<td class="res-s">ще не було</td>') + (arrow(sk) || '<td></td>') + '</tr>') +
     '</tbody></table></div>';
 }
 $('s-check').addEventListener('click', e => {
@@ -2077,7 +2694,7 @@ const SESSION = {
          {e: '🧩', t: '8–9 завдань', d: 'одного уроку'},
          {e: '🌟', t: 'Зорепад', d: 'хвалимо й повертаємося до списку уроків'}],
   duration: 'Разом 5–10 хвилин.',
-  voice: 'Сова ніколи не вимовляє окремого приголосного звука: голос браузера читає «[м]» як «ем», а це вчить дитину неправильно. Сова каже лише слова, речення, склади, голосні й числа. Окремий приголосний звучить лише із запису, зробленого людиною в студії звуків: уроки Г04, Г05, Г06, Г09 відкриваються, коли такі записи є. Решта окремих звуків — ваша робота, голосом.',
+  voice: 'Сова ніколи не вимовляє окремого приголосного звука: голос браузера читає «[м]» як «ем», а це вчить дитину неправильно. Сова каже лише слова, речення, склади, голосні й числа. Окремий приголосний звучить лише із запису, зробленого людиною в студії звуків: уроки Г04, Г05, Г06, Г09 відкриваються, коли такі записи є. Решта окремих звуків — ваша робота, голосом. Англійські слова сова каже англійським голосом (один і той самий на цьому пристрої), без перекладу; поки звучить англійська, біля сови видно прапорець.',
   role: ['Перші 2 хвилини будьте поруч: допоможіть із першою зірочкою, переконайтеся, що дитина чує сову.',
          'Далі не підказуйте відповідь. Сова сама підсвітить правильну відповідь після двох помилок.',
          'Хвалити можна й треба — за старання, а не за «правильно».'],
@@ -2099,14 +2716,16 @@ function speakSeq(items, onStep, capEl) {
   const tok = ++seqTok;
   if (TTS) TTS.cancel();
   const done = () => { if (tok === seqTok) { onStep(-1); if (capEl) capEl.textContent = ''; } };
-  if (capEl) capEl.textContent = ukVoice ? '' : 'Немає українського голосу — прочитайте вголос: ' + items.map(x => x.t).join(' … ');
-  if (ukVoice) {
+  const vOf = x => x.en ? enVoice : ukVoice, can = items.every(vOf);
+  if (capEl) capEl.textContent = can ? '' : 'Немає ' + (items.some(x => x.en && !enVoice) ? 'англійського' : 'українського') +
+    ' голосу — прочитайте вголос: ' + items.map(x => x.t).join(' … ');
+  if (can) {
     const us = [];
     items.forEach((x, i) => {
       const text = voiceText(x);
-      if (!voiceOk(text)) { VOICE_BLOCKED.push(text); return; }
+      if (!x.en && !voiceOk(text)) { VOICE_BLOCKED.push(text); return; }
       const u = new SpeechSynthesisUtterance(text);
-      u.voice = ukVoice; u.lang = ukVoice.lang; u.rate = 0.75;
+      u.voice = vOf(x); u.lang = vOf(x).lang; u.rate = 0.75;
       u.onstart = () => { if (tok === seqTok) onStep(i); };
       us.push(u);
     });
@@ -2214,19 +2833,60 @@ const VISUALS = {
     return '<div class="demo"><div class="pairs-demo"><div>🍽️🍽️🍽️🍽️</div><div class="ln">│││</div><div>🥄🥄🥄</div></div>' +
       '<p class="muted">Чотири тарілки, три ложки: одній тарілці пари не вистачило.</p></div>';
   },
-  shapes() {
-    return '<div class="demo"><div class="demo-row">' +
-      [[0, 1], [180, 0.6], [35, 0.85]].map(r => '<span class="tile">' + shapeSvg('triangle', r[0], r[1], '#3D7EA6').replace('<svg', '<svg style="width:70px;height:70px"') + '<span class="tag">трикутник</span></span>').join('') +
-      '<span class="tile">' + shapeSvg('square', 15, 0.8, '#C77D2E').replace('<svg', '<svg style="width:70px;height:70px"') + '<span class="tag">квадрат</span></span>' +
-      '<span class="tile">' + shapeSvg('rect', 0, 0.9, '#2F6F4E').replace('<svg', '<svg style="width:70px;height:70px"') + '<span class="tag">прямокутник</span></span>' +
-      '</div></div>';
+  // Ф01: приклади й «неприклади»
+  figs() {
+    const t = (html, tag) => '<span class="tile"><span style="display:block;width:70px;height:70px">' + html + '</span><span class="tag">' + tag + '</span></span>';
+    const fix = (id, d, rot, sc, c, outline) => '<svg viewBox="0 0 100 100" aria-hidden="true"><g transform="translate(50 50) rotate(' + rot + ') scale(' + sc + ')"><path d="' + FIG[id][d] + '" ' +
+      (outline ? 'fill="none" stroke="' + c + '" stroke-width="8" stroke-linecap="round" vector-effect="non-scaling-stroke"' : 'fill="' + c + '"') + '/></g></svg>';
+    return '<div class="demo"><p><b>Трикутники</b></p><div class="demo-row">' +
+      t(fix('triangle', 'plain', 0, .9, '#3D7EA6'), 'звичайний') + t(fix('triangle', 'plain', 35, .5, '#C77D2E'), 'малий') +
+      t(fix('triangle', 'plain', 160, .9, '#2F6F4E'), 'повернутий') + t(fix('triangle', 'thin', 10, .9, '#7A5AF8'), '«худий»') +
+      t(fix('triangle', 'right', 90, .9, '#B42318'), 'з прямим кутом') + '</div>' +
+      '<p><b>Не трикутники</b></p><div class="demo-row">' + t(fix('triangle', 'near', 0, .9, '#98A2B3'), 'круглий кут') +
+      t(fix('triangle', 'open', 0, .9, '#98A2B3', true), 'незамкнений') + t(fix('circle', 'near', 0, .9, '#98A2B3'), 'овал — не круг') + '</div></div>';
   },
+  // Ф02: олівці вирівняні і ні
+  sizes() {
+    const pen = (x, y, l, c) => '<rect x="' + x + '" y="' + y + '" width="' + l + '" height="14" fill="' + c + '"/><path d="M' + (x + l) + ' ' + y + ' l16 7 l-16 7 Z" fill="#F1D3A8"/>';
+    return '<div class="demo"><svg viewBox="0 0 300 140" style="width:100%;max-width:420px" aria-hidden="true">' +
+      '<path d="M20 4 V60" stroke="#98A2B3" stroke-dasharray="4 4"/>' + pen(20, 12, 200, '#3D7EA6') + pen(20, 38, 140, '#C77D2E') +
+      pen(20, 86, 200, '#3D7EA6') + pen(110, 112, 140, '#C77D2E') +
+      '<text x="250" y="30" font-size="13" fill="#2F6F4E">довший</text><text x="250" y="102" font-size="13" fill="#2F6F4E">довший</text></svg></div>';
+  },
+  // Ф03: обидві сцени з підписами місць
   scene() {
-    return '<div class="demo"><svg viewBox="0 0 420 230" style="width:100%;max-width:420px" aria-hidden="true">' +
-      '<rect x="0" y="200" width="420" height="20" fill="#E8D8C0"/><rect x="30" y="100" width="160" height="14" rx="4" fill="#9A5B1E"/>' +
-      '<rect x="42" y="114" width="12" height="86" fill="#9A5B1E"/><rect x="166" y="114" width="12" height="86" fill="#9A5B1E"/>' +
-      '<path d="M285 200 L278 150 L342 150 L335 200 Z" fill="#C77D2E"/><path d="M286 150 Q310 108 334 150" stroke="#9A5B1E" stroke-width="6" fill="none"/>' +
-      '<g font-size="20" fill="#3D7EA6" text-anchor="middle"><text x="110" y="78">на</text><text x="110" y="165">під</text><text x="245" y="185">ліворуч</text><text x="385" y="185">праворуч</text></g></svg></div>';
+    const lab = (sc, words) => '<svg viewBox="0 0 420 230" style="width:100%;max-width:420px" aria-hidden="true">' + PLACE_SCENES[sc].svg +
+      '<g font-size="20" fill="#B42318" text-anchor="middle" font-weight="600">' + Object.keys(words).map(k => {
+        const z = PLACE_SCENES[sc].z[k];
+        return '<text x="' + (z[0] * 4.2) + '" y="' + (z[1] * 2.2 + 7) + '">' + words[k] + '</text>';
+      }).join('') + '</g></svg>';
+    return '<div class="demo">' + lab('shelf', {top: 'вгорі', between: 'між', bottom: 'внизу'}) +
+      lab('table', {on: 'на', under: 'під', left: 'ліворуч', right: 'праворуч'}) + '</div>';
+  },
+  // Ф04: предмет → фігура
+  things() {
+    const T = LESSONS.F04.data.things;
+    return '<div class="demo"><div class="demo-row">' + [T[0], T[2], T[5], T[7]].map(x => '<span class="tile"><span class="e">' +
+      (x.svg ? '<svg viewBox="0 0 100 100" style="width:1em;height:1em" aria-hidden="true">' + SVG[x.svg] + '</svg>' : x.e) + '</span>' +
+      '<span style="display:block;width:44px;height:44px;margin:0 auto">' + shapeSvg(x.f, x.stand ? 90 : 0, .85, '#6941C6') + '</span>' +
+      '<span class="tag">' + LESSONS.F01.data.names[x.f] + '</span></span>').join('') + '</div></div>';
+  },
+  // Ф05: два трикутники → квадрат
+  compose() {
+    const U = 60, tri = (r, c, x) => '<path d="' + piecePath('tri', x, .5, r, U) + '" fill="' + c + '"/>';
+    return '<div class="demo"><svg viewBox="-4 -4 330 70" style="width:100%;max-width:440px" aria-hidden="true">' +
+      tri(0, '#3D7EA6', .5) + tri(0, '#C77D2E', 1.7) + '<text x="138" y="40" font-size="26" fill="#475467">↻</text>' +
+      tri(0, '#3D7EA6', 2.9) + tri(180, '#C77D2E', 2.9) + '<text x="230" y="40" font-size="26" fill="#475467">=</text>' +
+      '<rect x="' + (4.4 * U) + '" y="0" width="' + U + '" height="' + U + '" fill="#EAECF0" stroke="#475467" stroke-width="3"/></svg></div>';
+  },
+  // Англійська: картинки й слово, 🔊 — англійським голосом. Перекладу немає навмисно
+  enWords(v) {
+    const L = LESSONS[v.lesson], W = L.data.words.map(w => typeof w === 'string' ? {en: w} : w);
+    return '<div class="demo sq"><div class="demo-row">' + W.map((w, i) => '<span class="tile sp"><span class="e">' +
+      (w.svg ? '<svg viewBox="0 0 100 100" style="width:1em;height:1em" aria-hidden="true">' + SVG[w.svg] + '</svg>' :
+       w.c ? '<svg viewBox="0 0 100 100" style="width:1em;height:1em" aria-hidden="true"><path d="' + BLOB + '" fill="' + w.c + '" stroke="#98A2B3" stroke-width="2"/></svg>' :
+       w.e ? w.e : dots10(i + 1)) + '</span><span class="w" lang="en">' + esc(w.en) + '</span></span>').join('') + '</div>' +
+      seqBtn(W.map((w, i) => ({t: w.en, en: true, n: i})), '🔊 Послухати') + '<div class="caption"></div></div>';
   },
   track(v) {
     let h = '<div class="demo sq"><div class="demo-row" style="gap:4px">';
@@ -2259,7 +2919,7 @@ function guideSection(lid, id) {
   }
   if (id === 'all') {
     return '<h2>Усі уроки</h2><p class="lead">Оберіть урок, щоб прочитати його сторінку.</p><div class="lessons">' +
-      ORDER.map(x => '<button class="lesson' + (LESSONS[x].area === 'm' ? ' m' : '') + '" data-open="' + x + '"><span class="code">' + esc(LESSONS[x].code) +
+      ORDER.map(x => '<button class="lesson ' + LESSONS[x].area + '" data-open="' + x + '"><span class="code">' + esc(LESSONS[x].code) +
         '</span><span class="nm">' + esc(LESSONS[x].title) + '</span><span class="stt">' + (isPrepared(x) ? '✔ підготовлено' : '') + '</span></button>').join('') + '</div>';
   }
   const L = LESSONS[lid];
@@ -2419,14 +3079,15 @@ function renderPanel() {
   const st = stats(panelKid), rec = recommended(panelKid);
   const cls = s => s === 'засвоєно' ? 'st-ok' : s === 'застряг' ? 'st-stuck' : '';
   const cells = r => '<td>' + r.todayOk + '</td><td>' + r.days + '</td><td>' + r.n + '</td><td class="' + cls(r.st) + '">' + r.st + '</td>';
-  $('panelBody').innerHTML = ORDER.map(id => {
+  const row = id => {
     const L = LESSONS[id], sks = Object.keys(L.skills), name = esc(L.code + ' · ' + L.title) + (id === rec ? ' ★' : '');
     if (!avail(id) && !st[sks[0]].n) return '<tr data-row="' + sks[0] + '" class="res-s"><td>' + name + '</td><td colspan="4">чекає на записи звуків</td></tr>';
     if (sks.length === 1) return '<tr data-row="' + sks[0] + '"><td>' + name + '</td>' + cells(st[sks[0]]) + '</tr>';
     const ls = lessonState(st, id);
     return '<tr><td colspan="4"><b>' + name + '</b></td><td class="' + cls(ST[ls][1]) + '">' + ST[ls][1] + '</td></tr>' +
       sks.map(sk => '<tr data-row="' + sk + '"><td class="sub">' + esc(SKILL[sk].code + ' · ' + SKILL[sk].short) + '</td>' + cells(st[sk]) + '</tr>').join('');
-  }).join('');
+  };
+  $('panelBody').innerHTML = LINES.map(L => '<tr class="line-h"><th colspan="5">' + esc(L.name) + '</th></tr>' + lineIds(L.id).map(row).join('')).join('');
   $('panelChecks').innerHTML = checksTable(panelKid);
 }
 $('panelBukvar').addEventListener('click', e => {
@@ -2443,6 +3104,7 @@ $('panelReset').addEventListener('click', () => {
   if (G.stage === 'list') renderList();
 });
 
+migrate();
 paintRole();
 show('who');
 probeSounds();
