@@ -133,7 +133,20 @@ mudryk.iprostir.pp.ua {
 lab.mudryk.iprostir.pp.ua {
 	encode zstd gzip
 
+	# Уроки 5–8 віддає Flask: вхід, пристрої, прогрес (docs/kabinet-uroky.md).
+	# Статикою їх віддавати не можна — сторінку бачить лише активований
+	# пристрій після входу. Переїзд на основний домен = цей самий handle
+	# у блоці iprostir.pp.ua, код не змінюється.
+	handle /uroky* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
 	handle {
+		# Решта пісочниці — лише для своїх (пароль Caddy). Хеш:
+		#   caddy hash-password
+		# basic_auth {
+		#	dmytro <хеш>
+		# }
 		root * /var/www/lab
 		try_files {path} {path}/ {path}.html
 		file_server

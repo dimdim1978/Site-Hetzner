@@ -1,0 +1,198 @@
+{% extends "_base.html" %}
+{% block title %}Мудрик 5–8{% endblock %}
+{% block body %}
+<style>
+.tb{width:100%;border-collapse:collapse;font-size:15px}
+.tb th{text-align:left;font-size:13px;color:var(--ink-3);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tb td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.tb .act{white-space:nowrap;text-align:right}
+.tb .act .btn{min-height:34px;padding:5px 10px;font-size:13px;margin:2px 0 2px 4px}
+.scroll{overflow-x:auto}
+.rowf{display:flex;flex-wrap:wrap;align-items:flex-end}
+.rowf > *{margin:0 10px 10px 0}
+.rowf label{display:block;font-size:13px;color:var(--ink-3);margin-bottom:4px}
+.once{background:var(--warn-soft);border:1px solid #FEC84B;border-radius:10px;padding:14px 16px;margin:12px 0}
+.once .big{font-family:Consolas,monospace;font-size:24px;font-weight:700;letter-spacing:.06em}
+.msg{margin-top:8px;font-size:14px}
+.msg.err{color:var(--err)}
+.off{color:var(--ink-3)}
+.modal[hidden]{display:none}
+#print{display:none}
+@media print{
+  body *{visibility:hidden}
+  #print,#print *{visibility:visible}
+  #print{display:block;position:absolute;left:0;top:0;width:100%;padding:24px;font-size:18px}
+}
+</style>
+
+<h1>Мудрик 5–8 · уроки</h1>
+<div class="sub">Діти програми, пристрої й коди активації.
+  {% if not admin %}Ви бачите список; змінювати може лише адміністратор.{% endif %}
+  Уроки: <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></div>
+
+<div class="card">
+  <h2 style="font-size:18px;margin-bottom:10px">Діти</h2>
+  {% if admin %}
+  <form id="fKid" class="rowf" autocomplete="off">
+    <div><label for="kImia">Ім'я</label><input type="text" id="kImia" name="imia" maxlength="60" style="width:150px"></div>
+    <div><label for="kPrizv">Прізвище</label><input type="text" id="kPrizv" name="prizvyshche" maxlength="60" style="width:170px"></div>
+    <div><label for="kVik">Вік</label><select id="kVik" name="vik" style="width:80px"><option>5</option><option selected>6</option><option>7</option><option>8</option></select></div>
+    <div><label for="kBuk">Буквар</label><select id="kBuk" name="bukvar" style="width:160px"><option value="bolshakova">Большакова</option><option value="vashulenko">Вашуленко</option></select></div>
+    <div><button class="btn primary" type="submit">Додати дитину</button></div>
+  </form>
+  <div class="msg" id="kMsg"></div>
+  <div class="once" id="kOnce" hidden>
+    <div><b id="oName"></b> — логін і пароль показуються <b>один раз</b>. Запишіть або надрукуйте картку.</div>
+    <div style="margin-top:8px">Логін: <span class="big" id="oLogin"></span></div>
+    <div>Пароль: <span class="big" id="oPass"></span></div>
+    <button class="btn ghost" type="button" id="oPrint" style="margin-top:10px">🖨 Друкувати картку для мами</button>
+  </div>
+  {% endif %}
+  <div class="scroll"><table class="tb" id="tKids">
+    <thead><tr><th>Ім'я</th><th>Вік</th><th>Логін</th><th>Буквар</th><th>Останнє заняття</th><th>Засвоєно</th>{% if admin %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for d in dity %}
+      <tr data-id="{{ d.id }}" data-login="{{ d.login }}">
+        <td>{{ d.imia }}</td><td>{{ d.vik or '' }}</td><td><code>{{ d.login }}</code></td>
+        <td>{% if admin %}<select class="buk" style="min-height:34px;padding:4px 8px;font-size:14px;width:150px">
+              <option value="bolshakova"{% if d.bukvar == 'bolshakova' %} selected{% endif %}>Большакова</option>
+              <option value="vashulenko"{% if d.bukvar == 'vashulenko' %} selected{% endif %}>Вашуленко</option></select>
+            {% else %}{{ d.bukvar_name }}{% endif %}</td>
+        <td>{{ d.ostannie|dmy if d.ostannie else '—' }}</td><td>{{ d.zasvoeno }} з {{ n_skills }}</td>
+        {% if admin %}<td class="act"><button class="btn ghost" data-act="parol">Новий пароль</button><button class="btn ghost" data-act="del">Видалити</button></td>{% endif %}
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="off">Дітей ще немає.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <h2 style="font-size:18px;margin-bottom:10px">Коди активації</h2>
+  <p class="off" style="font-size:14px;margin-bottom:10px">Код із 8 цифр активує один пристрій (телефон мами, планшет ГО). Діє 24 години, один раз.</p>
+  {% if admin %}
+  <form id="fCode" class="rowf" autocomplete="off">
+    <div><label for="cName">Назва пристрою</label><input type="text" id="cName" name="nazva" maxlength="80" placeholder="Телефон мами Олі" style="width:260px"></div>
+    <div><button class="btn primary" type="submit">Новий код</button></div>
+  </form>
+  <div class="msg" id="cMsg"></div>
+  <div class="once" id="cOnce" hidden>
+    <div>Код для «<b id="cOnceName"></b>» — показується <b>один раз</b>, діє до <span id="cExp"></span>:</div>
+    <div class="big" id="cCode" style="margin-top:6px"></div>
+  </div>
+  {% endif %}
+  <div class="scroll"><table class="tb" id="tCodes">
+    <thead><tr><th>Для пристрою</th><th>Створено</th><th>Діє до</th>{% if admin %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for k in kody %}
+      <tr data-id="{{ k.id }}"><td>{{ k.nazva }}</td><td>{{ k.created_at[:16] }} · {{ k.created_by }}</td><td>{{ k.expires_at[:16] }}</td>
+        {% if admin %}<td class="act"><button class="btn ghost" data-act="cancel">Скасувати</button></td>{% endif %}</tr>
+    {% else %}
+      <tr><td colspan="4" class="off">Невикористаних кодів немає.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <h2 style="font-size:18px;margin-bottom:10px">Пристрої</h2>
+  <div class="scroll"><table class="tb" id="tDev">
+    <thead><tr><th>Назва</th><th>Активовано</th><th>Востаннє</th><th>Статус</th>{% if admin %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for p in prystroi %}
+      <tr data-id="{{ p.id }}"{% if p.revoked_at %} class="off"{% endif %}><td>{{ p.nazva }}</td><td>{{ p.created_at[:16] }} · {{ p.created_by }}</td>
+        <td>{{ (p.last_seen or '')[:16] }}</td><td>{% if p.revoked_at %}відкликано {{ p.revoked_at[:10] }}{% else %}активний{% endif %}</td>
+        {% if admin %}<td class="act">{% if not p.revoked_at %}<button class="btn ghost" data-act="revoke">Відкликати</button>{% endif %}</td>{% endif %}</tr>
+    {% else %}
+      <tr><td colspan="5" class="off">Активованих пристроїв ще немає.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- Картка для мами: друкується лише вона -->
+<div id="print">
+  <h2 style="font-size:24px;margin-bottom:12px">🦉 Мудрик — уроки для <span id="pName"></span></h2>
+  <p>Адреса: <b>{{ url }}</b></p>
+  <p>Логін дитини: <b id="pLogin" style="font-family:Consolas,monospace;font-size:22px"></b></p>
+  <p>Пароль: <b id="pPass" style="font-family:Consolas,monospace;font-size:22px"></b></p>
+  <ol style="margin:14px 0 0 22px;line-height:1.7">
+    <li>Відкрийте адресу на телефоні. Перший раз попросять код активації пристрою — його дає адміністратор.</li>
+    <li>Натисніть «Я — мама» і введіть логін і пароль дитини.</li>
+    <li>Тут з'являтимуться уроки, які дитина вже пройшла з педагогом, — для повторення вдома.</li>
+  </ol>
+  <p style="margin-top:14px;font-size:14px">Не передавайте пароль іншим. Загубили — адміністратор видасть новий.<br>
+    © ГО «Берегиня», 2026. Використання без дозволу заборонено.</p>
+</div>
+
+{% if admin %}
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  function post(url, data){
+    var fd = new FormData();
+    Object.keys(data || {}).forEach(function(k){ fd.append(k, data[k]); });
+    return fetch(url, {method:'POST', body:fd, credentials:'same-origin'})
+      .then(function(r){ return r.json().catch(function(){ return {ok:false, error:'Помилка сервера (' + r.status + ')'}; }); });
+  }
+  function showOnce(d){
+    $('oName').textContent = d.imia; $('oLogin').textContent = d.login; $('oPass').textContent = d.password;
+    $('pName').textContent = d.imia; $('pLogin').textContent = d.login; $('pPass').textContent = d.password;
+    $('kOnce').hidden = false; $('kOnce').scrollIntoView({block:'nearest'});
+  }
+  $('oPrint').addEventListener('click', function(){ window.print(); });
+  $('fKid').addEventListener('submit', function(e){
+    e.preventDefault();
+    var f = e.target;
+    post('/admin/mudryk/dytyna', {imia:f.imia.value, prizvyshche:f.prizvyshche.value, vik:f.vik.value, bukvar:f.bukvar.value})
+      .then(function(d){
+        if(!d.ok){ $('kMsg').className = 'msg err'; $('kMsg').textContent = d.error || 'Не вдалося'; return; }
+        $('kMsg').className = 'msg'; $('kMsg').textContent = 'Дитину додано. Список оновиться після перезавантаження сторінки.';
+        f.reset(); showOnce(d);
+      });
+  });
+  $('tKids').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-act]'); if(!b) return;
+    var tr = b.closest('tr'), id = tr.getAttribute('data-id'), name = tr.cells[0].textContent;
+    if(b.getAttribute('data-act') === 'parol'){
+      if(!confirm('Видати новий пароль для ' + name + '? Старий перестане діяти.')) return;
+      post('/admin/mudryk/' + id + '/parol').then(function(d){ if(d.ok) showOnce(d); else alert(d.error); });
+    } else {
+      if(!confirm('Видалити ' + name + ' разом з усіма заняттями? Це не можна скасувати.')) return;
+      post('/admin/mudryk/' + id + '/vydalyty').then(function(d){ if(d.ok) tr.remove(); else alert(d.error); });
+    }
+  });
+  $('tKids').addEventListener('change', function(e){
+    var s = e.target.closest('select.buk'); if(!s) return;
+    post('/admin/mudryk/' + s.closest('tr').getAttribute('data-id') + '/bukvar', {bukvar:s.value})
+      .then(function(d){ if(!d.ok) alert(d.error || 'Не вдалося'); });
+  });
+  $('fCode').addEventListener('submit', function(e){
+    e.preventDefault();
+    post('/admin/mudryk/kod', {nazva:e.target.nazva.value}).then(function(d){
+      if(!d.ok){ $('cMsg').className = 'msg err'; $('cMsg').textContent = d.error || 'Не вдалося'; return; }
+      $('cMsg').textContent = '';
+      $('cOnceName').textContent = d.nazva; $('cExp').textContent = d.expires.slice(0, 16);
+      $('cCode').textContent = d.kod.slice(0, 4) + ' ' + d.kod.slice(4);
+      $('cOnce').hidden = false; e.target.reset();
+    });
+  });
+  $('tCodes').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-act]'); if(!b) return;
+    var tr = b.closest('tr');
+    post('/admin/mudryk/kod/' + tr.getAttribute('data-id') + '/skasuvaty').then(function(d){ if(d.ok) tr.remove(); });
+  });
+  $('tDev').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-act]'); if(!b) return;
+    var tr = b.closest('tr');
+    if(!confirm('Відкликати «' + tr.cells[0].textContent + '»? На ньому знову попросять код.')) return;
+    post('/admin/mudryk/prystrii/' + tr.getAttribute('data-id') + '/vidklykaty').then(function(d){
+      if(d.ok){ tr.className = 'off'; tr.cells[3].textContent = 'відкликано'; b.remove(); }
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

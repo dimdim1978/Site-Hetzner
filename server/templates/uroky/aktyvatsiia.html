@@ -1,0 +1,49 @@
+{% extends 'uroky/_base.html' %}
+{% block title %}Активація пристрою{% endblock %}
+{% block body %}
+<h1>Активація пристрою</h1>
+{% if active %}
+<p class="lead">Цей пристрій уже активовано. <a href="/uroky">Перейти до уроків</a></p>
+{% endif %}
+<p class="lead">Уроки відкриваються лише на пристроях, які схвалив адміністратор.
+  Введіть код із 8 цифр, який він вам дав. Код діє 24 години й лише один раз.</p>
+<div class="card">
+  <form id="f" autocomplete="off">
+    <label for="kod">Код активації</label>
+    <input id="kod" name="kod" type="text" inputmode="numeric" maxlength="12" placeholder="12345678">
+    <button class="btn main" id="go" type="submit">Активувати</button>
+    <div class="msg" id="msg" role="status"></div>
+  </form>
+</div>
+<div class="card">
+  <h2 style="margin-top:0">Важливо знати</h2>
+  <ul class="tips">
+    <li><b>Очищення даних браузера знімає активацію</b> — тоді потрібен новий код.</li>
+    <li><b>iPhone:</b> значок на головному екрані має окремі від Safari дані. Тому спершу
+      в Safari «Поділитися» → «На екран „Додому“», потім відкрийте значок і вже там введіть код.</li>
+    <li><b>Android:</b> меню браузера ⋮ → «Додати на головний екран» — можна до або після коду.</li>
+    <li>Різні браузери на одному пристрої — це різні активації.</li>
+  </ul>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+'use strict';
+var f = document.getElementById('f'), msg = document.getElementById('msg'), go = document.getElementById('go');
+f.addEventListener('submit', function (e) {
+  e.preventDefault();
+  var kod = document.getElementById('kod').value.replace(/\D/g, '');
+  if (kod.length !== 8) { msg.className = 'msg err'; msg.textContent = 'У коді має бути 8 цифр.'; return; }
+  go.disabled = true; msg.className = 'msg'; msg.textContent = 'Перевіряю…';
+  fetch('/uroky/api/aktyvatsiia', {method: 'POST', credentials: 'same-origin',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({kod: kod})})
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      go.disabled = false;
+      if (d.ok) { msg.className = 'msg ok'; msg.textContent = 'Пристрій активовано.'; location.href = d.redirect; }
+      else { msg.className = 'msg err'; msg.textContent = d.error || 'Не вдалося.'; }
+    })
+    .catch(function () { go.disabled = false; msg.className = 'msg err'; msg.textContent = 'Немає зв’язку з сервером. Перевірте інтернет.'; });
+});
+</script>
+{% endblock %}

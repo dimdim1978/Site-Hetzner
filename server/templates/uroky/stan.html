@@ -1,0 +1,53 @@
+{% extends 'uroky/_base.html' %}
+{% block title %}Стан · {{ d.imia }}{% endblock %}
+{% block nav %}<a href="/uroky">До уроків</a>{% if staff %}<a href="/uroky/dity">Інша дитина</a>{% endif %}<a href="/uroky/vykhid">Вийти</a>{% endblock %}
+{% block head %}
+<style>
+.cal{border-collapse:separate;border-spacing:3px;margin:0 auto}
+.cal th{font-size:12px;color:var(--ink-3);font-weight:600}
+.cal td{width:34px;height:34px;border-radius:7px;background:#ECEAE3;font-size:11px;color:var(--ink-3);
+  text-align:center;vertical-align:middle;position:relative}
+.cal td.v{background:var(--sand);color:#fff;font-weight:700}
+.cal td.m{box-shadow:inset 0 0 0 3px var(--sky)}
+.cal td.f{background:transparent}
+.legend span{display:inline-block;margin-right:14px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px;background:#ECEAE3}
+.legend i.v{background:var(--sand)}
+.legend i.m{box-shadow:inset 0 0 0 3px var(--sky)}
+.line h2{margin-top:0}
+.sk{padding:9px 0;border-top:1px solid var(--line)}
+.sk:first-of-type{border-top:0}
+.sk .st{float:right;font-size:14px;font-weight:600;padding:2px 10px;border-radius:999px;background:#F2F4F7;color:var(--ink-3)}
+.sk .st.засвоєно{background:#ECFDF3;color:#027A48}
+.sk .st.вчиться{background:var(--sand-soft);color:#9A5B1E}
+.sk .st.застряг{background:var(--err-soft);color:var(--err)}
+.sk .do{display:block;color:var(--ink-2);font-size:15px;margin-top:4px}
+.sk .home{display:block;color:var(--sky);font-size:14px}
+</style>
+{% endblock %}
+{% block body %}
+<h1>{{ d.imia }}</h1>
+<p class="lead">Як іде навчання. Головне тут — регулярність: заповнені клітинки календаря.</p>
+<div class="card">
+  <h2 style="margin-top:0">Заняття за 8 тижнів</h2>
+  <table class="cal" id="kal">
+    <tr><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Нд</th></tr>
+    {% for w in kal %}<tr>{% for c in w %}<td class="{% if c.future %}f{% else %}{% if c.v %}v {% endif %}{% if c.m %}m{% endif %}{% endif %}" title="{{ c.d|dmy }}{% if c.v %} · з педагогом{% endif %}{% if c.m %} · удома{% endif %}">{% if not c.future %}{{ c.n }}{% endif %}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table>
+  <p class="legend muted"><span><i class="v"></i>з педагогом</span><span><i class="m"></i>повторення вдома</span></p>
+</div>
+{% for L in lines %}
+<div class="card line" data-line="{{ L.name }}">
+  <h2>{{ L.name }}</h2>
+  {% for x in L['items'] %}
+  <div class="sk" data-sk="{{ x.code }}"><span class="st {{ x.st }}">{{ x.human }}</span><b>{{ x.code }}</b> · {{ x.nazva }}
+    {% if x.st == 'застряг' %}<span class="do">Що робити: {{ x.porada }}</span>{% endif %}
+    {% if x.vdoma %}<span class="home">повторювали вдома: {{ x.vdoma }} раз{% if x.vdoma % 10 in (2,3,4) and x.vdoma % 100 not in (12,13,14) %}и{% elif not (x.vdoma % 10 == 1 and x.vdoma % 100 != 11) %}ів{% endif %}</span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+<p class="muted">Статуси рахуються лише з занять із педагогом. «Засвоєно» — 3 правильні з першої спроби щонайменше у 2 різні дні.
+  Повторення вдома видно педагогу, але статусів не змінюють. Буквар: {{ bukvar }}.</p>
+{% endblock %}

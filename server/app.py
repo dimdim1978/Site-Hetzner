@@ -9,13 +9,14 @@
   GET  /admin         список заявок (потрібен вхід)
   GET  /admin/<id>    одна заявка (потрібен вхід)
   POST /admin/backup  копія бази: на сервер і, за вибором, на пошту (лише role=admin)
+  /uroky*, /admin/mudryk  уроки 5–8 — окремий модуль uroky.py (docs/kabinet-uroky.md)
 
 Запуск для розробки:   python3 app.py
 Створити користувача:  python3 app.py adduser <логін> <пароль> [admin|teacher]
 На сервері працює під gunicorn — див. deploy/beregynia.service
 """
 
-import os, re, csv, json, sqlite3, smtplib, secrets, io, zipfile
+import os, re, csv, json, sqlite3, smtplib, secrets, io, zipfile, sys
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -699,6 +700,7 @@ def require_login():
 #
 #  /admin/*   — тільки персонал (kind='staff')
 #  /kabinet/* — тільки учень   (kind='pupil')
+#  /uroky/*   — активований пристрій + мама чи персонал (uroky.zastava)
 #  Сесія при кожному вході очищається, тож учень фізично не може
 #  мати ознаку staff, навіть якщо зайде відразу після педагога.
 # ============================================================
@@ -711,6 +713,8 @@ def gate():
     elif p.startswith('/kabinet'):
         if session.get('kind') != 'pupil':
             return redirect('/uchen.html')
+    elif p == '/uroky' or p.startswith('/uroky/'):
+        return uroky.zastava()
 
 
 # ============================================================
@@ -1402,8 +1406,8 @@ def _write_backup():
     # секунди в імені не для краси: без них дві копії поспіль (натиснули
     # «тільки на сервері», потім передумали й натиснули «на пошту») мовчки
     # перезаписали б одна одну
-    path = os.path.join(BACKUP_DIR, 'beregynia-{}.db'.format(
-        datetime.now().strftime('%Y-%m-%d-%H%M%S')))
+    stamp = datetime.now().strftime('%Y-%m-%d-%H%M%S')
+    path = os.path.join(BACKUP_DIR, 'beregynia-{}.db'.format(stamp))
 
     dst = sqlite3.connect(path)
     try:
@@ -1423,10 +1427,14 @@ def _write_backup():
             dropped += 1
         except OSError:
             break
-    total = sum(os.path.getsize(os.path.join(BACKUP_DIR, f)) for f in files)
+    # друга база (уроки 5–8) — з тією самою позначкою часу, інакше при
+    # відновленні половини були б з різних днів (kabinet-navchannia §4)
+    navch = uroky.backup_to(BACKUP_DIR, stamp, BACKUP_KEEP)
+    total = sum(os.path.getsize(os.path.join(BACKUP_DIR, f)) for f in os.listdir(BACKUP_DIR)
+                if f.endswith('.db') and (f.startswith('beregynia-') or f.startswith('navchannia-')))
     return {'path': path, 'name': os.path.basename(path),
             'size': os.path.getsize(path), 'kept': len(files),
-            'total': total, 'dropped': dropped}
+            'total': total, 'dropped': dropped, 'navch': navch}
 
 
 @app.post('/admin/backup')
@@ -1451,7 +1459,7 @@ def admin_backup():
     n = conn.execute('SELECT COUNT(*) c FROM children').fetchone()['c']
     log('копія бази на сервері: {} ({} заявок)'.format(bk['name'], n))
 
-    base = dict(ok=True, mailed=False, n=n, name=bk['name'],
+    base = dict(ok=True, mailed=False, n=n, name=bk['name'], navch=bk['navch'],
                 size=_human(bk['size']), kept=bk['kept'],
                 total=_human(bk['total']), dir=BACKUP_DIR)
     if not want_mail:
@@ -1529,6 +1537,12 @@ font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
 @app.get('/api/whoami')
 def whoami():
     return jsonify(login=session.get('login'), role=session.get('role'))
+
+# ============================================================
+#  УРОКИ 5–8 — окремий модуль, тут лише підключення
+# ============================================================
+import uroky
+uroky.init(app, sys.modules[__name__])
 
 # ============================================================
 #  КОМАНДНИЙ РЯДОК

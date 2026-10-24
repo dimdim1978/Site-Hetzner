@@ -659,7 +659,7 @@ table.list tr.inlist td:first-child{box-shadow:inset 3px 0 0 var(--green)}
             bkMsg.textContent = (d && d.error) || 'Не вдалося зробити копію.';
             return;
           }
-          var txt = 'Копію збережено: ' + d.name + ' (' + d.size + ')' +
+          var txt = 'Копію збережено: ' + d.name + (d.navch ? ' і ' + d.navch : '') + ' (' + d.size + ')' +
                     ' · копій на сервері: ' + d.kept + ' · разом ' + d.total;
           if(d.mailed){
             txt += ' · надіслано на ' + d.to;

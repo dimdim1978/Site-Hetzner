@@ -1,0 +1,41 @@
+{% extends 'uroky/_base.html' %}
+{% block title %}Діти{% endblock %}
+{% block nav %}{% if current %}<a href="/uroky">До уроків</a>{% endif %}<a href="/uroky/vykhid">Вийти</a>{% endblock %}
+{% block head %}
+<style>
+.kid{display:block;width:100%;text-align:left;font:inherit;background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;margin:0 0 10px;cursor:pointer;min-height:64px}
+.kid.cur{border-color:var(--sand);box-shadow:0 0 0 2px var(--sand) inset}
+.kid b{font-size:19px}
+.kid span{display:block;color:var(--ink-3);font-size:15px}
+</style>
+{% endblock %}
+{% block body %}
+<h1>З ким працюємо?</h1>
+<p class="lead">{{ who }}, оберіть дитину.</p>
+{% if dity|length > 10 %}
+<input type="search" id="q" placeholder="Пошук за ім'ям" style="margin-bottom:12px">
+{% endif %}
+{% if not dity %}
+<div class="card">Дітей ще немає. Їх заводить адміністратор в адмінці («Мудрик 5–8»).</div>
+{% endif %}
+<div id="list">
+{% for d in dity %}
+<form method="post" action="/uroky/dity" data-name="{{ d.imia|lower }}">
+  <input type="hidden" name="id" value="{{ d.id }}">
+  <button class="kid{% if d.id == current %} cur{% endif %}" type="submit" data-kid="{{ d.id }}"><b>{{ d.imia }}</b>
+    <span>{% if d.vik %}{{ d.vik }} р. · {% endif %}{% if d.ostannie %}останнє заняття {{ d.ostannie|dmy }}{% else %}занять ще не було{% endif %} · засвоєно навичок: {{ d.zasvoeno }}</span></button>
+</form>
+{% endfor %}
+</div>
+{% endblock %}
+{% block script %}
+<script>
+'use strict';
+var q = document.getElementById('q');
+if (q) q.addEventListener('input', function () {
+  var v = q.value.trim().toLowerCase(), fs = document.querySelectorAll('#list form');
+  for (var i = 0; i < fs.length; i++) fs[i].hidden = v && fs[i].getAttribute('data-name').indexOf(v) < 0;
+});
+</script>
+{% endblock %}

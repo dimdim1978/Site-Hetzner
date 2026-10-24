@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#C77D2E">
+<link rel="manifest" href="/uroky/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/uroky/icon-192.png">
+<link rel="apple-touch-icon" href="/uroky/icon-192.png">
+<title>{% block title %}Мудрик{% endblock %} · уроки</title>
+<style>
+/* Сторінки для дорослого. Межа сумісності та сама, що й в уроках:
+   старий Android (~Chrome 80) і Firefox 115 — тому без gap у flex, :has() тощо. */
+:root{--green:#2F6F4E;--sand:#C77D2E;--sand-soft:#FBF1E4;--sky:#3D7EA6;--ink:#101828;
+  --ink-2:#475467;--ink-3:#667085;--line:#E4E7EC;--bg:#F6F4EE;--err:#B42318;--err-soft:#FEF3F2}
+[hidden]{display:none !important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Roboto,Tahoma,Arial,sans-serif;
+  font-size:17px;line-height:1.5;-webkit-text-size-adjust:100%}
+.top{background:var(--sand);color:#fff}
+.top .in{max-width:760px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.top b{font-size:18px;margin-right:12px}
+.top a{color:#fff;font-size:15px;margin-left:14px}
+.wrap{max-width:760px;margin:0 auto;padding:8px 16px 40px}
+h1{font-size:24px;margin:22px 0 6px}
+h2{font-size:19px;margin:22px 0 8px}
+.lead{color:var(--ink-2);margin:0 0 16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 14px}
+.muted{color:var(--ink-3);font-size:15px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input[type=text],input[type=password],input[type=search]{font:inherit;font-size:18px;width:100%;min-height:52px;
+  padding:10px 14px;border:1px solid #D0D5DD;border-radius:10px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--sand);outline-offset:2px}
+.btn{display:inline-block;font:inherit;font-weight:600;min-height:52px;padding:12px 22px;border-radius:12px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;text-decoration:none;margin:6px 8px 0 0}
+.btn.main{background:var(--sand);border-color:var(--sand);color:#fff}
+.btn[disabled]{opacity:.5;cursor:default}
+.msg{margin-top:12px;font-weight:600}
+.msg.err{color:var(--err)}
+.msg.ok{color:var(--green)}
+.tips li{margin:4px 0}
+.copy{margin:28px 0 0;text-align:center;color:var(--ink-3);font-size:13px}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="top"><div class="in"><b>🦉 Мудрик</b><span>{% block nav %}{% endblock %}</span></div></div>
+<div class="wrap">
+{% block body %}{% endblock %}
+<p class="copy">© ГО «Берегиня», 2026. Використання без дозволу заборонено.</p>
+</div>
+{% block script %}{% endblock %}
+</body>
+</html>
