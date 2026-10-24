@@ -1,7 +1,7 @@
 /* Наскрізна перевірка уроків 5–8 (docs/uroky-10.md §5, uroky-11.md §D, uroky-12.md §F,
-   docs/kabinet-uroky.md §10б).
+   docs/kabinet-uroky.md §10б, §11).
    Запуск: NODE_PATH=$(npm root -g) node lab/perevirka-uroky.js [тека-для-скріншотів]
-   ONLY=phone (tablet, pc) — лише один пристрій; PARTS=secur,run,files,novoice — лише ці проходи.
+   ONLY=phone (tablet, pc) — лише один пристрій; PARTS=secur,zmist,run,files,novoice — лише ці проходи.
 
    Сторінку уроків тепер віддає Flask (server/uroky/uroky.html), тож перевірка сама піднімає
    server/app.py з DEV=1 і тимчасовими базами (beregynia.db, navchannia.db) та текою записів,
@@ -28,6 +28,10 @@ fs.mkdirSync(AUDIO);
 const PORT = 8700 + Math.floor(Math.random() * 200);
 const BASE = 'http://127.0.0.1:' + PORT;
 const ENV = Object.assign({}, process.env, {DEV: '1', DB_PATH: DB, NAVCH_DB_PATH: NAVCH, UROKY_AUDIO_DIR: AUDIO, PYTHONDONTWRITEBYTECODE: '1'});
+const LESSONS_DIR = path.join(SERVER, 'uroky', 'lessons');
+const POR = JSON.parse(fs.readFileSync(path.join(LESSONS_DIR, 'poriadok.json'), 'utf8'));
+const LES = {};
+POR.order.forEach(id => { LES[id] = JSON.parse(fs.readFileSync(path.join(LESSONS_DIR, id + '.json'), 'utf8')); });
 const ADMIN = {login: 'dima', password: 'dima-pass-123'}, TEACHER = {login: 'vika', password: 'vika-pass-123'};
 // Окремий педагог для блоку безпеки: «Я підготувався» в нього своє, і не зачепить проходів уроків
 const TEACHER2 = {login: 'olena', password: 'olena-pass-123'};
@@ -397,6 +401,7 @@ async function secur() {
   check(mz.length === 2 && mz.every(x => x.staff_login === null), N, 'заняття мами записані з khto=mama', 'мамині: ' + JSON.stringify(mz));
   // через інтерфейс: «Повторити урок» однією кнопкою
   await M.tap('#listBody .rec-go');
+  await M.page.waitForFunction(() => G.stage !== 'list');
   check(await M.page.evaluate(() => G.stage === 'greet' && G.lesson === 'G01'), N, 'мама: «Повторити урок» стартує Г01 одразу, без підготовки', 'мама rec-go: ' + await M.page.evaluate(() => G.stage + ' ' + G.lesson));
   const solveM = solver(M, dev);
   await M.tap('#btnStart');
@@ -542,6 +547,111 @@ async function secur() {
   await browser.close();
 }
 
+/* ======================= Зміст на сервері (§11) ======================= */
+// Рядки змісту уроку: тексти завдань, привітання, назви, матеріал для вчителя — усе, де є слово
+function contentStrings() {
+  const out = new Set();
+  const walk = (o, key) => {
+    if (typeof o === 'string') {
+      // ключі-посилання на малюнки рушія (svg: 'poppy') і службові поля — не зміст
+      if (['svg', 'type', 'sk', 'area', 'id', 'code', 'f', 'c', 'look', 'p', 's'].indexOf(key) >= 0) return;
+      const t = o.trim();
+      if (/[а-яіїєґ]{3}/i.test(t) || (key === 'en' && t.length >= 3)) out.add(t);
+      return;
+    }
+    if (Array.isArray(o)) o.forEach(x => walk(x, key));
+    else if (o && typeof o === 'object') Object.keys(o).forEach(k => walk(o[k], k));
+  };
+  Object.keys(LES).forEach(id => walk(LES[id], ''));
+  walk(JSON.parse(fs.readFileSync(path.join(LESSONS_DIR, '_zahalne.json'), 'utf8')), '');
+  return Array.from(out);
+}
+async function zmist() {
+  console.log('\n=== зміст уроків на сервері (§11)');
+  const N = 'zmist';
+  const browser = await chromium.launch(process.env.CHROME ? {executablePath: process.env.CHROME} : {});
+  const kid = await newKid('Зоя', 'Змістова'), other = await newKid('Іван', 'Інший');
+  const T = await openDevice(browser, DEVICES[1], 'Зміст: планшет');
+  await login(T, 'staff', TEACHER2.login, TEACHER2.password);
+  await chooseKid(T, kid.id);
+  // 1. Оболонка — лише рушій
+  const shell = await (await T.page.request.get('/uroky')).text();
+  /* Фрази (від 12 символів) не мають траплятися ніде, навіть у коментарях. Окремі слова й короткі
+     рядки — лише як рядки в коді ('машина', "сир"): згадати «склади» в коментарі рушій може.
+     Числівники (NUM) — словник рушія: ними сова рахує в будь-якому уроці. */
+  const NUMW = ['нуль', 'один', 'два', 'три', 'чотири', 'п’ять', 'шість', 'сім', 'вісім', 'дев’ять', 'десять'];
+  // Назви кроків шаблону заняття — це заголовки, які малює рушій, а не зміст уроку
+  const TEMPLATE = ['Я показую', 'Робимо разом', 'Дитина сама', 'Урок пальчика'];
+  const strs = contentStrings().filter(x => NUMW.indexOf(x) < 0 && TEMPLATE.indexOf(x) < 0);
+  const found = strs.filter(x => x.length >= 12 ? shell.indexOf(x) >= 0 : (shell.indexOf("'" + x + "'") >= 0 || shell.indexOf('"' + x + '"') >= 0));
+  check(strs.length > 400 && !found.length, N, 'в оболонці /uroky (' + Math.round(shell.length / 1024) + ' КБ) немає жодного з ' + strs.length + ' рядків змісту уроків і матеріалу для вчителя',
+    'в оболонці знайдено зміст: ' + found.slice(0, 12).join(' | '));
+  const rawLeft = ['const LESSONS = {', 'const SESSION =', 'const REMINDER =', 'guide: {', 'SWORDS'].filter(x => shell.indexOf(x) >= 0);
+  check(!rawLeft.length, N, 'в оболонці немає LESSONS, SESSION, REMINDER, guide — лише GEN, TYPES, VISUALS', 'в оболонці лишилось: ' + rawLeft.join(', '));
+  // 2. /uroky/api/urok/<id>: без куки, без входу, недоступний
+  const bare = await request.newContext({baseURL: BASE, maxRedirects: 0});
+  const noDev = (await bare.get('/uroky/api/urok/G01')).status();
+  const D2 = await openDevice(browser, DEVICES[0], 'Зміст: без входу');
+  const noLogin = await D2.page.evaluate(() => fetch('/uroky/api/urok/G01').then(r => r.status));
+  const T1 = await T.page.evaluate(() => fetch('/uroky/api/urok/G01').then(r => r.json()));
+  const g01 = JSON.stringify(T1);
+  check(noDev === 403 && noLogin === 401 && T1.ok && T1.urok.data && !/"guide"|Я показую|Робимо разом/.test(g01), N,
+    '/api/urok/G01: без куки пристрою 403, без входу 401; педагогу — завдання без матеріалу для вчителя', '/api/urok: ' + noDev + ' ' + noLogin + ' ' + g01.slice(0, 200));
+  const bad = await T.page.evaluate(() => fetch('/uroky/api/urok/X99').then(r => r.status));
+  check(bad === 404, N, 'неіснуючий урок → 404', 'X99: ' + bad);
+  // мама: лише пройдене з педагогом
+  await login(D2, 'mama', kid.login, kid.password);
+  await waitList(D2.page);
+  const before = await D2.page.evaluate(() => fetch('/uroky/api/urok/G01').then(r => r.status));
+  const mKat = await D2.page.evaluate(() => ORDER.length);
+  await T.page.evaluate(() => api('pidhotovka', {urok: 'G01'}));
+  await T.page.evaluate(id => api('zaniattia', {klient_id: uuid(), vyd: 'urok', urok: 'G01', pochatok: isoNow(), dytyna: id, navychky: {G01: {pershi: 3, usogo: 9}}}), kid.id);
+  const after = await D2.page.evaluate(() => fetch('/uroky/api/urok/G01').then(r => r.status));
+  const m02 = await D2.page.evaluate(() => fetch('/uroky/api/urok/M02').then(r => r.status));
+  await D2.page.reload(); await waitList(D2.page);
+  const mKat2 = await D2.page.evaluate(() => ORDER.join(','));
+  check(before === 403 && after === 200 && m02 === 403 && mKat === 0 && mKat2 === 'G01', N,
+    'мама: урок до заняття педагога → 403, після → 200; непройдений М02 → 403; у каталозі мами лише пройдені (' + mKat + ' → ' + mKat2 + ')',
+    'мама /api/urok: ' + [before, after, m02, mKat, mKat2].join(' '));
+  // 3. Матеріал для вчителя — лише персоналу, з підписом
+  const mg = await D2.page.evaluate(() => Promise.all(['G01', 'session'].map(x => fetch('/uroky/api/pidhotovka/' + x).then(r => r.status))));
+  const sg = await T.page.evaluate(() => fetch('/uroky/api/pidhotovka/G01').then(r => r.json()));
+  const ss = await T.page.evaluate(() => fetch('/uroky/api/pidhotovka/session').then(r => r.json()));
+  const today = new Date().toLocaleDateString('uk-UA', {timeZone: 'Europe/Kyiv', day: '2-digit', month: '2-digit', year: 'numeric'});
+  check(mg.join(',') === '403,403' && sg.guides && sg.guides.G01.show && sg.pidpys === 'ГО «Берегиня» · olena · ' + today && ss.session && ss.reminder.length, N,
+    '/api/pidhotovka: мамі 403 (і уроку, і загального), педагогу — матеріал із підписом «' + sg.pidpys + '»', 'pidhotovka: мама ' + mg + ', педагог ' + JSON.stringify(sg).slice(0, 160));
+  // Мамі в браузері матеріалу не потрапляє навіть після уроку
+  const leaked = await D2.page.evaluate(() => ORDER.some(id => Object.keys(LESSONS[id].skills).some(sk => LESSONS[id].skills[sk].guide)) || !!SESSION);
+  check(!leaked, N, 'у браузері мами немає ні guide, ні SESSION', 'мамі потрапив матеріал для вчителя');
+  // 4. Ф04: підготовка бере назви фігур із Ф01 (pidhotovka_z)
+  await T.page.reload(); await waitList(T.page);
+  await T.tap('#btnGuide');
+  await T.page.waitForSelector('#guideNav [data-tab="all"]').catch(async () => { throw new Error('матеріал не відкрився: ' + JSON.stringify(await T.page.evaluate(() => ({st: G.stage, body: $('guideBody').textContent.slice(0, 200)})))); });
+  await T.tap('#guideNav [data-tab="all"]');
+  await T.tap('#guideBody [data-open="F04"]');
+  await T.page.waitForSelector('#guideNav [data-tab="F04"]', {timeout: 10000}).catch(() => { throw new Error('Ф04 не відкрився: ' + T.cons.join(' | ') + ' / ' + T.page.url()); });
+  await T.tap('#guideNav [data-tab="F04"]');
+  const f04 = await T.page.textContent('#guideBody .demo');
+  check(/коло|круг|квадрат|трикутник|прямокутник/i.test(f04), N, 'Ф04: приклади в підготовці підписані назвами фігур із Ф01', 'Ф04 демо: ' + f04.slice(0, 120));
+  // Зіпсований файл уроку не валить сайт: урок пропускається, решта працює
+  const bk = path.join(LESSONS_DIR, 'A04.json'), orig = fs.readFileSync(bk);
+  fs.writeFileSync(bk, '{ зіпсовано');
+  let broken = '';
+  try {
+    broken = py(['-c', 'import app, uroky\nprint(len(uroky.ORDER), "A04" in uroky.FULL, len(uroky.CHECK_ORDER))'], {stdio: ['ignore', 'pipe', 'ignore']}).trim();
+  } finally { fs.writeFileSync(bk, orig); }
+  check(broken === '22 False 13', N, 'зіпсований A04.json: застосунок стартує, урок пропущено (22 уроки, перевірка без А04)', 'зіпсований файл: «' + broken + '»');
+  // 401/403/404 тут ми викликали навмисно — браузер пише про кожну таку відповідь сам
+  let clean = true;
+  for (const D of [T, D2]) {
+    const real = D.cons.filter(x => !/status of (401|403|404)\b.*\/uroky\/api\/(urok|pidhotovka)\//.test(x));
+    if (D.net.length) { clean = false; fail(N, 'запити за межі домену: ' + D.net.join(', ')); }
+    if (real.length) { clean = false; fail(N, 'консоль: ' + real.join(' | ')); }
+  }
+  if (clean) ok('консоль чиста (крім навмисних відмов); жодного запиту за межі домену');
+  await browser.close();
+}
+
 /* ======================= Уроки: старі перевірки через сервер ======================= */
 async function run(dev) {
   console.log('\n=== ' + dev.name + ' ' + dev.viewport.width + '×' + dev.viewport.height);
@@ -606,6 +716,7 @@ async function run(dev) {
   // Педагог, уже готувався: картка → нагадування → «Почати заняття»
   const openPrepared = async id => {
     await tap('#listBody [data-lesson="' + id + '"]');
+    await page.waitForFunction(() => G.stage !== 'list');
     if (await stage() === 'remind') await tap('#remindStart');
   };
 
@@ -627,12 +738,16 @@ async function run(dev) {
   const copy = await page.textContent('#s-list .copy');
   check(/© ГО «Берегиня», 2026\. Використання без дозволу заборонено/.test(copy), dev.name, 'внизу списку: «' + copy.trim() + '»', 'позначки © немає');
   // Каталог сервера збігається з уроками на сторінці (сервер рахує засвоєння за ним)
-  const kat = JSON.parse(fs.readFileSync(path.join(SERVER, 'uroky', 'katalog.json'), 'utf8'));
-  const mine = await page.evaluate(() => ORDER.map(id => id + ':' + LESSONS[id].area + LESSONS[id].level + ':' + Object.keys(LESSONS[id].skills).join(',') + ':' + (LESSONS[id].needs || []).join(',')).join(' '));
-  const theirs = kat.lessons.map(L => L.id + ':' + L.area + L.level + ':' + Object.keys(L.skills).join(',') + ':' + L.needs.join(',')).join(' ');
-  check(mine === theirs, dev.name, 'каталог сервера (katalog.json) збігається з уроками на сторінці', 'каталог розійшовся:\n' + mine + '\n' + theirs);
+  const mine = await page.evaluate(() => ORDER.map(id => id + ':' + LESSONS[id].area + LESSONS[id].level + ':' + Object.keys(LESSONS[id].skills).join(',') + ':' + (LESSONS[id].needs || []).join(',')).join(' ') +
+    ' | ' + CHECK_ORDER.join(','));
+  const theirs = POR.order.map(id => { const L = LES[id]; return id + ':' + L.area + L.level + ':' + Object.keys(L.skills).join(',') + ':' + (L.needs || []).join(','); }).join(' ') +
+    ' | ' + POR.check_order.join(',');
+  const noContent = await page.evaluate(() => ORDER.every(id => !LESSONS[id].data && !LESSONS[id].tasks));
+  check(mine === theirs && noContent, dev.name, 'каталог зі сторінки збігається з lessons/*.json і poriadok.json; змісту уроків до відкриття в браузері немає',
+    'каталог розійшовся:\n' + mine + '\n' + theirs + ' / зміст до відкриття: ' + !noContent);
   // Сіра картка відкриває лише підготовку, заняття не стартує
   await tap('#listBody [data-lesson="G04"]');
+  await page.waitForSelector('#guideBody [data-act="try"]');
   const g04 = await page.evaluate(() => ({st: G.stage, tryDis: !!document.querySelector('#guideBody [data-act="try"][disabled]'),
     snd: document.querySelectorAll('#guideBody .say-sm[disabled]').length}));
   check(g04.st === 'guide' && g04.tryDis && g04.snd === 3, dev.name, 'сіра Г04: підготовка читається, «Спробуйте самі» і 🔊 приголосних неактивні', 'сіра Г04: ' + JSON.stringify(g04));
@@ -642,9 +757,12 @@ async function run(dev) {
 
   // Г03: підготовка, 🔊 прикладів, «Спробуйте самі»
   await tap('#listBody [data-lesson="G03"]');
+  await page.waitForFunction(() => G.stage !== 'list');
   if (await stage() !== 'guide') fail(dev.name, 'педагог не потрапив у підготовку Г03');
   await tap('#guideNav [data-tab="G03"]');
   await shot('guide-G03');
+  const sig = await page.textContent('#guideBody .pidpys');
+  check(/^ГО «Берегиня» · vika[a-z]+ · \d\d\.\d\d\.\d{4}$/.test(sig), dev.name, 'у матеріалі для вчителя внизу підпис «' + sig + '»', 'підпис матеріалу: ' + sig);
   const sp0 = await page.evaluate(() => window.__spoken.length);
   await tap('#guideBody .demo .speak');
   await page.waitForTimeout(600);
@@ -671,6 +789,7 @@ async function run(dev) {
   check(lessonsDone(liza.id) === 1 && prep.length === 1, dev.name, '«Я підготувався» — на сервері для педагога ' + TCH.login + '; урок М01 записано', 'М01: занять ' + lessonsDone(liza.id) + ', підготовка ' + prep.length);
   // Вдруге — лише нагадування
   await tap('#listBody [data-lesson="M01"]');
+  await page.waitForFunction(() => G.stage !== 'list');
   check((await stage()) === 'remind', dev.name, 'підготовлений урок відкриває нагадування', 'замість нагадування ' + await stage());
   await tap('#remindBack');
   // Далі педагог «уже готувався» до всіх уроків
@@ -759,14 +878,16 @@ async function run(dev) {
   check(mamaIds.length === 19 && !mamaSnd.length, dev.name, 'мама бачить 19 пройдених з педагогом уроків, звукових (без записів) — жодного', 'мама бачить: ' + mamaIds.join(' '));
   const st0 = await page.evaluate(() => JSON.stringify(stats()));
   await tap('#listBody .rec-go');
+  await page.waitForFunction(() => G.stage !== 'list');
   const ml = await page.evaluate(() => G.lesson);
   await playLesson(ml);
   const st1 = await page.evaluate(() => stats());
   const same = Object.keys(st1).filter(k => k !== '_today').every(k => JSON.parse(st0)[k].st === st1[k].st);
   check(same && Object.keys(LESSON_SK(ml)).every(sk => st1[sk].vdoma === 1), dev.name, 'мама повторила ' + ml + ': статуси ті самі, «вдома» = 1', 'мама змінила стан: ' + ml);
-  function LESSON_SK(id) { return JSON.parse(fs.readFileSync(path.join(SERVER, 'uroky', 'katalog.json'), 'utf8')).lessons.find(L => L.id === id).skills; }
+  function LESSON_SK(id) { return LES[id].skills; }
 
   // Повний перебір: кожне можливе завдання кожного уроку (багато разів, бо вибір випадковий)
+  await page.evaluate(() => ensureLessons(ORDER));
   const sweep = await page.evaluate(async () => {
     const said = [];
     const orig = window.speechSynthesis.speak;
@@ -931,6 +1052,7 @@ async function withFiles(dev) {
   await chooseKid(D, marko.id);
   for (const id of ['G04', 'G05', 'G06', 'G09']) {
     await tap('#listBody [data-lesson="' + id + '"]');
+    await page.waitForFunction(() => G.stage !== 'list');
     if (await page.evaluate(() => G.stage) === 'remind') await tap('#remindStart');
     await tap('#btnStart');
     for (let k = 0; k < 3; k++) { await tap('#star'); await page.waitForTimeout(80); }
@@ -1002,7 +1124,7 @@ async function noVoice() {
   await page.waitForURL(/\/uroky\/dity$/);
   await page.tap('button[data-kid="' + kid.id + '"]');
   await waitList(page);
-  await page.evaluate(() => { G.lesson = 'G11'; startTasks(); });
+  await page.evaluate(() => ensureLessons(['G11', 'A04']).then(() => { G.lesson = 'G11'; startTasks(); }));
   await page.waitForTimeout(1500);
   const aloud = await page.textContent('#aloud');
   const lit = await page.locator('#cards .card.lit').count();
@@ -1028,6 +1150,7 @@ async function noVoice() {
     await adminLogin();
     console.log('Flask: ' + BASE + ' (тимчасові бази в ' + TMP + ')');
     if (part('secur')) try { await secur(); } catch (e) { fail('secur', 'зупинилось: ' + e.message.split('\n')[0]); }
+    if (part('zmist')) try { await zmist(); } catch (e) { fail('zmist', 'зупинилось: ' + e.message.split('\n')[0]); }
     if (part('run')) for (const d of devs) {
       try { await run(d); } catch (e) { fail(d.name, 'зупинилось: ' + e.message.split('\n')[0]); }
     }

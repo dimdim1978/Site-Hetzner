@@ -57,25 +57,66 @@ ST_HUMAN = {'—': 'не почато', 'вчиться': 'вчиться', 'з�
 
 
 # ============================================================
-#  КАТАЛОГ УРОКІВ — що є, які навички, яких записів потребує
+#  УРОКИ — файли server/uroky/lessons/<id>.json (прохід 5, §11)
+#
+#  Один урок — один файл: завдання (data), привітання і матеріал для
+#  вчителя (skills.<навичка>.guide) разом, щоб Дмитро правив одне місце.
+#  Браузер отримує їх ПОРІЗНО: дитячу частину — /uroky/api/urok/<id>
+#  (лише доступний урок), матеріал для вчителя — /uroky/api/pidhotovka/<id>
+#  (лише персонал). Порядок уроків і перевірки — lessons/poriadok.json,
+#  спільна частина підготовки — lessons/_zahalne.json.
 # ============================================================
-KAT = {}
+LESSONS_DIR = os.path.join(UROKY_DIR, 'lessons')
+FULL = {}              # id → урок цілком, як у файлі
+ZAHALNE = {}           # «Як іде сесія», нагадування, правило засвоєння
 ORDER = []
-LESSON = {}
+LESSON = {}            # id → лише опис: код, назва, лінія, рівень, записи, навички
 SKILL = {}             # навичка → {lesson, code, short, nazva, porada}
 CHECK_ORDER = []
 
+def _meta(L):
+    sks = {}
+    for sk, v in L['skills'].items():
+        gd = v['guide']
+        t = gd['together']
+        sks[sk] = {'code': gd['title'].split('.')[0], 'short': v['short'],
+                   'nazva': re.sub(r'^[^.]+\.\s*', '', gd['title']),
+                   'porada': 'Пограйте разом у {}: {}'.format(t['name'], t['steps'][0])}
+    return {'id': L['id'], 'code': L['code'], 'title': L['title'], 'area': L['area'],
+            'level': L['level'], 'needs': L.get('needs') or [], 'skills': sks}
+
 def load_katalog():
-    global KAT, ORDER, LESSON, SKILL, CHECK_ORDER
-    with open(os.path.join(UROKY_DIR, 'katalog.json'), encoding='utf-8') as f:
-        KAT = json.load(f)
-    ORDER = [L['id'] for L in KAT['lessons']]
-    LESSON = {L['id']: L for L in KAT['lessons']}
+    """Зіпсований файл уроку (кома, лапка) НЕ кладе сайт: анкети й адмінка
+    працюють у тому самому процесі. Такий урок просто пропускається, а
+    причина пишеться в журнал служби (journalctl -u beregynia)."""
+    global ZAHALNE, ORDER, LESSON, SKILL, CHECK_ORDER
+    FULL.clear()
+    try:
+        with open(os.path.join(LESSONS_DIR, 'poriadok.json'), encoding='utf-8') as f:
+            por = json.load(f)
+        with open(os.path.join(LESSONS_DIR, '_zahalne.json'), encoding='utf-8') as f:
+            ZAHALNE = json.load(f)
+    except Exception as e:
+        A.app.logger.error('Уроки: не прочитано poriadok.json/_zahalne.json: %s', e)
+        por, ZAHALNE = {'order': [], 'check_order': []}, {}
+    metas = []
+    for lid in por['order']:
+        try:
+            with open(os.path.join(LESSONS_DIR, lid + '.json'), encoding='utf-8') as f:
+                L = json.load(f)
+            if L.get('id') != lid:
+                raise ValueError('у файлі id={}'.format(L.get('id')))
+            metas.append(_meta(L))
+            FULL[lid] = L
+        except Exception as e:
+            A.app.logger.error('Уроки: урок %s пропущено — %s', lid, e)
+    ORDER = [m['id'] for m in metas]
+    LESSON = {m['id']: m for m in metas}
     SKILL = {}
-    for L in KAT['lessons']:
-        for sk, v in L['skills'].items():
-            SKILL[sk] = dict(v, lesson=L['id'])
-    CHECK_ORDER = list(KAT['check_order'])
+    for m in metas:
+        for sk, v in m['skills'].items():
+            SKILL[sk] = dict(v, lesson=m['id'])
+    CHECK_ORDER = [sk for sk in por['check_order'] if sk in SKILL]
 
 
 def avail(lid):
@@ -331,8 +372,9 @@ def stan(did, today=None):
     мами — окремий лічильник vdoma."""
     today = today or today_kyiv()
     ses = _sesii(did)
-    teach = [s for s in ses if s['khto'] == 'vchytel' and s['vyd'] == 'urok']
-    mama = [s for s in ses if s['khto'] == 'mama' and s['vyd'] == 'urok']
+    # урок, файл якого зник чи зіпсувався, не має валити стан — його заняття просто не рахуються
+    teach = [s for s in ses if s['khto'] == 'vchytel' and s['vyd'] == 'urok' and s['urok'] in LESSON]
+    mama = [s for s in ses if s['khto'] == 'mama' and s['vyd'] == 'urok' and s['urok'] in LESSON]
 
     skills = {}
     for sk in SKILL:
@@ -426,6 +468,16 @@ def stan(did, today=None):
             'ostannie': ses[-1]['den'] if ses else None}
 
 
+def katalog_for(s):
+    """Перелік уроків для браузера — лише опис, без завдань і без матеріалу
+    для вчителя. Мамі — тільки ті уроки, які вона може повторювати."""
+    ids = ORDER if session.get('kind') == 'staff' else s['mama']['lessons']
+    return [{'id': LESSON[i]['id'], 'code': LESSON[i]['code'], 'title': LESSON[i]['title'],
+             'area': LESSON[i]['area'], 'level': LESSON[i]['level'], 'needs': LESSON[i]['needs'],
+             'skills': {sk: {'code': v['code'], 'short': v['short']} for sk, v in LESSON[i]['skills'].items()}}
+            for i in ids]
+
+
 def stan_json(row):
     s = stan(row['id'])
     s.pop('kalendar', None)
@@ -433,7 +485,7 @@ def stan_json(row):
            'dytyna': {'id': row['id'], 'imia': row['imia'], 'vik': row['vik'],
                       'bukvar': BUKVAR_CLIENT.get(row['bukvar'], '?'),
                       'bukvar_name': BUKVAR_NAME.get(row['bukvar'], '')},
-           'stan': s, 'dev': DEV}
+           'stan': s, 'dev': DEV, 'katalog': katalog_for(s), 'check_order': CHECK_ORDER}
     if session.get('kind') == 'staff':
         out['staff'] = {'login': session.get('login'), 'name': session.get('name')}
         out['prep'] = {r['urok']: r['data'] for r in nv().execute(
@@ -710,6 +762,47 @@ def init(app, appmod):
     @app.post('/uroky/api/zaniattia')
     def uroky_api_zaniattia():
         return _pryiniaty()
+
+    # ---------------- зміст: по одному уроку (§11) ----------------
+    @app.get('/uroky/api/urok/<lid>')
+    def uroky_api_urok(lid):
+        row = dytyna_sesii()
+        if not row:
+            return _lost(api=True)
+        if lid not in FULL:
+            return jsonify(ok=False, error='Немає такого уроку'), 404
+        # мамі — лише пройдене з педагогом (те саме правило, що й для запису заняття);
+        # педагог веде програму, йому доступні всі уроки
+        if session.get('kind') != 'staff' and lid not in stan(row['id'])['mama']['lessons']:
+            return jsonify(ok=False, error='Цей урок ще не пройдено з педагогом'), 403
+        L = FULL[lid]
+        urok = {k: v for k, v in L.items() if k not in ('skills', 'pidhotovka_z')}
+        urok['skills'] = {sk: {'short': v['short'], 'code': LESSON[lid]['skills'][sk]['code']}
+                          for sk, v in L['skills'].items()}
+        resp = jsonify(ok=True, urok=urok)
+        resp.headers['Cache-Control'] = 'no-store'
+        return resp
+
+    @app.get('/uroky/api/pidhotovka/<lid>')
+    def uroky_api_pidhotovka_get(lid):
+        # другий рубіж: мамі не віддається навіть за прямим запитом
+        if session.get('kind') != 'staff':
+            return jsonify(ok=False, error='Матеріал для вчителя — лише педагогу'), 403
+        # непомітний підпис: якщо сторінка «спливе», видно, з чийого входу
+        pidpys = 'ГО «Берегиня» · {} · {}'.format(session.get('login'), datetime.now(KYIV).strftime('%d.%m.%Y'))
+        if lid == 'session':
+            out = dict(ok=True, pidpys=pidpys, **ZAHALNE)
+        elif lid in FULL:
+            L = FULL[lid]
+            out = {'ok': True, 'pidpys': pidpys,
+                   'guides': {sk: v['guide'] for sk, v in L['skills'].items()},
+                   # візуалам деяких уроків потрібні дані сусіднього (Ф04 — назви фігур із Ф01)
+                   'dani': {d: FULL[d].get('data') for d in L.get('pidhotovka_z') or [] if d in FULL}}
+        else:
+            return jsonify(ok=False, error='Немає такого уроку'), 404
+        resp = jsonify(out)
+        resp.headers['Cache-Control'] = 'no-store'
+        return resp
 
     # ---------------- лише для розробки ----------------
     @app.post('/uroky/api/dev/zavtra')

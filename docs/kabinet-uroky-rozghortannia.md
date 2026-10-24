@@ -143,3 +143,5 @@ cp /opt/site/lab/uroky.html /var/www/lab/uroky.html
   піде на активацію.
 * На пошту кнопка копії й далі шле лише основну базу; `navchannia-….db` лежить
   на сервері поруч.
+* **Урок зник зі списку після правки** — зіпсований `server/uroky/lessons/<id>.json`:
+  `journalctl -u beregynia -n 50 | grep Уроки` покаже, який файл і що не так.
