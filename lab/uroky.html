@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Мудрик · 10 уроків</title>
+<title>Мудрик · уроки</title>
 <style>
   /* Межа сумісності — старий Android-планшет (~Chrome 80) і Firefox 115.
      Тому: clamp()/min() є (Chrome 79+), а gap у flex НЕМАЄ (лише з Chrome 84) —
@@ -126,6 +126,16 @@
   .word-big{display:inline-block;background:#fff;border:4px solid var(--line);border-radius:24px;padding:4px .4em;line-height:1.15}
   .word-big b{display:block;font-size:clamp(48px, 11vmin, 110px);letter-spacing:.04em}
   .word-big span{display:block;font-size:clamp(26px, 5vmin, 48px);color:var(--soft)}
+  /* Г04: підпис під значком — для дорослого */
+  .card .lbl{display:block;width:100%;text-align:center;font-size:calc(var(--card) * .11);color:var(--soft);line-height:1.1}
+  /* Г06: звукові схеми зі шкільними позначеннями: ○ голосний, ▬ твердий, ═ м'який */
+  .sch{display:inline-flex;align-items:center;line-height:1}
+  .sch i{display:block;margin:0 .1em;flex:none}
+  .sch .so{width:.8em;height:.8em;border:.13em solid #D92D20;border-radius:50%}
+  .sch .sh{width:1em;height:.16em;background:var(--sky)}
+  .sch .ss{width:1em;height:.46em;border-top:.16em solid var(--green);border-bottom:.16em solid var(--green)}
+  .card .sch{font-size:calc(var(--card) * .25)}
+  .snd-btn{margin-top:4px;border:3px solid var(--sky);background:#fff;color:var(--sky);border-radius:18px;min-height:60px;padding:0 20px;font-size:20px}
   /* Кубикові крапки */
   .dice{display:inline-block;position:relative;vertical-align:middle}
   .dice i{position:absolute;width:22%;height:22%;margin:-11% 0 0 -11%;border-radius:50%;background:var(--ink)}
@@ -258,6 +268,16 @@
   .rec-go{display:block;width:100%;border:0;border-radius:22px;background:var(--green);color:#fff;font-size:26px;font-weight:600;
     padding:18px 14px;box-shadow:0 6px 0 #1f4b35;margin:12px 0 20px;text-align:center}
   .rec-go:active{transform:translateY(4px);box-shadow:0 2px 0 #1f4b35}
+  .lesson.wait{background:#F2F4F7;color:var(--soft);border-style:dashed}
+  .lesson.wait .code{background:#98A2B3}
+  .lesson .wn{display:block;font-size:14px;color:#8A5418}
+  .check-box{border:2px solid var(--sky);background:#EEF4F8;border-radius:16px;padding:10px 14px;margin:6px 0 14px}
+  .check-box .btn{width:100%;font-size:19px}
+  .check-box .btn.main{background:var(--sky);border-color:var(--sky)}
+  .check-box p{margin:6px 0 0}
+  .btn[disabled],.speak[disabled],.say-sm[disabled]{opacity:.5;cursor:default}
+  .res-2{color:var(--green);font-weight:600}.res-0{color:#B42318}.res-s{color:var(--soft)}
+  .concl{font-size:21px;border-left:6px solid var(--sand);background:#FBF3EA;padding:10px 14px;border-radius:8px;margin-top:14px}
   .rec-go small{display:block;font-size:17px;font-weight:400;opacity:.92;margin-top:4px}
   details.more{border-top:1px solid var(--line);margin-top:8px}
   details.more summary{font-size:18px;min-height:52px;line-height:52px;cursor:pointer}
@@ -308,6 +328,10 @@
   .fs-card .tag{display:block;font-size:14px;color:var(--soft)}
   .fs-card.no{border-style:dashed}
   .fs-card.no .w b{color:var(--sky)}
+  .demo .sq.solo{margin:0;padding:0;border:0}
+  .sound-tile .w{font-size:28px}
+  .sound-tile .say-sm{margin-top:6px}
+  .scheme-demo .sch{font-size:36px;margin:6px 0}
   .fs-card.lit{border-color:var(--sand);box-shadow:0 0 0 5px rgba(199,125,46,.3)}
   .fs-sample{display:inline-block;border:3px dashed var(--sand);border-radius:16px;padding:6px 18px;background:#fff;margin-bottom:12px}
   .fs-sample .e{font-size:54px;line-height:1.1}.fs-sample .e .ico{width:54px;height:54px}
@@ -431,6 +455,15 @@
   <div class="page-body" id="guideBody"></div>
 </section>
 
+<!-- Стартова / повторна перевірка: пояснення перед нею і результат після — для дорослого -->
+<section class="page" id="s-check" hidden>
+  <nav class="page-nav"><div class="in">
+    <button class="nav-btn" id="checkBack">← До уроків</button>
+    <span class="nav-title" id="checkKid"></span>
+  </div></nav>
+  <div class="page-body" id="checkBody"></div>
+</section>
+
 <!-- Нагадування вчителю, який уже готувався до цього уроку -->
 <section class="screen" id="s-remind" hidden>
   <div class="remind">
@@ -508,6 +541,8 @@
     <p class="muted">✓ — правильна відповідь з першої спроби. «Засвоєно» — 3 правильні щонайменше у 2 різні дні.
       «Застряг» — 3 сесії поспіль без жодної правильної. Урок засвоєно, коли засвоєні всі його навички.
       Дані лише в цьому браузері (localStorage).</p>
+    <h2 style="margin-top:18px">Перевірки: перша → повторна</h2>
+    <div id="panelChecks"></div>
     <div class="row">
       <button class="btn" id="panelTomorrow">Імітувати завтра</button>
       <button class="btn" id="panelReset">Скинути</button>
@@ -540,6 +575,41 @@ const BUKVAR = {
   V: {name: 'Вашуленко', vowels: ['а', 'о', 'і', 'и', 'у', 'е']},
   '?': {name: 'Не знаю', vowels: ['а', 'о', 'і', 'и', 'у', 'е']}  // як у Вашуленка
 };
+
+/* ЗАПИСАНІ ЗВУКИ (docs/uroky-11.md §A). Перелік — той самий, що SOUNDS у lab/studio.html:
+   студія віддає файли snd_<id>.wav, вони лежать у теці audio/ поруч із цією сторінкою.
+   Змінили перелік у студії — змініть і тут. Окремий приголосний звучить ТІЛЬКИ звідси. */
+const SND_DIR = 'audio/';
+const SOUNDS = [
+  {id: 'a', s: 'а', kind: 'vowel'}, {id: 'o', s: 'о', kind: 'vowel'}, {id: 'u', s: 'у', kind: 'vowel'},
+  {id: 'y', s: 'и', kind: 'vowel'}, {id: 'i', s: 'і', kind: 'vowel'}, {id: 'e', s: 'е', kind: 'vowel'},
+  {id: 'm', s: 'м', kind: 'long'}, {id: 'n', s: 'н', kind: 'long'}, {id: 'l', s: 'л', kind: 'long'},
+  {id: 'r', s: 'р', kind: 'long'}, {id: 's', s: 'с', kind: 'long'}, {id: 'z', s: 'з', kind: 'long'},
+  {id: 'sh', s: 'ш', kind: 'long'}, {id: 'zh', s: 'ж', kind: 'long'}, {id: 'v', s: 'в', kind: 'long'},
+  {id: 'f', s: 'ф', kind: 'long'}, {id: 'kh', s: 'х', kind: 'long'}, {id: 'h', s: 'г', kind: 'long'},
+  {id: 'b', s: 'б', kind: 'short'}, {id: 'p', s: 'п', kind: 'short'}, {id: 'd', s: 'д', kind: 'short'},
+  {id: 't', s: 'т', kind: 'short'}, {id: 'k', s: 'к', kind: 'short'}, {id: 'g', s: 'ґ', kind: 'short'},
+  {id: 'ts', s: 'ц', kind: 'short'}, {id: 'ch', s: 'ч', kind: 'short'}, {id: 'dzh', s: 'дж', kind: 'short'},
+  {id: 'dz', s: 'дз', kind: 'short'},
+  {id: 'l_soft', s: 'л’', kind: 'soft'}, {id: 'n_soft', s: 'н’', kind: 'soft'}, {id: 's_soft', s: 'с’', kind: 'soft'},
+  {id: 'z_soft', s: 'з’', kind: 'soft'}, {id: 'r_soft', s: 'р’', kind: 'soft'}, {id: 'j', s: 'й', kind: 'soft'},
+  {id: 'd_soft', s: 'д’', kind: 'soft'}, {id: 't_soft', s: 'т’', kind: 'soft'}, {id: 'ts_soft', s: 'ц’', kind: 'soft'},
+  {id: 'dz_soft', s: 'дз’', kind: 'soft'}
+];
+const SND = {};
+SOUNDS.forEach(x => { SND[x.id] = x; });
+const VOWEL_ID = {а: 'a', о: 'o', у: 'u', и: 'y', і: 'i', е: 'e'};
+const sndName = id => '[' + SND[id].s + ']';
+// Слова для Г05–Г06: лише тягучі приголосні й голосні. sch — звукова схема: o голосний, - твердий, = м'який
+const SWORDS = [
+  {w: 'сир', e: '🧀', snd: ['s', 'y', 'r'], sch: '-o-'}, {w: 'рис', e: '🍚', snd: ['r', 'y', 's'], sch: '-o-'},
+  {w: 'лис', e: '🦊', snd: ['l', 'y', 's'], sch: '-o-'}, {w: 'ніс', e: '👃', snd: ['n_soft', 'i', 's'], sch: '=o-'},
+  {w: 'ліс', e: '🌲', snd: ['l_soft', 'i', 's'], sch: '=o-'},
+  {w: 'сова', e: '🦉', snd: ['s', 'o', 'v', 'a']}, {w: 'мило', e: '🧼', snd: ['m', 'y', 'l', 'o']},
+  {w: 'сани', e: '🛷', snd: ['s', 'a', 'n', 'y']}
+];
+const sndNeeds = ws => ws.reduce((a, w) => a.concat(w.snd.filter(x => a.indexOf(x) < 0)), []);
+const SCH_ALT = {'-o-': ['=o-', 'o--', '--o', '-o='], '=o-': ['-o-', '=-o', 'o=-', '=o=']};
 
 const LESSONS = {
   G01: {
@@ -667,6 +737,97 @@ const LESSONS = {
     }}}
   },
 
+  /* Г04, Г05, Г06, Г09 — «звукові»: окремий приголосний звучить лише з файлу (audio/snd_<id>.wav).
+     needs — без яких файлів урок не відкривається; поки їх немає, мама його не бачить, вчитель бачить сірим. */
+  G04: {
+    code: 'Г04', title: 'Голосні й приголосні на слух', level: 0, area: 'g',
+    needs: ['m', 'n', 'l', 's', 'sh', 'v'],  // голосні без запису скаже голос браузера — це дозволено
+    hello: {t: 'Сьогодні слухаємо, який звук співається.'},
+    data: {vowels: ['a', 'o', 'u', 'y', 'i', 'e'], cons: ['m', 'n', 'l', 's', 'sh', 'v']},
+    tasks() {
+      const t = shuffle(this.data.vowels).slice(0, 4).map(id => ({id, v: true}))
+        .concat(shuffle(this.data.cons).slice(0, 5).map(id => ({id, v: false})));
+      return mixNoRun(t, x => x.v).map(x => ({type: 'sing', sk: 'G04', id: x.id, vowel: x.v, files: [x.id]}));
+    },
+    skills: {G04: {short: 'голосні й приголосні на слух', guide: {
+      title: 'Г04. Голосні й приголосні на слух',
+      what: 'Голосні звуки можна співати: повітря йде вільно. У приголосних є перешкода — губи, язик, зуби. Голосний позначаємо кружечком.',
+      voice: 'Окремий приголосний звучить лише із запису, зробленого в студії звуків. Голос планшета його не вимовляє ніколи — він читає «[м]» як «ем». Поки записів немає, урок закритий.',
+      visual: {type: 'sing', ids: ['a', 'o', 'u', 'm', 's', 'sh'],
+               note: 'Натисніть 🔊 біля звука: він прозвучить із запису. Голосний без запису скаже голос планшета, приголосний без запису мовчить.'},
+      show: ['Співайте [а-а-а], [о-о-о] — звук тягнеться, як пісня.',
+             'Спробуйте «проспівати» [п] — не виходить. Покажіть на губах і язиці, де перешкода.',
+             'Голосний позначайте кружечком.'],
+      together: {name: '«Співаємо — не співаємо»',
+                 steps: ['Ви називаєте звук — дитина співає його, якщо він співається, або плескає, якщо ні.',
+                         'Поставте два «кошики»: для голосних і для приголосних. Дитина «кладе» звук у потрібний.']},
+      alone: 'Звучить звук із запису — дитина торкається 🎵 «співається» (голосний) або ✋ «не співається» (приголосний). Звуки: а о у и і е і тягучі м н л с ш в.',
+      pitfalls: [{p: 'Вважає [й] голосним.', fix: 'Спробуйте разом проспівати [й] — не виходить.'},
+                 {p: 'Плутає звук і букву.', fix: 'Працюйте лише на слух, без букв.'}]
+    }}}
+  },
+
+  G05: {
+    code: 'Г05', title: 'Злиття звуків на слух', level: 0, area: 'g',
+    needs: sndNeeds(SWORDS),
+    hello: {t: 'Сьогодні вгадуємо слова, які каже робот.'},
+    data: {words: SWORDS},
+    tasks() {
+      const W = this.data.words;
+      // Поруч ставимо слово з тими самими звуками (сир — рис, лис — ліс): тоді треба слухати порядок, а не вгадувати
+      const common = (a, b) => a.snd.filter(x => b.snd.indexOf(x) >= 0).length;
+      return shuffle(W).map(r => {
+        const near = shuffle(W.filter(x => x !== r)).sort((a, b) => common(r, b) - common(r, a))[0];
+        const far = pick(W.filter(x => x !== r && x !== near));
+        return {type: 'blend', sk: 'G05', w: r, opts: [r, near, far], files: r.snd};
+      });
+    },
+    skills: {G05: {short: 'злиття звуків на слух', guide: {
+      title: 'Г05. Злиття звуків на слух',
+      what: 'Почуті окремо звуки зливаються в слово. Злити — раніше, ніж розкласти.',
+      voice: 'Слово по звуках звучить лише із записів. Ціле слово сова каже сама — це дозволено.',
+      visual: {type: 'blend', words: ['сир', 'лис', 'сова'],
+               note: 'Натисніть «🔊 По звуках»: слово прозвучить звук за звуком із записів, звуки підсвітяться по черзі. «Разом» — ціле слово.'},
+      show: ['Кажіть звуки окремо, а потім разом, усе швидше: [м]…[а]…[к] — [м][а][к] — мак!',
+             '«Звуки беруться за руки».'],
+      together: {name: '«Робот говорить»',
+                 steps: ['Ви кажете слово по звуках, як робот, — дитина вгадує й показує предмет або картинку.',
+                         'Потім робот — дитина, а вгадуєте ви.']},
+      alone: 'Робот каже слово по звуках (із записів) — дитина обирає картинку з трьох. Слова лише з тягучих і голосних: сир, рис, лис, ніс, ліс, сова, мило, сани.',
+      pitfalls: [{p: 'Вставляє зайві голосні («ме-а-ке»).', fix: 'Вимовляйте тягучі звуки без пауз: «мммааак».'},
+                 {p: 'Губить перший звук.', fix: 'Коротші слова, 2–3 звуки.'}]
+    }}}
+  },
+
+  G06: {
+    code: 'Г06', title: 'Звуковий аналіз слова з 3 звуків', level: 1, area: 'g',
+    needs: sndNeeds(SWORDS.filter(w => w.sch)),
+    hello: {t: 'Сьогодні шукаємо схеми слів.'},
+    data: {words: SWORDS.filter(w => w.sch)},
+    tasks() {
+      const W = this.data.words;
+      let t, n = 0;
+      // Кожне слово раз, потім три повтори; те саме слово двічі підряд не ставимо
+      do { t = shuffle(W).concat(shuffle(W).slice(0, 3)); n++; } while (n < 50 && t.some((x, i) => i && x === t[i - 1]));
+      return t.map(w => ({type: 'scheme', sk: 'G06', w, opts: [w.sch].concat(shuffle(SCH_ALT[w.sch]).slice(0, 2)), files: w.snd}));
+    },
+    skills: {G06: {short: 'звуковий аналіз', guide: {
+      title: 'Г06. Звуковий аналіз слова з 3 звуків',
+      what: 'Дитина відтворює ланцюжок звуків у слові. Модель — шкільні позначення: кружечок — голосний, риска — твердий, дві риски — м’який.',
+      school: 'відтворює ланцюжок звуків у почутому слові.',
+      visual: {type: 'schemes', words: ['сир', 'ніс'],
+               note: 'Червоний кружечок — голосний, синя риска — твердий, зелені дві риски — м’який. «🔊 По звуках» — із записів.'},
+      show: ['Протяжно вимовляйте «сссииир» і на кожен звук кладіть знак: риска, кружечок, риска.',
+             'Потім ведіть пальцем по схемі й називайте звуки.'],
+      together: {name: '«Розклади знаки»',
+                 steps: ['Розкладіть знаки під картинкою: сир, лис, суп.',
+                         'Перевірте разом: ведіть пальцем по знаках і вимовляйте звуки.']},
+      alone: 'Картинка й три звукові схеми — дитина обирає правильну. Кнопка 🔊 програє слово по звуках із записів. Слова: сир, рис, лис (риска, кружечок, риска), ніс, ліс (дві риски, кружечок, риска).',
+      pitfalls: [{p: 'Пропускає або переставляє звуки.', fix: 'Вимовляйте протяжніше, ведіть пальцем.'},
+                 {p: 'Плутає м’які.', fix: 'Спершу лише тверді слова, м’які окремо (ніс, ліс).'}]
+    }}}
+  },
+
   G07: {
     code: 'Г07', title: 'Тверді й м’які, дзвінкі й глухі', level: 1, area: 'g',
     hello: {t: 'Сьогодні слухаємо дуже схожі слова.'},
@@ -742,6 +903,34 @@ const LESSONS = {
       alone: 'Сова каже голосний звук, дитина торкається потрібної букви з 3–4 (велика й мала поруч). Порядок букв — за букварем дитини: Большакова — а, о, у, и, і, е; Вашуленко — а, о, і, и, у, е; «Не знаю» — як у Вашуленка.',
       pitfalls: [{p: 'Плутає И та І.', fix: 'Слова-пари: «кит — кіт», «лис — ліс». Їх знає урок Г07.'},
                  {p: 'Каже «буква» про звук.', fix: '«Звук ми чуємо, букву бачимо». Ви самі завжди кажіть правильно.'}]
+    }}}
+  },
+
+  G09: {
+    code: 'Г09', title: 'Приголосні букви: М Л Н С', level: 1, area: 'g',
+    needs: ['m', 'l', 'n', 's'],
+    hello: {t: 'Сьогодні шукаємо нові букви.'},
+    data: {letters: ['m', 'l', 'n', 's']},  // рано в обох букварях
+    tasks() {
+      const L = this.data.letters;
+      let t, n = 0;
+      do { t = shuffle(L).concat(shuffle(L)); n++; } while (n < 50 && t.some((x, i) => i && x === t[i - 1]));
+      return t.map((id, k) => ({type: 'consLetter', sk: 'G09', id, files: [id],
+        opts: shuffle(shuffle(L.filter(x => x !== id)).slice(0, k < 3 ? 2 : 3).concat([id]))}));
+    },
+    skills: {G09: {short: 'приголосні букви', guide: {
+      title: 'Г09. Приголосні букви',
+      what: 'Приголосні букви — у порядку букваря. Починаємо з М Л Н С: в обох букварях вони йдуть рано. Одразу після кожної букви — складове читання.',
+      voice: 'Звук до букви звучить лише із запису. Назву букви («ем») дитині не кажемо — ні сова, ні ви.',
+      visual: {type: 'consLetters', ids: ['m', 'l', 'n', 's'],
+               note: 'Натисніть 🔊 біля букви: прозвучить її звук із запису.'},
+      show: ['Той самий шлях від звука до букви: слово — звук — «цей звук ми записуємо так».',
+             'Одразу складіть склад із вивченим голосним: М + А = МА.'],
+      together: {name: 'Складові картки',
+                 steps: ['Складові картки на столі, розрізна азбука.', '«Склади МА, МО, МУ».']},
+      alone: 'Звучить звук із запису — дитина торкається букви з 3–4 (велика й мала поруч). Букви: М Л Н С.',
+      pitfalls: [{p: 'Забуває букви.', fix: 'Менше нових за раз, частіше повторювати вивчене.'},
+                 {p: 'Називає букву («ем») замість звука.', fix: '«Звук ми чуємо, букву бачимо». Самі кажіть лише звук.'}]
     }}}
   },
 
@@ -968,7 +1157,10 @@ const PHRASES = {
   starDone: {t: 'Чудово! Тепер пограємося.'},
   again:    {t: 'Спробуй ще.'},
   praise:   [{t: 'Молодець!'}, {t: 'Чудово!'}, {t: 'Так, правильно!'}, {t: 'Супер!'}],
-  end:      {t: 'Молодець! Урок закінчено.'}
+  end:      {t: 'Молодець! Урок закінчено.'},
+  // Перевірка: однаково після будь-якої відповіді — без «правильно/неправильно»
+  thanks:   {t: 'Дякую!'},
+  checkEnd: {t: 'Дякую! Ми гарно пограли.'}
 };
 const KIDS = {liza: '🐰 Ліза', marko: '🚀 Марко', olia: '🌻 Оля'};
 
@@ -1048,10 +1240,13 @@ const voiceText = p => String(p.s || p.t).toLowerCase();
 const hasSpeech = x => /[а-яіїєґ0-9]/i.test(x);
 
 let speaking = false, sayTok = 0, sayTimers = [];
-// parts: масив фраз {t, s, hide, on}; показуємо всі разом, вимовляємо по черзі.
-// on — що зробити, коли саме ця фраза почала звучати (підсвітити кнопку, показати групу)
+// parts: масив фраз {t, s, hide, on, snd}; показуємо всі разом, вимовляємо по черзі.
+// on — що зробити, коли саме ця фраза почала звучати (підсвітити кнопку, показати групу).
+// snd — масив id записаних звуків: звучить файл, не голос браузера (§0). Голос і файли чергуються:
+// сусідні голосові фрази йдуть у браузер разом (так без пауз), а файл чекає, доки голос договорить.
 function say(parts) {
   if (!Array.isArray(parts)) parts = [parts];
+  parts = parts.filter(Boolean);
   const tok = ++sayTok;
   sayTimers.forEach(clearTimeout); sayTimers = [];
   $('bubble').textContent = parts.filter(p => !p.hide && p.t).map(p => p.t).join(' ');
@@ -1059,29 +1254,51 @@ function say(parts) {
   $('aloud').textContent = secret.length ? 'Скажіть уголос: ' + secret.join(' · ') : '';
   idle.reset();
   if (TTS) TTS.cancel();
-  const live = parts.filter(p => hasSpeech(voiceText(p)) || p.on);
-  // Без голосу (чужий голос читає кирилицю абракадаброю — краще мовчати) дії йдуть таймером
-  if (!ukVoice) {
-    live.forEach((p, i) => { if (p.on) sayTimers.push(setTimeout(() => { if (tok === sayTok) p.on(); }, 300 + i * 1000)); });
-    return;
-  }
-  const spoken = [];
-  live.forEach(p => {
-    const text = voiceText(p);
-    if (!hasSpeech(text)) { if (p.on) p.on(); return; }
-    if (!voiceOk(text)) { VOICE_BLOCKED.push(text); if (p.on) p.on(); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    u.voice = ukVoice; u.lang = ukVoice.lang; u.rate = 0.9;
-    u.onstart = () => { if (tok !== sayTok) return; speaking = true; $('owl').classList.add('talk'); if (p.on) p.on(); };
-    spoken.push(u);
+  stopSounds();
+  const segs = [];
+  parts.filter(p => p.snd || hasSpeech(voiceText(p)) || p.on).forEach(p => {
+    const last = segs[segs.length - 1];
+    if (p.snd) segs.push({snd: p});
+    else if (last && last.tts) last.tts.push(p);
+    else segs.push({tts: [p]});
   });
-  if (!spoken.length) return;
-  spoken[spoken.length - 1].onend = spoken[spoken.length - 1].onerror = () => {
-    if (tok !== sayTok) return; speaking = false; $('owl').classList.remove('talk'); idle.reset();
+  const talk = on => { speaking = on; $('owl').classList.toggle('talk', on); };
+  const run = k => {
+    if (tok !== sayTok) return;
+    const seg = segs[k];
+    if (!seg) { if (k) { talk(false); idle.reset(); } return; }
+    const next = () => run(k + 1);
+    if (seg.snd) {
+      talk(true);
+      if (seg.snd.on) seg.snd.on();
+      // Відмова (немає файлу, браузер не дав грати) — мовчки далі: голосом приголосний не підміняємо
+      playSeq(seg.snd.snd, 450).then(() => {}, () => {}).then(() => { sayTimers.push(setTimeout(next, 250)); });
+      return;
+    }
+    const live = seg.tts;
+    // Без голосу (чужий голос читає кирилицю абракадаброю — краще мовчати) дії йдуть таймером
+    if (!ukVoice) {
+      live.forEach((p, i) => { if (p.on) sayTimers.push(setTimeout(() => { if (tok === sayTok) p.on(); }, 300 + i * 1000)); });
+      if (k < segs.length - 1) sayTimers.push(setTimeout(next, 300 + live.length * 1000));
+      return;
+    }
+    const spoken = [];
+    live.forEach(p => {
+      const text = voiceText(p);
+      if (!hasSpeech(text)) { if (p.on) p.on(); return; }
+      if (!voiceOk(text)) { VOICE_BLOCKED.push(text); if (p.on) p.on(); return; }
+      const u = new SpeechSynthesisUtterance(text);
+      u.voice = ukVoice; u.lang = ukVoice.lang; u.rate = 0.9;
+      u.onstart = () => { if (tok !== sayTok) return; talk(true); if (p.on) p.on(); };
+      spoken.push(u);
+    });
+    if (!spoken.length) return next();
+    spoken[spoken.length - 1].onend = spoken[spoken.length - 1].onerror = next;
+    spoken.forEach(u => TTS.speak(u));
   };
-  spoken.forEach(u => TTS.speak(u));
+  run(0);
 }
-function hush() { sayTok++; sayTimers.forEach(clearTimeout); sayTimers = []; if (TTS) TTS.cancel(); speaking = false; $('owl').classList.remove('talk'); }
+function hush() { sayTok++; sayTimers.forEach(clearTimeout); sayTimers = []; if (TTS) TTS.cancel(); stopSounds(); speaking = false; $('owl').classList.remove('talk'); }
 
 /* ================= Звук (синтез, без файлів) ================= */
 let actx = null;
@@ -1106,6 +1323,99 @@ function tone(freqs, dur) {
 }
 const chime = () => tone([523, 659, 784], 0.11);
 const blip = () => tone([660], 0.08);
+
+/* ================= Записані звуки (docs/uroky-11.md §A) =================
+   При старті пробуємо файли через Audio: прийшли метадані — файл є, error — немає.
+   preload='metadata' — щоб не тягнути на телефон усі записи одразу; повністю файл
+   завантажиться при першому програванні. Працює і з сервера, і з диска (file://).
+   Кожен відсутній файл браузер сам пише в консоль червоним («Failed to load resource»),
+   і приглушити це з JS не можна. Тому: спершу лише [с] — він потрібен усім звуковим
+   урокам; немає його — решту не пробуємо (один рядок у консолі замість десятків).
+   Є — пробуємо тільки те, що потрібно урокам, і голосні (Г08 гратиме їх із запису). */
+const SND_OK = {}, SND_EL = {};
+let SND_DONE = false;
+function probeOne(id) {
+  return new Promise(res => {
+    let fin = false;
+    const a = new Audio();
+    const end = ok => { if (fin) return; fin = true; SND_OK[id] = ok; if (ok) SND_EL[id] = a; res(ok); };
+    a.addEventListener('loadedmetadata', () => end(true));
+    a.addEventListener('canplaythrough', () => end(true));
+    a.addEventListener('error', () => end(false));
+    setTimeout(() => end(false), 15000);  // мовчазний браузер: вважаємо, що файлу немає
+    a.preload = 'metadata';
+    a.src = SND_DIR + 'snd_' + id + '.wav';
+  });
+}
+function probeSounds() {
+  const want = SOUNDS.filter(x => x.kind === 'vowel').map(x => x.id);
+  ORDER.forEach(id => (LESSONS[id].needs || []).forEach(x => { if (want.indexOf(x) < 0) want.push(x); }));
+  SOUNDS.forEach(x => { SND_OK[x.id] = false; });
+  probeOne('s')
+    .then(ok => ok ? Promise.all(want.filter(x => x !== 's').map(probeOne)) : null)
+    .then(() => { SND_DONE = true; onSoundsReady(); });
+}
+// Яких файлів бракує уроку
+const missing = id => (LESSONS[id].needs || []).filter(x => !SND_OK[x]);
+const avail = id => !missing(id).length;
+
+let sndCur = null, sndGen = 0;
+// Promise: виконується, коли звук дограв; відмова — якщо файлу немає або його зупинили.
+// Голосом браузера тут нічого не підміняємо (§0).
+function playSound(id) {
+  const a = SND_OK[id] && SND_EL[id];
+  if (!a) return Promise.reject(new Error('немає запису ' + id));
+  haltCur();
+  return new Promise((res, rej) => {
+    let fin = false, tm = 0;
+    const end = ok => {
+      if (fin) return; fin = true; clearTimeout(tm);
+      a.removeEventListener('ended', onEnd); a.removeEventListener('error', onErr);
+      if (sndCur && sndCur.a === a) sndCur = null;
+      if (ok) res(); else rej(new Error('звук ' + id + ' зупинено'));
+    };
+    const onEnd = () => end(true), onErr = () => end(false);
+    a.addEventListener('ended', onEnd); a.addEventListener('error', onErr);
+    sndCur = {a, end};
+    try { a.currentTime = 0; } catch (e) { /* ще не завантажився — почнеться з початку */ }
+    const p = a.play();
+    if (p && p.catch) p.catch(() => end(false));
+    // Запасний вихід: деякі старі браузери гублять ended
+    const dur = isFinite(a.duration) && a.duration > 0 ? a.duration : 3;
+    tm = setTimeout(() => end(true), dur * 1000 + 1500);
+  });
+}
+function haltCur() {
+  if (sndCur) { const c = sndCur; sndCur = null; try { c.a.pause(); } catch (e) { /* уже стоїть */ } c.end(false); }
+}
+// Зупинка ззовні (нова фраза, вихід): обриває і поточний звук, і решту послідовності
+function stopSounds() { sndGen++; haltCur(); }
+// Злиття по звуках: звуки по черзі з паузою gap мс; onStep(i) — коли починається i-й
+function playSeq(ids, gap, onStep) {
+  const miss = ids.filter(x => !SND_OK[x]);
+  if (miss.length) return Promise.reject(new Error('немає записів ' + miss.join(',')));
+  const gen = ++sndGen;
+  let i = 0;
+  const step = () => {
+    if (gen !== sndGen) return Promise.reject(new Error('зупинено'));
+    if (i >= ids.length) return Promise.resolve();
+    const k = i++;
+    if (onStep) onStep(k);
+    return playSound(ids[k]).then(() => k < ids.length - 1 ? new Promise(r => setTimeout(r, gap)) : null).then(step);
+  };
+  return step();
+}
+// Звук у завдання: із запису; голосний без запису — голосом браузера (дозволено);
+// приголосний без запису — нічого (§0). Урок без потрібних записів і так закритий.
+function sndPart(id) {
+  if (SND_OK[id]) return {t: '', snd: [id], hide: true};
+  if (SND[id].kind === 'vowel') return {t: '', s: SND[id].s, hide: true};
+  return null;
+}
+function onSoundsReady() {
+  if (G.stage === 'list') renderList();
+  else if (G.stage === 'guide') toGuide(G.guideLesson, G.guideTab);
+}
 
 /* ================= Збереження ================= */
 const KEY = 'beregynia-uroky';
@@ -1170,9 +1480,13 @@ function lessonState(st, id) {
    У ньому — перший за програмою, який сьогодні ще не проходили і де дитина не застрягла
    (застряглий урок — справа дорослого: повернутися до «Робимо разом»). */
 function recommended(kid) {
-  const st = stats(kid);
-  const open = ORDER.filter(id => lessonState(st, id) !== 'ok');
-  if (!open.length) return ORDER[0];
+  const st = stats(kid), av = ORDER.filter(avail);
+  // Після перевірки: спершу урок, з якого вона радить почати; уроки, де вона дала 2 з 2, — уже вміє
+  const last = lastCheck(kid), x = last && checkStart(last);
+  if (x && avail(x) && ['ok', 'stuck'].indexOf(lessonState(st, x)) < 0 && !st._today.has(x)) return x;
+  const passed = id => !!last && Object.keys(LESSONS[id].skills).every(sk => last.items[sk] && sum(last.items[sk]) === 2);
+  const open = av.filter(id => lessonState(st, id) !== 'ok' && !passed(id));
+  if (!open.length) return av[0];
   const lvl = Math.min.apply(null, open.map(id => LESSONS[id].level));
   const mine = open.filter(id => LESSONS[id].level === lvl);
   const free = mine.filter(id => lessonState(st, id) !== 'stuck');
@@ -1197,7 +1511,7 @@ const idle = {
 document.addEventListener('pointerdown', () => idle.fresh(), true);
 
 /* ================= Перебіг заняття ================= */
-const G = {kid: null, lesson: null, sid: null, stage: null, instr: null, tasks: [], i: 0, task: null, errors: 0, lock: false, stars: 0, trial: null};
+const G = {kid: null, lesson: null, sid: null, stage: null, instr: null, tasks: [], i: 0, task: null, errors: 0, lock: false, stars: 0, trial: null, check: null};
 
 function show(stage) {
   G.stage = stage;
@@ -1206,10 +1520,11 @@ function show(stage) {
   $('s-list').hidden = stage !== 'list';
   $('s-guide').hidden = stage !== 'guide';
   $('s-remind').hidden = stage !== 'remind';
+  $('s-check').hidden = stage !== 'check';
   $('s-child').hidden = !child;
   $('repeat').hidden = $('exit').hidden = !child;
   // На сторінках підготовки ⚙ лише заважала б читати
-  $('gear').hidden = stage === 'guide' || stage === 'remind' || stage === 'list';
+  $('gear').hidden = stage === 'guide' || stage === 'remind' || stage === 'list' || stage === 'check';
   $('v-greet').hidden = stage !== 'greet';
   $('mouseArea').hidden = stage !== 'mouse';
   $('v-task').hidden = stage !== 'task';
@@ -1219,12 +1534,12 @@ function show(stage) {
   const old = document.querySelectorAll('.fall,.check');
   for (let i = 0; i < old.length; i++) old[i].remove();
 }
-function instruct(parts) { G.instr = parts; idle.fresh(); say(parts); }
+function instruct(parts) { G.instr = (Array.isArray(parts) ? parts : [parts]).filter(Boolean); idle.fresh(); say(G.instr); }
 function repeat() { if (G.instr) say(G.instr); }
 function leave() { hush(); idle.stop(); G.instr = null; G.lock = false; }
 
-function toWho() { leave(); G.trial = null; G.kid = null; show('who'); }
-function toGreet() { G.trial = null; show('greet'); instruct([PHRASES.greet, LESSONS[G.lesson].hello]); }
+function toWho() { leave(); G.trial = null; G.check = null; G.kid = null; show('who'); }
+function toGreet() { G.trial = null; show('greet'); instruct([PHRASES.greet, G.check ? CHECK_HELLO : LESSONS[G.lesson].hello]); }
 // Урок пальчика/мишки
 function toStars() { G.stars = 0; G.lock = false; show('mouse'); placeStar(true); instruct(coarse() ? PHRASES.starTouch : PHRASES.starMouse); }
 
@@ -1254,6 +1569,8 @@ function startTrial(lid, sk) {
   show('task'); renderTask();
 }
 function startTasks() {
+  // Перевірка не пише сесію: у засвоєння вона не йде (docs/uroky-11.md §C.6)
+  if (G.check) { G.sid = null; G.tasks = G.check.tasks.slice(); G.i = 0; show('task'); return renderTask(); }
   G.sid = newSession(G.kid, G.lesson);
   G.tasks = LESSONS[G.lesson].tasks(ctxFor()); G.i = 0;
   show('task'); renderTask();
@@ -1292,6 +1609,18 @@ function renderTask() {
 function answer(el, ok) {
   if (G.lock || G.stage !== 'task') return;
   const task = G.task;
+  // Перевірка: перша відповідь і є відповіддю. Ні галочки, ні «спробуй ще», ні підказки — однакове «Дякую!»
+  if (G.check) {
+    G.lock = true; blip();
+    checkAnswer(task, ok);
+    say(PHRASES.thanks);
+    setTimeout(() => {
+      if (G.stage !== 'task' || G.task !== task) return;
+      G.i++;
+      if (G.i < G.tasks.length) renderTask(); else toEnd();
+    }, NEXT_MS);
+    return;
+  }
   if (ok) {
     G.lock = true;
     if (!G.trial) record(G.kid, G.sid, task.sk, G.errors === 0);
@@ -1319,7 +1648,8 @@ function answer(el, ok) {
 }
 
 function toEnd() {
-  show('end'); instruct(PHRASES.end);
+  if (G.check) saveCheck();
+  show('end'); instruct(G.check ? PHRASES.checkEnd : PHRASES.end);
   for (let i = 0; i < 24; i++) {
     const s = document.createElement('div'); s.className = 'fall';
     s.textContent = i % 3 ? '⭐' : '🌟';
@@ -1347,6 +1677,7 @@ function shapeSvg(id, rot, sc, color) {
     '<rect x="-44" y="-22" width="88" height="44" ' + f + '/>';
   return '<svg viewBox="0 0 100 100" aria-hidden="true"><g transform="translate(50 50) rotate(' + rot + ') scale(' + sc + ')">' + body + '</g></svg>';
 }
+const schemeHtml = sch => '<span class="sch">' + sch.split('').map(c => '<i class="' + (c === 'o' ? 'so' : c === '=' ? 'ss' : 'sh') + '"></i>').join('') + '</span>';
 const COLORS = ['#C77D2E', '#3D7EA6', '#2F6F4E', '#B42318', '#7A5AF8'];
 
 const TYPES = {
@@ -1381,7 +1712,35 @@ const TYPES = {
     const U = LESSONS.G08.data.upper;
     ui.pic('👂');
     ui.opts(task.opts.map(v => ({ok: v === task.v, html: '<span class="let">' + U[v] + '<small>' + v + '</small></span>'})), true);
-    ui.ask([{t: 'Послухай звук і покажи його букву.'}, {t: '', s: task.v, hide: true}]);
+    ui.ask([{t: 'Послухай звук і покажи його букву.'}, sndPart(VOWEL_ID[task.v])]);
+  },
+  // Г04: звук із запису — співається (голосний) чи ні (приголосний)
+  sing(task, ui) {
+    ui.pic('👂');
+    ui.opts([{ok: task.vowel, html: '<span class="emo">🎵</span><span class="lbl">співається</span>', title: 'співається'},
+             {ok: !task.vowel, html: '<span class="emo">✋</span><span class="lbl">не співається</span>', title: 'не співається'}], true);
+    ui.ask([{t: 'Послухай звук. Він співається?'}, sndPart(task.id)]);
+  },
+  // Г05: слово по звуках із записів — картинка
+  blend(task, ui) {
+    ui.pic('🤖');
+    ui.opts(task.opts.map(w => ({ok: w === task.w, html: '<span class="emo">' + w.e + '</span>', title: w.w})));
+    task.praise = {t: cap(task.w.w) + '.'};
+    ui.ask([{t: 'Робот каже слово по звуках. Що це?'}, {t: '', snd: task.w.snd, hide: true}]);
+  },
+  // Г06: картинка й слово — звукова схема
+  scheme(task, ui) {
+    ui.pic(task.w.e);
+    const s = ui.stage('<button class="snd-btn">🔊 По звуках</button>');
+    s.firstChild.addEventListener('click', () => { if (G.task === task && !G.lock) { hush(); playSeq(task.w.snd, 450).catch(() => {}); } });
+    ui.opts(task.opts.map(x => ({ok: x === task.w.sch, html: schemeHtml(x)})));
+    ui.ask([{t: cap(task.w.w) + '.'}, {t: '', snd: task.w.snd, hide: true}, {t: 'Знайди схему цього слова.'}]);
+  },
+  // Г09: приголосний звук із запису — буква
+  consLetter(task, ui) {
+    ui.pic('👂');
+    ui.opts(task.opts.map(id => ({ok: id === task.id, html: '<span class="let">' + SND[id].s.toUpperCase() + '<small>' + SND[id].s + '</small></span>'})), true);
+    ui.ask([{t: 'Послухай звук і покажи його букву.'}, sndPart(task.id)]);
   },
   // Г11: склад на екрані, голос каже три — кожен засвічує свою кнопку
   sylHear(task, ui) {
@@ -1512,13 +1871,18 @@ const TYPES = {
 
 /* ================= Список уроків ================= */
 function toList() {
-  leave(); G.trial = null;
+  leave(); G.trial = null; G.check = null;
   show('list');
   renderList();
   $('s-list').scrollTop = 0;
 }
 function lessonCard(id, st, rec) {
-  const L = LESSONS[id], s = lessonState(st, id);
+  const L = LESSONS[id], s = lessonState(st, id), miss = missing(id);
+  // Немає записів — вчитель бачить урок сірим (можна читати підготовку), заняття не стартує
+  if (miss.length) return '<button class="lesson wait' + (L.area === 'm' ? ' m' : '') + '" data-lesson="' + id + '">' +
+    '<span class="code">' + esc(L.code) + '</span><span class="nm">' + esc(L.title) +
+    '<span class="wn">' + (SND_DONE ? 'Чекає на записи звуків: ' + esc(miss.map(sndName).join(', ')) : 'Шукаю записи звуків…') + '</span></span>' +
+    '<span class="stt">🔇</span></button>';
   return '<button class="lesson' + (L.area === 'm' ? ' m' : '') + (id === rec ? ' rec' : '') + '" data-lesson="' + id + '">' +
     '<span class="code">' + esc(L.code) + '</span><span class="nm">' + esc(L.title) +
     (id === rec ? ' <span class="rec-badge">Рекомендований</span>' : '') + '</span>' +
@@ -1536,12 +1900,14 @@ function renderList() {
   const cards = ids => '<div class="lessons">' + ids.map(id => lessonCard(id, st, rec)).join('') + '</div>';
   let h = '';
   if (mama) {
-    h += '<button class="rec-go" data-lesson="' + rec + '">▶ Почати рекомендований урок<small>' +
+    // Мама уроків без записів не бачить зовсім
+    h += checkBlock(kid) + '<button class="rec-go" data-lesson="' + rec + '">▶ Почати рекомендований урок<small>' +
       esc(LESSONS[rec].code + ' · ' + LESSONS[rec].title) + '</small></button>' +
-      '<details class="more"><summary>Інші уроки</summary>' + cards(ORDER) + '</details>';
+      '<details class="more"><summary>Інші уроки</summary>' + cards(ORDER.filter(avail)) + '</details>';
   } else {
-    h += '<h2>Уроки</h2><p class="lead">Рекомендований — перший незасвоєний урок рівня дитини, який сьогодні ще не проходили. ' +
-      'Перед першим заняттям уроку на цьому пристрої відкриється підготовка до нього.</p>' + cards(ORDER);
+    h += '<h2>Уроки</h2>' + checkBlock(kid) + '<p class="lead">Рекомендований — перший незасвоєний урок рівня дитини, який сьогодні ще не проходили' +
+      (lastCheck(kid) ? ' (після перевірки — урок, з якого вона радить почати)' : '') + '. ' +
+      'Перед першим заняттям уроку на цьому пристрої відкриється підготовка до нього. Сірі уроки чекають на записи звуків зі студії.</p>' + cards(ORDER);
   }
   h += '<div class="setting"><b>Буквар дитини</b>' + bukvarSeg(kid) +
     '<p class="muted">Впливає на порядок голосних у Г08. Склади й слова (Г11, Г12) — лише з букв, що в обох букварях ідуть рано: м, л, н, с, к.</p></div>';
@@ -1549,16 +1915,137 @@ function renderList() {
 }
 $('s-list').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  const id = b.getAttribute('data-lesson'), bk = b.getAttribute('data-bukvar');
-  if (id) openLesson(id);
+  const id = b.getAttribute('data-lesson'), bk = b.getAttribute('data-bukvar'), act = b.getAttribute('data-act');
+  if (act === 'check') toCheckIntro();
+  else if (act === 'checkRes') toCheckResult(lastCheck(G.kid));
+  else if (id) openLesson(id);
   else if (bk) { setBukvar(G.kid, bk); renderList(); }
 });
 $('listBack').addEventListener('click', () => toWho());
 $('listGear').addEventListener('click', () => $('gear').click());
 
+/* ================= Стартова й повторна перевірка (docs/uroky-11.md §C) =================
+   Орієнтир для дорослого, не тест: по 2 завдання на навичку тими самими механіками,
+   без відгуку. Пишеться окремо від сесій: kids[kid].checks = [{date, kind, items: {G01: [1, 0], M05: null}}],
+   null — навичку пропущено за правилом зупинки. У засвоєння не йде. */
+const CHECK_ORDER = ['G01', 'G02', 'G03', 'G04', 'G08', 'G09', 'G11', 'M01', 'M02', 'M05', 'M06'];
+const CHECK_HELLO = {t: 'Сьогодні пограємо у різні ігри.'};
+const sum = a => a.reduce((x, y) => x + y, 0);
+const lineOf = sk => sk.charAt(0);  // G — грамота, M — математика
+const fmtDate = d => d.split('-').reverse().join('.');
+// Звукові навички — лише якщо їхні записи вже є
+const checkPlan = () => CHECK_ORDER.filter(sk => avail(SKILL[sk].lesson));
+function checksOf(kid) { const k = load().kids[kid]; return (k && k.checks) || []; }
+function lastCheck(kid) { const c = checksOf(kid); return c[c.length - 1] || null; }
+// Почати з першого уроку, де менше ніж 2 з 2 (пропущене — теж менше)
+function checkStart(c) {
+  const sk = CHECK_ORDER.find(x => x in c.items && !(c.items[x] && sum(c.items[x]) === 2));
+  return sk ? SKILL[sk].lesson : null;
+}
+function checkBlock(kid) {
+  const cs = checksOf(kid), last = cs[cs.length - 1];
+  const n = checkPlan().length * 2;
+  if (!last) return '<div class="check-box"><button class="btn main" data-act="check">🧭 Стартова перевірка</button>' +
+    '<p class="muted">5–7 хвилин, ' + n + ' коротких ігор: з якого уроку почати. Це не тест і не оцінка дитини.</p></div>';
+  const lbl = 'Повторна перевірка (перша — ' + fmtDate(cs[0].date) + ')';
+  const res = '<button class="linkish" data-act="checkRes">Результат останньої перевірки</button>';
+  if (last.date < today()) return '<div class="check-box"><button class="btn main" data-act="check">🧭 ' + esc(lbl) + '</button>' +
+    '<p class="muted">Найкраще через 4–6 тижнів після першої: та сама перевірка покаже, чи є зрушення. ' + res + '</p></div>';
+  return '<div class="check-box"><button class="btn" disabled>🧭 ' + esc(lbl) + '</button>' +
+    '<p class="muted">Сьогодні перевірку вже пройдено; повторна — не раніше ніж завтра, найкраще через 4–6 тижнів. ' + res + '</p></div>';
+}
+function toCheckIntro() {
+  leave(); show('check');
+  const repeat = checksOf(G.kid).length > 0, n = checkPlan().length * 2;
+  $('checkKid').textContent = KIDS[G.kid];
+  $('checkBody').innerHTML = '<h2>' + (repeat ? 'Повторна перевірка' : 'Стартова перевірка') + '</h2>' +
+    '<p class="lead">5–7 хвилин, ' + n + ' коротких ігор з різних уроків. Це <b>не тест і не оцінка</b> дитини — орієнтир для вас: з якого уроку почати' +
+    (repeat ? ' і чи є зрушення від першої перевірки' : '') + '.</p>' +
+    '<ul class="warn"><li><b>Не підказуйте.</b>Сова не каже, правильно чи ні, — так і має бути. Після кожної відповіді вона каже «Дякую!» і йде далі.</li>' +
+    '<li><b>Якщо не виходить — це нормально.</b>Коли дві навички поспіль не вдалися, сова сама пропустить решту цієї частини (грамоти чи математики): втома важить більше за повноту.</li></ul>' +
+    '<p>Перевірка нічого не зараховує в «засвоєно» — це роблять лише уроки.</p>' +
+    '<div class="ready"><button class="btn main" data-act="go">▶ Почати перевірку</button>' +
+    '<button class="btn" data-act="list">← До уроків</button></div>';
+  $('s-check').scrollTop = 0;
+}
+function startCheck() {
+  const plan = checkPlan(), ctx = ctxFor(), tasks = [];
+  plan.forEach(sk => {
+    const L = LESSONS[SKILL[sk].lesson];
+    let pool = [], n = 0;
+    while (pool.length < 2 && n++ < 10) pool = pool.concat(L.tasks(ctx).filter(x => x.sk === sk));
+    shuffle(pool).slice(0, 2).forEach(t => tasks.push(t));
+  });
+  G.check = {kind: checksOf(G.kid).length ? 'repeat' : 'start', plan, tasks, res: {}, done: [], stop: {}, saved: null};
+  G.lesson = null;
+  toGreet();
+}
+function checkAnswer(task, ok) {
+  const C = G.check, sk = task.sk, line = lineOf(sk);
+  (C.res[sk] = C.res[sk] || []).push(ok ? 1 : 0);
+  if (C.res[sk].length < C.tasks.filter(t => t.sk === sk).length) return;
+  C.done.push(sk);
+  // Правило зупинки: дві навички лінії поспіль по 0 — решту лінії пропускаємо
+  const mine = C.done.filter(x => lineOf(x) === line), zero = x => !sum(C.res[x]);
+  if (mine.length >= 2 && zero(mine[mine.length - 1]) && zero(mine[mine.length - 2])) {
+    C.stop[line] = true;
+    G.tasks = G.tasks.filter((t, i) => i <= G.i || lineOf(t.sk) !== line);  // і крапки прогресу це покажуть
+  }
+}
+function saveCheck() {
+  const C = G.check, d = load(), items = {};
+  C.plan.forEach(sk => { items[sk] = C.res[sk] && C.res[sk].length ? C.res[sk] : null; });
+  const rec = {date: today(d), kind: C.kind, items};
+  const k = kidRec(d, G.kid);
+  (k.checks = k.checks || []).push(rec);
+  store(d);
+  C.saved = rec;
+}
+const resCell = v => v === undefined ? '<td class="res-s">—</td>' : v === null ? '<td class="res-s">пропущено</td>' :
+  '<td class="res-' + (sum(v) === 2 ? '2' : sum(v) === 0 ? '0' : '1') + '">' + sum(v) + ' з ' + v.length + '</td>';
+const skName = sk => esc(SKILL[sk].code + ' · ' + SKILL[sk].short);
+function toCheckResult(c) {
+  if (!c) return toList();
+  leave(); G.check = null; show('check');
+  $('checkKid').textContent = KIDS[G.kid];
+  const x = checkStart(c), rec = recommended(G.kid);
+  const concl = x ? 'Почати з уроку ' + LESSONS[x].code + ' · ' + LESSONS[x].title + '.' :
+    'Усі перевірені навички — 2 з 2. Далі — урок ' + LESSONS[rec].code + ' · ' + LESSONS[rec].title + '.';
+  $('checkBody').innerHTML = '<h2>' + (c.kind === 'repeat' ? 'Повторна перевірка' : 'Стартова перевірка') + ' · ' + fmtDate(c.date) + '</h2>' +
+    '<p class="lead">Орієнтир для дорослого, не оцінка дитини. Сова не підказувала, тож тут видно, що дитина вміє сама.</p>' +
+    '<div class="tbl"><table><thead><tr><th>Навичка</th><th>Результат</th></tr></thead><tbody id="checkTbl">' +
+    CHECK_ORDER.filter(sk => sk in c.items).map(sk => '<tr data-row="' + sk + '"><td>' + skName(sk) + '</td>' + resCell(c.items[sk]) + '</tr>').join('') +
+    '</tbody></table></div><p class="concl" id="checkConcl">' + esc(concl) + '</p>' +
+    '<p class="muted">Рекомендований урок у списку тепер береться звідси. Повторити ту саму перевірку — через 4–6 тижнів, тією ж кнопкою; порівняння — у ⚙.</p>' +
+    '<div class="ready"><button class="btn main" data-act="list">До уроків</button></div>';
+  $('s-check').scrollTop = 0;
+}
+// ⚙: перша → остання повторна по кожній навичці
+function checksTable(kid) {
+  const cs = checksOf(kid);
+  if (!cs.length) return '<p class="muted">Стартової перевірки ще не було. Кнопка — у списку уроків дитини.</p>';
+  const a = cs[0], b = cs.length > 1 ? cs[cs.length - 1] : null;
+  const n = v => v ? sum(v) : 0;
+  const arrow = sk => !b || !(sk in b.items) || !(sk in a.items) ? '' :
+    n(b.items[sk]) > n(a.items[sk]) ? '<td class="res-2">↑</td>' : n(b.items[sk]) < n(a.items[sk]) ? '<td class="res-0">↓</td>' : '<td>=</td>';
+  return '<div class="tbl"><table><thead><tr><th>Навичка</th><th>Перша · ' + fmtDate(a.date) + '</th><th>Повторна' +
+    (b ? ' · ' + fmtDate(b.date) : '') + '</th><th></th></tr></thead><tbody id="panelChecksBody">' +
+    CHECK_ORDER.filter(sk => sk in a.items || (b && sk in b.items)).map(sk => '<tr data-row="' + sk + '"><td>' + skName(sk) + '</td>' +
+      resCell(a.items[sk]) + (b ? resCell(b.items[sk]) : '<td class="res-s">ще не було</td>') + (arrow(sk) || '<td></td>') + '</tr>').join('') +
+    '</tbody></table></div>';
+}
+$('s-check').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const act = b.getAttribute('data-act');
+  if (act === 'go') startCheck();
+  else if (act === 'list') toList();
+});
+$('checkBack').addEventListener('click', () => toList());
+
 function openLesson(id) {
   G.lesson = id;
   // Мама — одразу заняття; вчитель — підготовка до цього уроку, поки не позначив «Я підготувався»
+  if (!avail(id)) return getRole() === 'mama' ? toList() : toGuide(id, Object.keys(LESSONS[id].skills)[0]);
   if (getRole() === 'mama') return toGreet();
   if (isPrepared(id)) return toRemind();
   const anyPrep = ORDER.some(x => isPrepared(x));
@@ -1590,7 +2077,7 @@ const SESSION = {
          {e: '🧩', t: '8–9 завдань', d: 'одного уроку'},
          {e: '🌟', t: 'Зорепад', d: 'хвалимо й повертаємося до списку уроків'}],
   duration: 'Разом 5–10 хвилин.',
-  voice: 'Сова ніколи не вимовляє окремого приголосного звука: голос браузера читає «[м]» як «ем», а це вчить дитину неправильно. Сова каже лише слова, речення, склади, голосні й числа. Окремі звуки — ваша робота, голосом.',
+  voice: 'Сова ніколи не вимовляє окремого приголосного звука: голос браузера читає «[м]» як «ем», а це вчить дитину неправильно. Сова каже лише слова, речення, склади, голосні й числа. Окремий приголосний звучить лише із запису, зробленого людиною в студії звуків: уроки Г04, Г05, Г06, Г09 відкриваються, коли такі записи є. Решта окремих звуків — ваша робота, голосом.',
   role: ['Перші 2 хвилини будьте поруч: допоможіть із першою зірочкою, переконайтеся, що дитина чує сову.',
          'Далі не підказуйте відповідь. Сова сама підсвітить правильну відповідь після двох помилок.',
          'Хвалити можна й треба — за старання, а не за «правильно».'],
@@ -1652,7 +2139,37 @@ const sylWord = (w, withWhole) => {
     w.syl.map((s, i) => (i ? '<span class="syl-sep">‿</span>' : '') + '<span class="syl sp">' + esc(s) + '<i></i></span>').join('') +
     '</span><span class="badge">' + w.syl.length + '</span>' + seqBtn(items, '🔊', 'say-sm') + '</div>';
 };
+// 🔊 із записів; голосні без запису — голосом браузера; приголосний без запису — кнопка неактивна (§0)
+function sndBtn(ids, label, cls, self) {
+  const miss = ids.filter(x => !SND_OK[x]);
+  if (!miss.length) return '<button class="' + (cls || 'speak') + '" data-act="snd" data-ids="' + ids.join(',') + '"' + (self ? ' data-self="1"' : '') + '>' + label + '</button>';
+  if (miss.every(x => SND[x].kind === 'vowel') && ids.every(x => SND[x].kind === 'vowel'))
+    return seqBtn(ids.map((x, i) => ({t: SND[x].s, n: self ? 0 : i})), label, cls);
+  return '<button class="' + (cls || 'speak') + '" disabled title="Чекає на записи: ' + esc(miss.map(sndName).join(', ')) + '">🔇</button>';
+}
+const swordOf = w => SWORDS.find(x => x.w === w);
 const VISUALS = {
+  sing(v) {
+    return '<div class="demo"><div class="demo-row">' + v.ids.map(id => '<span class="sq solo"><span class="tile sp sound-tile"><span class="w">' + esc(sndName(id)) +
+      '</span><span class="tag">' + (SND[id].kind === 'vowel' ? '🎵 співається' : '✋ не співається') + '</span>' + sndBtn([id], '🔊', 'say-sm', true) + '</span></span>').join('') +
+      '</div><div class="caption"></div></div>';
+  },
+  blend(v) {
+    return '<div class="demo">' + v.words.map(swordOf).map(w => '<div class="sq"><div class="demo-row"><span class="tile"><span class="e">' + w.e + '</span><span class="w">' + esc(w.w) + '</span></span>' +
+      w.snd.map(id => '<span class="tile sp"><span class="w">' + esc(sndName(id)) + '</span></span>').join('') + '</div>' +
+      sndBtn(w.snd, '🔊 По звуках') + ' ' + seqBtn([{t: w.w, n: 'all'}], '🔊 Разом') + '</div>').join('') + '<div class="caption"></div></div>';
+  },
+  schemes(v) {
+    return '<div class="demo scheme-demo">' + v.words.map(swordOf).map(w => '<div class="sq"><div class="demo-row"><span class="tile"><span class="e">' + w.e + '</span><span class="w">' + esc(w.w) + '</span></span>' +
+      w.snd.map((id, i) => '<span class="tile sp">' + schemeHtml(w.sch.charAt(i)) + '<span class="w">' + esc(sndName(id)) + '</span></span>').join('') + '</div>' +
+      sndBtn(w.snd, '🔊 По звуках') + '</div>').join('') +
+      '<p>' + schemeHtml('o') + ' голосний · ' + schemeHtml('-') + ' твердий · ' + schemeHtml('=') + ' м’який</p><div class="caption"></div></div>';
+  },
+  consLetters(v) {
+    return '<div class="demo"><div class="demo-row">' + v.ids.map(id => '<span class="sq solo"><span class="tile sp sound-tile"><span class="w" style="font-size:30px">' +
+      esc(SND[id].s.toUpperCase() + ' ' + SND[id].s) + '</span><span class="tag">звук ' + esc(sndName(id)) + '</span>' + sndBtn([id], '🔊', 'say-sm', true) + '</span></span>').join('') +
+      '</div><div class="caption"></div></div>';
+  },
   bricks(v) {
     const words = v.sentence.split(' ');
     return '<div class="demo sq"><div class="demo-row">' +
@@ -1750,14 +2267,16 @@ function guideSection(lid, id) {
     const withKid = !!G.kid;
     return '<h2>Готово</h2><p class="lead">' + esc(L.code + ' · ' + L.title) + '. Коротко перед стартом:</p><ol>' +
       REMINDER.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' +
-      '<div class="ready"><button class="btn main" data-act="ready">' +
+      '<div class="ready"><button class="btn main" data-act="ready"' + (avail(lid) ? '' : ' disabled') + '>' +
       (withKid ? 'Я підготувався — почати урок з дитиною' : 'Я підготувався — позначити') + '</button>' +
       '<button class="btn" data-act="back">' + (withKid ? 'Повернутися до списку уроків' : 'Повернутися до вибору дитини') + '</button></div>' +
       (withKid ? '<p class="muted">Займається: ' + esc(KIDS[G.kid]) + '</p>' : '') +
       '<p class="muted">Позначка ставиться для цього уроку на цьому пристрої. Наступного разу буде лише коротке нагадування.</p>';
   }
-  const K = L.skills[id].guide;
-  return '<h2>' + esc(K.title) + '</h2>' +
+  const K = L.skills[id].guide, miss = missing(lid);
+  const waitNote = miss.length ? '<p class="voice-rule">🔇 Урок чекає на записи звуків: ' + esc(miss.map(sndName).join(', ')) +
+    '. Їх записують у студії звуків (lab/studio.html) і кладуть у теку audio/ поруч із цією сторінкою. Поки записів немає, заняття не стартує, а мама цього уроку не бачить.</p>' : '';
+  return '<h2>' + esc(K.title) + '</h2>' + waitNote +
     '<h3>1. Що вчимо</h3><p>' + esc(K.what) + '</p>' + (K.school ? '<p class="school"><b>Що вимагає школа:</b> ' + esc(K.school) + '</p>' : '') +
     (K.voice ? '<p class="voice-rule">🔇 ' + esc(K.voice) + '</p>' : '') +
     '<h3>2. Я показую</h3>' + VISUALS[K.visual.type](K.visual) + '<p class="muted">' + esc(K.visual.note) + '</p>' +
@@ -1765,14 +2284,15 @@ function guideSection(lid, id) {
     '<h3>3. Робимо разом</h3><div class="game"><b>Гра без екрана: ' + esc(K.together.name) + '</b><ul>' +
       K.together.steps.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' +
     '<h3>4. Дитина сама</h3><div class="alone"><p><b>На планшеті:</b> ' + esc(K.alone) + '</p><p>' + esc(MASTERY) + '</p>' +
-      '<button class="btn main try" data-act="try" data-sk="' + id + '">▶ Спробуйте самі — 3 завдання</button>' +
+      '<button class="btn main try" data-act="try" data-sk="' + id + '"' + (miss.length ? ' disabled' : '') + '>▶ Спробуйте самі — 3 завдання</button>' +
       '<p class="muted">Пройдіть те, що проходитиме дитина. Відповіді нікуди не записуються; після трьох завдань повернетеся сюди.</p></div>' +
     '<h3>5. Труднощі</h3><ul class="warn">' + K.pitfalls.map(x => '<li><b>' + esc(x.p) + '</b>→ ' + esc(x.fix) + '</li>').join('') + '</ul>';
 }
 
 function toGuide(lid, id, atTry) {
   leave(); seqTok++;
-  G.trial = null; G.guideLesson = lid;
+  if (lid && !id) id = Object.keys(LESSONS[lid].skills)[0];
+  G.trial = null; G.guideLesson = lid; G.guideTab = id;
   show('guide');
   GSEQ = [];
   const tabs = guideTabs(lid);
@@ -1798,6 +2318,14 @@ $('s-guide').addEventListener('click', e => {
   if (act === 'back') guideBack();
   else if (act === 'try') startTrial(lid, b.getAttribute('data-sk'));
   else if (act === 'ready') { seqTok++; hush(); markPrepared(lid); if (G.kid) { G.lesson = lid; toGreet(); } else toWho(); }
+  else if (act === 'snd') {
+    // 🔊 із записів: сама плитка (data-self) або звуки в рядку по черзі
+    seqTok++; hush();
+    const ids = b.getAttribute('data-ids').split(',');
+    const sq = b.closest('.sq') || b.closest('.demo'), nodes = b.getAttribute('data-self') ? [b.closest('.sp')] : sq.querySelectorAll('.sp');
+    const one = nodes.length === 1;
+    playSeq(ids, 450, i => lightOnly(nodes, one ? 0 : i)).catch(() => {}).then(() => lightOnly(nodes, -1));
+  }
   else if (act === 'seq') {
     const sq = b.closest('.sq') || b.closest('.demo'), nodes = sq.querySelectorAll('.sp');
     const items = GSEQ[+b.getAttribute('data-i')];
@@ -1832,7 +2360,8 @@ $('star').addEventListener('click', () => {
   else { G.lock = true; $('star').style.visibility = 'hidden'; say(PHRASES.starDone);
     setTimeout(() => { $('star').style.visibility = ''; if (G.stage === 'mouse') startTasks(); }, 1500); }
 });
-$('btnDone').addEventListener('click', () => toList());
+// Після перевірки дитина тисне «До уроків», а бачить дорослий — результат
+$('btnDone').addEventListener('click', () => { if (G.check && G.check.saved) toCheckResult(G.check.saved); else toList(); });
 $('repeat').addEventListener('click', () => repeat());
 // Довге натискання пальцем на Android відкриває меню/лупу — глушимо всюди, крім поля вводу
 // Сторінки для дорослого можна виділяти й копіювати — це звичайний текст
@@ -1892,11 +2421,13 @@ function renderPanel() {
   const cells = r => '<td>' + r.todayOk + '</td><td>' + r.days + '</td><td>' + r.n + '</td><td class="' + cls(r.st) + '">' + r.st + '</td>';
   $('panelBody').innerHTML = ORDER.map(id => {
     const L = LESSONS[id], sks = Object.keys(L.skills), name = esc(L.code + ' · ' + L.title) + (id === rec ? ' ★' : '');
+    if (!avail(id) && !st[sks[0]].n) return '<tr data-row="' + sks[0] + '" class="res-s"><td>' + name + '</td><td colspan="4">чекає на записи звуків</td></tr>';
     if (sks.length === 1) return '<tr data-row="' + sks[0] + '"><td>' + name + '</td>' + cells(st[sks[0]]) + '</tr>';
     const ls = lessonState(st, id);
     return '<tr><td colspan="4"><b>' + name + '</b></td><td class="' + cls(ST[ls][1]) + '">' + ST[ls][1] + '</td></tr>' +
       sks.map(sk => '<tr data-row="' + sk + '"><td class="sub">' + esc(SKILL[sk].code + ' · ' + SKILL[sk].short) + '</td>' + cells(st[sk]) + '</tr>').join('');
   }).join('');
+  $('panelChecks').innerHTML = checksTable(panelKid);
 }
 $('panelBukvar').addEventListener('click', e => {
   const b = e.target.closest('button[data-bukvar]'); if (!b) return;
@@ -1909,10 +2440,12 @@ $('panelTomorrow').addEventListener('click', () => { const d = load(); d.offset+
 $('panelReset').addEventListener('click', () => {
   if (!confirm('Стерти всі дані (усіх дітей, буквар, позначки «Я підготувався») і повернути справжню дату?')) return;
   store({offset: 0, kids: {}, prep: {}}); renderPanel();
+  if (G.stage === 'list') renderList();
 });
 
 paintRole();
 show('who');
+probeSounds();
 </script>
 </body>
 </html>
